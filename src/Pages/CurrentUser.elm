@@ -126,7 +126,7 @@ update sharedState msg model =
 
 view : SharedState -> Model -> Element Msg
 view sharedState model =
-    column Style.mainColumn
+    column (Style.mainColumn fill fill)
         [ column (Style.shadedColumn (px 480) (px 300))
             [ showIf (model.state /= SignedIn) (inputUsername model)
             , showIf (model.state /= SignedIn) (inputEmail model)

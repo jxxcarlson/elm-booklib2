@@ -16,7 +16,8 @@
             "elm/svg": "1.0.1",
             "elm/time": "1.0.0",
             "elm/url": "1.0.0",
-            "mdgriffith/elm-ui": "1.1.0"
+            "mdgriffith/elm-ui": "1.1.0",
+            "pablohirafuji/elm-markdown": "2.0.5"
         },
         "indirect": {
             "elm/bytes": "1.0.8",

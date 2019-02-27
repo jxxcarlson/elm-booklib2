@@ -14,8 +14,10 @@ module Common.Style
         , myFocusStyle
         , tableHeading
         , blue
+        , orange
         , grey
         , white
+        , charcoal
         )
 
 import Element exposing (..)
@@ -32,9 +34,9 @@ tableHeading =
 
 titleButton highlighted =
     if highlighted then
-        [ Font.color blue ]
+        [ Font.color orange ]
     else
-        [ Font.color black ]
+        [ Font.color white ]
 
 
 button : List (Element.Attr () msg)
@@ -52,8 +54,8 @@ activeButton active =
             button
 
 
-mainColumn =
-    [ paddingXY 0 40, spacing 24, height (px 730) ]
+mainColumn w h =
+    [ paddingXY 0 40, spacing 24, width w, height h ]
 
 
 shadedColumn w h =
@@ -164,3 +166,8 @@ blue =
 
 darkBlue =
     Element.rgb 0.0 0.0 0.6
+
+
+orange =
+    -- Element.rgb 0.9569 0.6078 0.2588
+    Element.rgb 1.0 0.7 0.0549

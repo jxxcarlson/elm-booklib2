@@ -135,12 +135,11 @@ view msgMapper sharedState model =
                     "404"
 
         body_ =
-            column [ padding 20, Background.color Style.grey, width fill ]
-                [ el [ paddingXY 0 20, Font.bold ]
-                    (text "BookLib")
-                , row
-                    (Style.navBar (px 480))
-                    [ Input.button (Style.activeButton (model.route == BooksRoute))
+            column [ padding 20, Background.color Style.grey, width fill, height fill ]
+                [ row
+                    (Style.navBar (fill))
+                    [ el [ Font.bold, Font.color Style.white ] (text "BookLib")
+                    , Input.button (Style.activeButton (model.route == BooksRoute))
                         { onPress = Just (NavigateTo BooksRoute)
                         , label = el [] (text "Books")
                         }

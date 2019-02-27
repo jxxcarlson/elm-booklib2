@@ -9,10 +9,14 @@ module Pages.Book
         )
 
 import Http
+import Html
+import Html.Attributes as HA
 import Time exposing (Posix)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
 import Json.Decode.Pipeline exposing (required, hardcoded)
+import Markdown
+import Book.MarkdownExtra as MarkdownExtra
 import Element exposing (..)
 import Element.Font as Font
 import Element.Input as Input
@@ -678,21 +682,68 @@ update sharedState msg model =
 
 view : SharedState -> Model -> Element Msg
 view sharedState model =
-    column (Style.mainColumn ++ [ Background.color Style.grey ])
-        [ el [ Font.size 24, Font.bold ] (text "Book page")
-        , bookListDisplay model
+    column (Style.mainColumn fill fill)
+        [ bookListDisplay model
         , footer sharedState model
         ]
 
 
 bookListDisplay model =
-    Element.column [ width (bookListDisplayWidth model), spacing 10, padding 10, Background.color Style.white ]
-        [ Element.row [ spacing 15 ]
-            [ Element.el [ Font.bold ] (text <| bookInfo model)
-            , Element.el [ Font.size 14, Font.color Style.blue ] (text <| totalsString model)
-            ]
+    Element.row []
+        [ bookListTable model
+        , notesViewedAsMarkdown model
+        ]
+
+
+bookListTable model =
+    Element.column
+        [ width fill
+        , height (px 650)
+        , spacing 10
+        , padding 10
+        , Background.color Style.charcoal
+        , Font.color Style.white
+        ]
+        [ bookListTableHeader model
         , listBooks model
         ]
+
+
+bookListTableHeader : Model -> Element Msg
+bookListTableHeader model =
+    Element.row [ spacing 15, Background.color Style.charcoal, Font.color Style.white ]
+        [ Element.el [ Font.bold, Font.color Style.white ] (text <| bookInfo model)
+        , Element.el [ Font.size 14, Font.color Style.orange ] (text <| totalsString model)
+        ]
+
+
+
+--
+-- MARKDOWN
+--
+
+
+notesViewedAsMarkdown : Model -> Element msg
+notesViewedAsMarkdown model =
+    case model.currentBook of
+        Nothing ->
+            Element.none
+
+        Just book ->
+            Element.html <| Html.div (markdownStyle model) <| [ MarkdownExtra.view book.notes ]
+
+
+markdownStyle model =
+    [ HA.style "height" "630px"
+    , HA.style "width" "500px"
+    , HA.style "font-size" "12px"
+    , HA.style "line-height" "15px"
+    , HA.style "overflow-y" "scroll"
+    , HA.style "overflow-x" "hidden"
+    , HA.style "padding-top" "20px"
+    , HA.style "background-color" "#f7f6f4"
+    , HA.style "padding-left" "15px"
+    ]
 
 
 listBooks model =
@@ -702,6 +753,8 @@ listBooks model =
         , Element.spacing 10
         , scrollbarY
         , height (px 400)
+        , Background.color Style.charcoal
+        , Font.color Style.white
         , clipX
         ]
         { data = model.bookList
@@ -724,17 +777,17 @@ listBooks model =
                     \book ->
                         Element.text book.category
               }
-            , { header = Element.el Style.tableHeading (Element.text "Progress")
-              , width = px 110
-              , view =
-                    \book ->
-                        Element.text (pageInfo book)
-              }
             , { header = Element.el Style.tableHeading (Element.text "")
               , width = px 110
               , view =
                     \book ->
                         Element.el [] (Indicator.indicator 100 10 "orange" (pageRatio book))
+              }
+            , { header = Element.el Style.tableHeading (Element.text "Progress")
+              , width = px 110
+              , view =
+                    \book ->
+                        Element.text (pageInfo book)
               }
             ]
         }

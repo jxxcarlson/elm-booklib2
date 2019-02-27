@@ -3,6 +3,7 @@ module Common.Utility
         ( replaceIf
         , toUtcString
         , toUtcDateString
+        , softBreakAlt
         )
 
 import Regex
