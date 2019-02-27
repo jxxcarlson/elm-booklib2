@@ -53,7 +53,7 @@ activeButton active =
 
 
 mainColumn =
-    [ paddingXY 0 40, spacing 24, height (px 700) ]
+    [ paddingXY 0 40, spacing 24, height (px 730) ]
 
 
 shadedColumn w h =
