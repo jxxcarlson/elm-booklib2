@@ -1,4 +1,4 @@
-module Routing.Router exposing (Model, Msg(..), initialModel, init, pageView, update, updateHome, updateCurrentUser, view)
+module Routing.Router exposing (Model, Msg(..), initialModel, init, pageView, update, updateBook, updateCurrentUser, view)
 
 import Browser
 import Browser.Navigation exposing (Key)
@@ -17,7 +17,7 @@ import User.Types
 
 
 type alias Model =
-    { homeModel : Book.Model
+    { bookModel : Book.Model
     , currentUserModel : CurrentUser.Model
     , route : Route
     }
@@ -25,7 +25,7 @@ type alias Model =
 
 type Msg
     = UrlChange Url
-    | HomeMsg Book.Msg
+    | BookMsg Book.Msg
     | CurrentUserMsg User.Types.Msg
     | NavigateTo Route
 
@@ -33,13 +33,13 @@ type Msg
 initialModel : Url -> Model
 initialModel url =
     let
-        ( homeModel, homeCmd ) =
+        bookModel =
             Book.init
 
         currentUserModel =
             CurrentUser.initModel
     in
-        { homeModel = homeModel
+        { bookModel = bookModel
         , currentUserModel = currentUserModel
         , route = parseUrl url
         }
@@ -48,17 +48,17 @@ initialModel url =
 init : Url -> ( Model, Cmd Msg )
 init url =
     let
-        ( homeModel, homeCmd ) =
+        bookModel =
             Book.init
 
         currentUserModel =
             CurrentUser.initModel
     in
-        ( { homeModel = homeModel
+        ( { bookModel = bookModel
           , currentUserModel = currentUserModel
           , route = parseUrl url
           }
-        , Cmd.map HomeMsg homeCmd
+        , Cmd.map BookMsg Cmd.none
         )
 
 
@@ -77,21 +77,21 @@ update sharedState msg model =
             , NoUpdate
             )
 
-        HomeMsg homeMsg ->
-            updateHome model homeMsg
+        BookMsg bookMsg ->
+            updateBook sharedState model bookMsg
 
         CurrentUserMsg currentUserMsg ->
             updateCurrentUser sharedState model currentUserMsg
 
 
-updateHome : Model -> Book.Msg -> ( Model, Cmd Msg, SharedStateUpdate )
-updateHome model homeMsg =
+updateBook : SharedState -> Model -> Book.Msg -> ( Model, Cmd Msg, SharedStateUpdate )
+updateBook sharedState model bookMsg =
     let
-        ( nextHomeModel, homeCmd ) =
-            Book.update homeMsg model.homeModel
+        ( nextBookModel, bookCmd ) =
+            Book.update sharedState bookMsg model.bookModel
     in
-        ( { model | homeModel = nextHomeModel }
-        , Cmd.map HomeMsg homeCmd
+        ( { model | bookModel = nextBookModel }
+        , Cmd.map BookMsg bookCmd
         , NoUpdate
         )
 
@@ -150,8 +150,8 @@ pageView sharedState model =
     row []
         [ case model.route of
             HomeRoute ->
-                Book.view sharedState model.homeModel
-                    |> Element.map HomeMsg
+                Book.view sharedState model.bookModel
+                    |> Element.map BookMsg
 
             SettingsRoute ->
                 CurrentUser.view sharedState model.currentUserModel
