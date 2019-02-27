@@ -2,7 +2,7 @@ module Routing.Router exposing (Model, Msg(..), initialModel, init, pageView, up
 
 import Browser
 import Browser.Navigation exposing (Key)
-import Pages.Book as Book
+import Pages.Books as Books
 import Pages.CurrentUser as CurrentUser
 import Routing.Helpers exposing (Route(..), parseUrl, reverseRoute)
 import SharedState exposing (SharedState, SharedStateUpdate(..))
@@ -17,7 +17,7 @@ import User.Types
 
 
 type alias Model =
-    { bookModel : Book.Model
+    { bookModel : Books.Model
     , currentUserModel : CurrentUser.Model
     , route : Route
     }
@@ -25,7 +25,7 @@ type alias Model =
 
 type Msg
     = UrlChange Url
-    | BookMsg Book.Msg
+    | BookMsg Books.Msg
     | CurrentUserMsg User.Types.Msg
     | NavigateTo Route
 
@@ -34,7 +34,7 @@ initialModel : Url -> Model
 initialModel url =
     let
         bookModel =
-            Book.init
+            Books.init
 
         currentUserModel =
             CurrentUser.initModel
@@ -49,7 +49,7 @@ init : Url -> ( Model, Cmd Msg )
 init url =
     let
         bookModel =
-            Book.init
+            Books.init
 
         currentUserModel =
             CurrentUser.initModel
@@ -73,7 +73,7 @@ update sharedState msg model =
                 cmd =
                     case route of
                         BooksRoute ->
-                            Book.getBookListViaSharedState sharedState
+                            Books.getBookListViaSharedState sharedState
 
                         _ ->
                             Cmd.none
@@ -96,11 +96,11 @@ update sharedState msg model =
             updateCurrentUser sharedState model currentUserMsg
 
 
-updateBook : SharedState -> Model -> Book.Msg -> ( Model, Cmd Msg, SharedStateUpdate )
+updateBook : SharedState -> Model -> Books.Msg -> ( Model, Cmd Msg, SharedStateUpdate )
 updateBook sharedState model bookMsg =
     let
         ( nextBookModel, bookCmd, sharedStateUpdate ) =
-            Book.update sharedState bookMsg model.bookModel
+            Books.update sharedState bookMsg model.bookModel
     in
         ( { model | bookModel = nextBookModel }
         , Cmd.map BookMsg bookCmd
@@ -161,7 +161,7 @@ pageView sharedState model =
     row []
         [ case model.route of
             BooksRoute ->
-                Book.view sharedState model.bookModel
+                Books.view sharedState model.bookModel
                     |> Element.map BookMsg
 
             CurrentUserRoute ->

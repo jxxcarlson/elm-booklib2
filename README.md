@@ -17,7 +17,7 @@ This function can be used in a child page, and the `SharedStateUpdate` construct
 
 ## The App
 
-There are two pages in the app, **Book** and **Sign in Page**.  In the sign-in page one can either sign in to or register for the site presented by the back  end.  I've left the backend that I've used for testing for the moment: [Booklib.io](https://booklib.io), a site for keeping track of the books you read — taking notes, sharing your reading list with others, etc.
+There are two pages in the app, **Books** and **Sign in Page**.  In the sign-in page one can either sign in to or register for the site presented by the back  end.  I've left the backend that I've used for testing for the moment: [Booklib.io](https://booklib.io), a site for keeping track of the books you read — taking notes, sharing your reading list with others, etc.
 
 Putting that aside, the main point is that if you sign in or register on the **Sign in Page**, then the user information returned by the server, including a token to authenticate a session, is stored in the `SharedState` and so is available to all child pages.  You will see this if you sign in: your username will also be displayed in the home page.
 

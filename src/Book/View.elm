@@ -1,4 +1,4 @@
-module Book.View exposing (view)
+module Books.View exposing (view)
 
 import Element exposing (..)
 import Element.Background as Background
@@ -7,7 +7,7 @@ import Element.Input as Input
 import Element.Keyed as Keyed
 import Element.Lazy
 import Markdown
-import Book.MarkdownExtra as MD
+import Books.MarkdownExtra as MD
 import Html as H
 import Html.Attributes as HA
 import Widget
@@ -19,8 +19,8 @@ import Widget
         )
 import Utility
 import Indicator
-import Book.Model exposing (Book, Model, BookMsg(..), AppState(..), NotesViewMode(..), TextDisplayMode(..), TextRenderMode(..), booksCompleted)
-import Book.Request as Request
+import Books.Model exposing (Books, Model, BookMsg(..), AppState(..), NotesViewMode(..), TextDisplayMode(..), TextRenderMode(..), booksCompleted)
+import Books.Request as Request
 import Days
 import Time exposing (Posix, Month(..))
 
@@ -473,7 +473,7 @@ currentBookPanel book model =
 --  , Element.el [paddingXY 10 0] (newBookButton model)
 
 
-readingRateDisplay : Model -> Book -> Element msg
+readingRateDisplay : Model -> Books -> Element msg
 readingRateDisplay model book =
     case ( book.startDateString /= "", book.finishDateString /= "" ) of
         ( True, _ ) ->
@@ -483,12 +483,12 @@ readingRateDisplay model book =
             Element.el [ Font.size 14, moveUp 10, moveRight 85 ] (Element.text <| "")
 
 
-readingRateString : Model -> Book -> String
+readingRateString : Model -> Books -> String
 readingRateString model book =
     (String.fromInt <| Basics.round <| readingRate model book) ++ " pp/day (" ++ (String.fromInt <| daysToComplete model book) ++ " days)"
 
 
-daysToComplete : Model -> Book -> Int
+daysToComplete : Model -> Books -> Int
 daysToComplete model book =
     case book.finishDateString /= "" of
         True ->
@@ -498,12 +498,12 @@ daysToComplete model book =
             Days.fromUSDate book.startDateString (toUtcDateString model.currentTime)
 
 
-readingRate : Model -> Book -> Float
+readingRate : Model -> Books -> Float
 readingRate model book =
     (Basics.toFloat book.pagesRead) / (Basics.toFloat <| daysToComplete model book)
 
 
-startMessage : Book -> String
+startMessage : Books -> String
 startMessage book =
     case book.startDateString == "" of
         True ->
@@ -513,7 +513,7 @@ startMessage book =
             book.startDateString
 
 
-finishMessage : Book -> String
+finishMessage : Books -> String
 finishMessage book =
     case book.finishDateString == "" of
         True ->
