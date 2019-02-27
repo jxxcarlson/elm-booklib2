@@ -98,7 +98,7 @@ update sharedState msg model =
                 , password = ""
                 , state = SignedIn
               }
-            , Cmd.none
+            , pushUrl sharedState.navKey "#books"
             , UpdateCurrentUser (Just user)
             )
 

@@ -14,7 +14,10 @@ reverseRoute : Route -> String
 reverseRoute route =
     case route of
         CurrentUserRoute ->
-            "#/currentuser"
+            "#/"
+
+        BooksRoute ->
+            "#/books"
 
         _ ->
             "#/"
@@ -22,8 +25,8 @@ reverseRoute route =
 
 routeParser =
     Url.Parser.oneOf
-        [ Url.Parser.map BooksRoute Url.Parser.top
-        , Url.Parser.map CurrentUserRoute (Url.Parser.s "currentuser")
+        [ Url.Parser.map CurrentUserRoute Url.Parser.top
+        , Url.Parser.map BooksRoute (Url.Parser.s "books")
         ]
 
 
@@ -31,7 +34,7 @@ parseUrl : Url -> Route
 parseUrl url =
     case url.fragment of
         Nothing ->
-            BooksRoute
+            CurrentUserRoute
 
         Just fragment ->
             { url | path = fragment, fragment = Nothing }
