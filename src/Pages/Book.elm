@@ -5,6 +5,7 @@ module Pages.Book
         , init
         , update
         , view
+        , getBookListViaSharedState
         )
 
 import Http
@@ -679,7 +680,6 @@ view : SharedState -> Model -> Element Msg
 view sharedState model =
     column (Style.mainColumn ++ [ Background.color Style.grey ])
         [ el [ Font.size 24, Font.bold ] (text "Book page")
-        , el [ Font.size 16 ] (text <| "Counter = " ++ String.fromInt model.counter)
         , bookListDisplay model
         , footer sharedState model
         ]
@@ -690,7 +690,6 @@ bookListDisplay model =
         [ Element.row [ spacing 15 ]
             [ Element.el [ Font.bold ] (text <| bookInfo model)
             , Element.el [ Font.size 14, Font.color Style.blue ] (text <| totalsString model)
-            , getBooksButton
             ]
         , listBooks model
         ]
@@ -822,6 +821,16 @@ footer sharedState model =
 --
 -- Cmd Msg (HTTP)
 --
+
+
+getBookListViaSharedState : SharedState -> Cmd Msg
+getBookListViaSharedState sharedState =
+    case sharedState.currentUser of
+        Nothing ->
+            Cmd.none
+
+        Just user ->
+            getBookList user.id user.token
 
 
 getBookList : Int -> String -> Cmd Msg

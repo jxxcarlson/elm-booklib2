@@ -66,10 +66,22 @@ update : SharedState -> Msg -> Model -> ( Model, Cmd Msg, SharedStateUpdate )
 update sharedState msg model =
     case msg of
         UrlChange location ->
-            ( { model | route = parseUrl location }
-            , Cmd.none
-            , NoUpdate
-            )
+            let
+                route =
+                    (parseUrl location)
+
+                cmd =
+                    case route of
+                        BooksRoute ->
+                            Book.getBookListViaSharedState sharedState
+
+                        _ ->
+                            Cmd.none
+            in
+                ( { model | route = route }
+                , Cmd.map BookMsg cmd
+                , NoUpdate
+                )
 
         NavigateTo route ->
             ( model
