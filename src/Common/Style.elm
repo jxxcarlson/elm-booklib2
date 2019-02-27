@@ -2,6 +2,7 @@ module Common.Style
     exposing
         ( button
         , activeButton
+        , titleButton
         , noAutocapitalize
         , noAutocorrect
         , preWrap
@@ -11,6 +12,10 @@ module Common.Style
         , footerItem
         , navBar
         , myFocusStyle
+        , tableHeading
+        , blue
+        , grey
+        , white
         )
 
 import Element exposing (..)
@@ -19,6 +24,17 @@ import Element.Font as Font
 import Element.Input
 import Element.Lazy
 import Html.Attributes
+
+
+tableHeading =
+    [ Font.bold ]
+
+
+titleButton highlighted =
+    if highlighted then
+        [ Font.color blue ]
+    else
+        [ Font.color black ]
 
 
 button : List (Element.Attr () msg)

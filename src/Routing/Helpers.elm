@@ -5,16 +5,16 @@ import Url.Parser exposing ((</>))
 
 
 type Route
-    = HomeRoute
-    | SettingsRoute
+    = BooksRoute
+    | CurrentUserRoute
     | NotFoundRoute
 
 
 reverseRoute : Route -> String
 reverseRoute route =
     case route of
-        SettingsRoute ->
-            "#/settings"
+        CurrentUserRoute ->
+            "#/currentuser"
 
         _ ->
             "#/"
@@ -22,8 +22,8 @@ reverseRoute route =
 
 routeParser =
     Url.Parser.oneOf
-        [ Url.Parser.map HomeRoute Url.Parser.top
-        , Url.Parser.map SettingsRoute (Url.Parser.s "settings")
+        [ Url.Parser.map BooksRoute Url.Parser.top
+        , Url.Parser.map CurrentUserRoute (Url.Parser.s "currentuser")
         ]
 
 
@@ -31,7 +31,7 @@ parseUrl : Url -> Route
 parseUrl url =
     case url.fragment of
         Nothing ->
-            HomeRoute
+            BooksRoute
 
         Just fragment ->
             { url | path = fragment, fragment = Nothing }

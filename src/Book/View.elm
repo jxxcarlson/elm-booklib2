@@ -411,38 +411,8 @@ bookListDisplay model =
         ]
 
 
-bookInfo : Model -> String
-bookInfo model =
-    "Books: " ++ (String.fromInt <| booksCompleted model.bookList) ++ "/" ++ (String.fromInt <| List.length model.bookList)
-
-
-totalsString model =
-    let
-        daysElapsed =
-            Days.fromUSDate model.beginningDate (toUtcDateString model.currentTime)
-
-        pagesReadPerDay =
-            Basics.round ((Basics.toFloat model.totalPagesRead) / (Basics.toFloat daysElapsed))
-    in
-        (String.fromInt model.totalPagesRead)
-            ++ " pages since "
-            ++ model.beginningDate
-            ++ " — "
-            ++ (String.fromInt pagesReadPerDay)
-            ++ " pp/day"
-
-
 
 -- "Total pages read since " ++ model.beginningDate ++ ": " ++ (String.fromInt model.totalPagesRead)
-
-
-bookListDisplayWidth model =
-    case model.notesViewMode of
-        NotesViewShort ->
-            (px 780)
-
-        NotesViewLong ->
-            (px 360)
 
 
 newBookButton_ : Model -> Element BookMsg
@@ -601,10 +571,6 @@ icon status =
 
         False ->
             el [ Font.size 14, Font.bold, moveDown 1 ] (text "N")
-
-
-pageRatio book =
-    (toFloat book.pagesRead) / (toFloat book.pages)
 
 
 pagesInput model =
@@ -853,22 +819,6 @@ listBooksNarrow model =
         }
 
 
-titleButton book maybeCurrentBook =
-    let
-        highlighted =
-            case maybeCurrentBook of
-                Nothing ->
-                    False
-
-                Just currentBook ->
-                    currentBook.id == book.id
-    in
-        Input.button (titleButtonStyle highlighted)
-            { onPress = Just (SetCurrentBook book)
-            , label = Element.text book.title
-            }
-
-
 truncatedDisplay : Int -> String -> String
 truncatedDisplay n str =
     let
@@ -879,17 +829,6 @@ truncatedDisplay n str =
             truncatedStr ++ " ..."
         else
             str
-
-
-pageInfo book =
-    let
-        pp =
-            (String.fromInt book.pagesRead) ++ "/" ++ (String.fromInt book.pages)
-
-        pc =
-            String.fromInt <| Basics.round <| 100 * (Basics.toFloat book.pagesRead) / (Basics.toFloat book.pages)
-    in
-        pp ++ " (" ++ pc ++ "%)"
 
 
 

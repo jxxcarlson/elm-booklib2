@@ -15,11 +15,19 @@ import Json.Decode.Pipeline exposing (required, hardcoded)
 import Element exposing (..)
 import Element.Font as Font
 import Element.Input as Input
+import Element.Background as Background
 import SharedState exposing (SharedState, SharedStateUpdate(..))
 import Common.Style as Style
 import Common.Utility as Utility
+import Common.Indicator as Indicator
+import Common.Days as Days
 import User.Types exposing (User)
 import Configuration
+
+
+--
+-- MODEL
+--
 
 
 type alias Model =
@@ -28,7 +36,6 @@ type alias Model =
     , bookList : List Book
     , totalPagesRead : Int
     , dateStartedReadingString : String
-    , maybeUser : Maybe User
     , title : String
     , subtitle : String
     , author : String
@@ -58,7 +65,6 @@ init =
     , bookList = []
     , totalPagesRead = 0
     , dateStartedReadingString = ""
-    , maybeUser = Nothing
     , title = ""
     , subtitle = ""
     , author = ""
@@ -132,6 +138,12 @@ booksCompleted bookList =
     bookList |> List.foldl (\book count -> count + (bookIsCompleted book)) 0
 
 
+
+--
+-- MSG
+--
+
+
 type Msg
     = ReceiveBookList (Result Http.Error (List Book))
     | ComputePagesRead (Result Http.Error (List Book))
@@ -166,15 +178,21 @@ type Msg
     | NoOp
 
 
+
+--
+-- UPDATE
+--
+
+
 {-| NOTE that the Book udpdate function is of the usual
 kind -- there is no SharedState parameter. Contrast
 this with the update function for SettiÂngs.
 -}
-update : SharedState -> Msg -> Model -> ( Model, Cmd Msg )
+update : SharedState -> Msg -> Model -> ( Model, Cmd Msg, SharedStateUpdate )
 update sharedState msg model =
     case msg of
         NoOp ->
-            ( model, Cmd.none )
+            ( model, Cmd.none, NoUpdate )
 
         NewBook ->
             ( { model
@@ -187,6 +205,7 @@ update sharedState msg model =
                 , notes = "Just started"
               }
             , Cmd.none
+            , NoUpdate
             )
 
         CancelNewBook ->
@@ -196,6 +215,7 @@ update sharedState msg model =
                   previousCurrentBook = Nothing
               }
             , Cmd.none
+            , NoUpdate
             )
 
         EditBook ->
@@ -249,10 +269,11 @@ update sharedState msg model =
                     , pages = pages
                   }
                 , Cmd.none
+                , NoUpdate
                 )
 
         SaveBookEditChanges ->
-            case ( model.currentBook, model.maybeUser ) of
+            case ( model.currentBook, sharedState.currentUser ) of
                 ( Just book, Just user ) ->
                     let
                         updatedBook =
@@ -271,22 +292,23 @@ update sharedState msg model =
                     in
                         ( { model | appState = ReadingMyBooks, currentBook = Just updatedBook, bookList = bookList }
                         , updateBook updatedBook user.token
+                        , NoUpdate
                         )
 
                 ( _, _ ) ->
-                    ( model, Cmd.none )
+                    ( model, Cmd.none, NoUpdate )
 
         BookIsUpdated (Ok str) ->
-            ( model, Cmd.none )
+            ( model, Cmd.none, NoUpdate )
 
         BookIsUpdated (Err err) ->
-            ( model, Cmd.none )
+            ( model, Cmd.none, NoUpdate )
 
         BookIsCreated (Ok str) ->
-            ( model, Cmd.none )
+            ( model, Cmd.none, NoUpdate )
 
         BookIsCreated (Err err) ->
-            ( model, Cmd.none )
+            ( model, Cmd.none, NoUpdate )
 
         ReceiveBookList (Ok bookList) ->
             let
@@ -335,50 +357,54 @@ update sharedState msg model =
                     , finishDateString = finishDateString
                   }
                 , Cmd.none
+                , NoUpdate
                 )
 
         ReceiveBookList (Err err) ->
-            ( { model | errorMessage = "Error receiveing book list" }, Cmd.none )
+            ( { model | errorMessage = "Error receiveing book list" }, Cmd.none, NoUpdate )
 
         ComputePagesRead result ->
             case result of
                 Ok bookList ->
-                    ( { model | totalPagesRead = computeTotalPagesRead bookList }, Cmd.none )
+                    ( { model | totalPagesRead = computeTotalPagesRead bookList }, Cmd.none, NoUpdate )
 
                 Err _ ->
-                    ( model, Cmd.none )
+                    ( model, Cmd.none, NoUpdate )
 
         RequestBookList userid token ->
-            ( model, getBookList userid token )
+            ( model, getBookList userid token, NoUpdate )
 
         -- ###
         GetCurrentUserBookList ->
-            case model.maybeUser of
+            case sharedState.currentUser of
                 Nothing ->
-                    ( model, Cmd.none )
+                    ( model, Cmd.none, NoUpdate )
 
                 Just user ->
-                    ( { model | appState = ReadingMyBooks, textRenderMode = MarkDownView }, getBookList user.id user.token )
+                    ( { model | appState = ReadingMyBooks, textRenderMode = MarkDownView }
+                    , getBookList user.id user.token
+                    , NoUpdate
+                    )
 
         InputTitle str ->
-            ( { model | title = str }, Cmd.none )
+            ( { model | title = str }, Cmd.none, NoUpdate )
 
         InputSubtitle str ->
-            ( { model | subtitle = str }, Cmd.none )
+            ( { model | subtitle = str }, Cmd.none, NoUpdate )
 
         InputCategory str ->
-            ( { model | category = str }, Cmd.none )
+            ( { model | category = str }, Cmd.none, NoUpdate )
 
         InputAuthor str ->
-            ( { model | author = str }, Cmd.none )
+            ( { model | author = str }, Cmd.none, NoUpdate )
 
         InputPages str ->
-            ( { model | pages = str |> String.toInt |> Maybe.withDefault 0 }, Cmd.none )
+            ( { model | pages = str |> String.toInt |> Maybe.withDefault 0 }, Cmd.none, NoUpdate )
 
         InputPagesRead str ->
             let
                 userid =
-                    case model.maybeUser of
+                    case sharedState.currentUser of
                         Nothing ->
                             0
 
@@ -418,6 +444,7 @@ update sharedState msg model =
                     , totalPagesRead = model.totalPagesRead + deltaPages
                   }
                 , command
+                , NoUpdate
                 )
 
         InputNotes str ->
@@ -446,24 +473,24 @@ update sharedState msg model =
                         Just book ->
                             Utility.replaceIf (\runningBook -> runningBook.id == book.id) book model.bookList
             in
-                ( { model | currentBook = updatedBook, bookList = updatedBookList }, command )
+                ( { model | currentBook = updatedBook, bookList = updatedBookList }, command, NoUpdate )
 
         InputBlurb str ->
             let
-                nextMaybeUser =
-                    case model.maybeUser of
+                nextCurrentUser =
+                    case sharedState.currentUser of
                         Nothing ->
                             Nothing
 
                         Just user ->
                             Just { user | blurb = str }
             in
-                ( { model | maybeUser = nextMaybeUser }, Cmd.none )
+                ( model, Cmd.none, UpdateCurrentUser nextCurrentUser )
 
         ToggleBookPublic val ->
             case model.currentBook of
                 Nothing ->
-                    ( model, Cmd.none )
+                    ( model, Cmd.none, NoUpdate )
 
                 Just book ->
                     let
@@ -476,7 +503,7 @@ update sharedState msg model =
                         updatedBookList =
                             Utility.replaceIf (\runningBook -> runningBook.id == nextBook.id) nextBook model.bookList
                     in
-                        ( { model | currentBook = Just nextBook, bookList = updatedBookList }, command )
+                        ( { model | currentBook = Just nextBook, bookList = updatedBookList }, command, NoUpdate )
 
         CreateNewBook ->
             let
@@ -496,7 +523,7 @@ update sharedState msg model =
                     }
 
                 token =
-                    case model.maybeUser of
+                    case sharedState.currentUser of
                         Nothing ->
                             ""
 
@@ -504,7 +531,7 @@ update sharedState msg model =
                             user.token
 
                 userid =
-                    case model.maybeUser of
+                    case sharedState.currentUser of
                         Nothing ->
                             0
 
@@ -521,6 +548,7 @@ update sharedState msg model =
                     , textRenderMode = PlainTextView
                   }
                 , createBook userid newBook token
+                , NoUpdate
                 )
 
         SetCurrentBook book ->
@@ -531,6 +559,7 @@ update sharedState msg model =
                 , finishDateString = book.finishDateString
               }
             , Cmd.none
+            , NoUpdate
             )
 
         UpdateCurrentBook ->
@@ -552,7 +581,7 @@ update sharedState msg model =
                             Utility.replaceIf (\runningBook -> runningBook.id == book.id) book model.bookList
 
                 token =
-                    case model.maybeUser of
+                    case sharedState.currentUser of
                         Nothing ->
                             ""
 
@@ -569,7 +598,7 @@ update sharedState msg model =
             in
                 case nextCurrentBook of
                     Nothing ->
-                        ( model, Cmd.none )
+                        ( model, Cmd.none, NoUpdate )
 
                     Just book ->
                         ( { model
@@ -579,15 +608,16 @@ update sharedState msg model =
                             , pagesRead = book.pagesRead
                           }
                         , updateBookCmd
+                        , NoUpdate
                         )
 
         UpdateBlurb ->
-            ( model, Cmd.none )
+            ( model, Cmd.none, NoUpdate )
 
         GetSharedBooks username ->
-            case model.maybeUser of
+            case sharedState.currentUser of
                 Nothing ->
-                    ( model, Cmd.none )
+                    ( model, Cmd.none, NoUpdate )
 
                 Just user ->
                     ( { model | appState = SharingBooks username, textRenderMode = MarkDownView }
@@ -595,13 +625,14 @@ update sharedState msg model =
                         [ getSharedBooks username user.token
                         , getSharedBlurb username user.token
                         ]
+                    , NoUpdate
                     )
 
         ReceiveSharedBlurb (Ok str) ->
-            ( { model | sharedBlurb = str }, Cmd.none )
+            ( { model | sharedBlurb = str }, Cmd.none, NoUpdate )
 
         ReceiveSharedBlurb (Err err) ->
-            ( model, Cmd.none )
+            ( model, Cmd.none, NoUpdate )
 
         ToggleNotesViewMode ->
             let
@@ -613,38 +644,170 @@ update sharedState msg model =
                         NotesViewLong ->
                             NotesViewShort
             in
-                ( { model | notesViewMode = nextMode }, Cmd.none )
+                ( { model | notesViewMode = nextMode }, Cmd.none, NoUpdate )
 
         ToggleBlurbAndNotes ->
             case model.textDisplayMode of
                 DisplayNotes ->
-                    ( { model | counter = model.counter + 1, textDisplayMode = DisplayBlurb }, Cmd.none )
+                    ( { model | counter = model.counter + 1, textDisplayMode = DisplayBlurb }, Cmd.none, NoUpdate )
 
                 DisplayBlurb ->
-                    ( { model | counter = model.counter + 1, textDisplayMode = DisplayNotes }, Cmd.none )
+                    ( { model | counter = model.counter + 1, textDisplayMode = DisplayNotes }, Cmd.none, NoUpdate )
 
         ToggleMarkdown ->
             case model.textRenderMode of
                 PlainTextView ->
-                    ( { model | textRenderMode = MarkDownView }, Cmd.none )
+                    ( { model | textRenderMode = MarkDownView }, Cmd.none, NoUpdate )
 
                 MarkDownView ->
-                    ( { model | textRenderMode = PlainTextView }, Cmd.none )
+                    ( { model | textRenderMode = PlainTextView }, Cmd.none, NoUpdate )
 
         InputStartDate str ->
-            ( { model | startDateString = str }, Cmd.none )
+            ( { model | startDateString = str }, Cmd.none, NoUpdate )
 
         InputFinishDate str ->
-            ( { model | finishDateString = str }, Cmd.none )
+            ( { model | finishDateString = str }, Cmd.none, NoUpdate )
+
+
+
+--
+-- VIEW
+--
 
 
 view : SharedState -> Model -> Element Msg
 view sharedState model =
-    column Style.mainColumn
+    column (Style.mainColumn ++ [ Background.color Style.grey ])
         [ el [ Font.size 24, Font.bold ] (text "Book page")
         , el [ Font.size 16 ] (text <| "Counter = " ++ String.fromInt model.counter)
+        , bookListDisplay model
         , footer sharedState model
         ]
+
+
+bookListDisplay model =
+    Element.column [ width (bookListDisplayWidth model), spacing 10, padding 10, Background.color Style.white ]
+        [ Element.row [ spacing 15 ]
+            [ Element.el [ Font.bold ] (text <| bookInfo model)
+            , Element.el [ Font.size 14, Font.color Style.blue ] (text <| totalsString model)
+            , getBooksButton
+            ]
+        , listBooks model
+        ]
+
+
+listBooks model =
+    Element.table
+        [ Element.centerX
+        , Font.size 13
+        , Element.spacing 10
+        , scrollbarY
+        , height (px 400)
+        , clipX
+        ]
+        { data = model.bookList
+        , columns =
+            [ { header = Element.el Style.tableHeading (Element.text "Title")
+              , width = px 200
+              , view =
+                    \book ->
+                        titleButton book model.currentBook
+              }
+            , { header = Element.el Style.tableHeading (Element.text "Author")
+              , width = px 150
+              , view =
+                    \book ->
+                        Element.text book.author
+              }
+            , { header = Element.el Style.tableHeading (Element.text "Category")
+              , width = px 150
+              , view =
+                    \book ->
+                        Element.text book.category
+              }
+            , { header = Element.el Style.tableHeading (Element.text "Progress")
+              , width = px 110
+              , view =
+                    \book ->
+                        Element.text (pageInfo book)
+              }
+            , { header = Element.el Style.tableHeading (Element.text "")
+              , width = px 110
+              , view =
+                    \book ->
+                        Element.el [] (Indicator.indicator 100 10 "orange" (pageRatio book))
+              }
+            ]
+        }
+
+
+bookInfo : Model -> String
+bookInfo model =
+    "Books: " ++ (String.fromInt <| booksCompleted model.bookList) ++ "/" ++ (String.fromInt <| List.length model.bookList)
+
+
+pageInfo book =
+    let
+        pp =
+            (String.fromInt book.pagesRead) ++ "/" ++ (String.fromInt book.pages)
+
+        pc =
+            String.fromInt <| Basics.round <| 100 * (Basics.toFloat book.pagesRead) / (Basics.toFloat book.pages)
+    in
+        pp ++ " (" ++ pc ++ "%)"
+
+
+totalsString model =
+    let
+        daysElapsed =
+            Days.fromUSDate model.beginningDate (Utility.toUtcDateString model.currentTime)
+
+        pagesReadPerDay =
+            Basics.round ((Basics.toFloat model.totalPagesRead) / (Basics.toFloat daysElapsed))
+    in
+        (String.fromInt model.totalPagesRead)
+            ++ " pages since "
+            ++ model.beginningDate
+            ++ " — "
+            ++ (String.fromInt pagesReadPerDay)
+            ++ " pp/day"
+
+
+bookListDisplayWidth model =
+    (px 780)
+
+
+pageRatio book =
+    (toFloat book.pagesRead) / (toFloat book.pages)
+
+
+titleButton book maybeCurrentBook =
+    let
+        highlighted =
+            case maybeCurrentBook of
+                Nothing ->
+                    False
+
+                Just currentBook ->
+                    currentBook.id == book.id
+    in
+        Input.button (Style.titleButton highlighted)
+            { onPress = Just (SetCurrentBook book)
+            , label = Element.text book.title
+            }
+
+
+getBooksButton =
+    Input.button Style.button
+        { onPress = Just GetCurrentUserBookList
+        , label = Element.text "Get books"
+        }
+
+
+
+--
+-- FOOTER
+--
 
 
 footer : SharedState -> Model -> Element Msg
@@ -743,9 +906,9 @@ createBook userid book token =
 --- NN
 
 
-doRequestBookList : Model -> Msg
-doRequestBookList model =
-    case model.maybeUser of
+doRequestBookList : Maybe User -> Msg
+doRequestBookList user_ =
+    case user_ of
         Nothing ->
             NoOp
 

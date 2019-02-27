@@ -87,12 +87,12 @@ update sharedState msg model =
 updateBook : SharedState -> Model -> Book.Msg -> ( Model, Cmd Msg, SharedStateUpdate )
 updateBook sharedState model bookMsg =
     let
-        ( nextBookModel, bookCmd ) =
+        ( nextBookModel, bookCmd, sharedStateUpdate ) =
             Book.update sharedState bookMsg model.bookModel
     in
         ( { model | bookModel = nextBookModel }
         , Cmd.map BookMsg bookCmd
-        , NoUpdate
+        , sharedStateUpdate
         )
 
 
@@ -113,34 +113,34 @@ view msgMapper sharedState model =
     let
         title =
             case model.route of
-                HomeRoute ->
-                    "Book"
+                BooksRoute ->
+                    "Books"
 
-                SettingsRoute ->
+                CurrentUserRoute ->
                     "CurrentUser"
 
                 NotFoundRoute ->
                     "404"
 
         body_ =
-            column [ padding 40 ]
+            column [ padding 20, Background.color Style.grey, width fill ]
                 [ el [ paddingXY 0 20, Font.bold ]
                     (text "BookLib")
                 , row
                     (Style.navBar (px 480))
-                    [ Input.button (Style.activeButton (model.route == HomeRoute))
-                        { onPress = Just (NavigateTo HomeRoute)
-                        , label = el [] (text "Book")
+                    [ Input.button (Style.activeButton (model.route == BooksRoute))
+                        { onPress = Just (NavigateTo BooksRoute)
+                        , label = el [] (text "Books")
                         }
-                    , Input.button (Style.activeButton (model.route == SettingsRoute))
-                        { onPress = Just (NavigateTo SettingsRoute)
+                    , Input.button (Style.activeButton (model.route == CurrentUserRoute))
+                        { onPress = Just (NavigateTo CurrentUserRoute)
                         , label = el [] (text "Sign in")
                         }
                     ]
                 , pageView sharedState model
                 ]
     in
-        { title = "Elm Shared State Demo"
+        { title = "BookLib"
         , body = body_ |> Element.layoutWith { options = [ Style.myFocusStyle ] } [] |> Html.map msgMapper |> \x -> [ x ]
         }
 
@@ -149,11 +149,11 @@ pageView : SharedState -> Model -> Element Msg
 pageView sharedState model =
     row []
         [ case model.route of
-            HomeRoute ->
+            BooksRoute ->
                 Book.view sharedState model.bookModel
                     |> Element.map BookMsg
 
-            SettingsRoute ->
+            CurrentUserRoute ->
                 CurrentUser.view sharedState model.currentUserModel
                     |> Element.map CurrentUserMsg
 
