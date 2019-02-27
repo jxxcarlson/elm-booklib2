@@ -683,19 +683,19 @@ update sharedState msg model =
 view : SharedState -> Model -> Element Msg
 view sharedState model =
     column (Style.mainColumn fill fill)
-        [ bookListDisplay model
+        [ bookListDisplay sharedState model
         , footer sharedState model
         ]
 
 
-bookListDisplay model =
+bookListDisplay sharedState model =
     Element.row []
-        [ bookListTable model
+        [ bookListTable sharedState model
         , notesViewedAsMarkdown model
         ]
 
 
-bookListTable model =
+bookListTable sharedState model =
     Element.column
         [ width fill
         , height (px 650)
@@ -704,16 +704,16 @@ bookListTable model =
         , Background.color Style.charcoal
         , Font.color Style.white
         ]
-        [ bookListTableHeader model
+        [ bookListTableHeader sharedState model
         , listBooks model
         ]
 
 
-bookListTableHeader : Model -> Element Msg
-bookListTableHeader model =
+bookListTableHeader : SharedState -> Model -> Element Msg
+bookListTableHeader sharedState model =
     Element.row [ spacing 15, Background.color Style.charcoal, Font.color Style.white ]
         [ Element.el [ Font.bold, Font.color Style.white ] (text <| bookInfo model)
-        , Element.el [ Font.size 14, Font.color Style.orange ] (text <| totalsString model)
+        , Element.el [ Font.size 14, Font.color Style.orange ] (text <| totalsString sharedState model)
         ]
 
 
@@ -809,10 +809,11 @@ pageInfo book =
         pp ++ " (" ++ pc ++ "%)"
 
 
-totalsString model =
+totalsString : SharedState -> Model -> String
+totalsString sharedState model =
     let
         daysElapsed =
-            Days.fromUSDate model.beginningDate (Utility.toUtcDateString model.currentTime)
+            Days.fromUSDate model.beginningDate (Utility.toUtcDateString <| Just sharedState.currentTime)
 
         pagesReadPerDay =
             Basics.round ((Basics.toFloat model.totalPagesRead) / (Basics.toFloat daysElapsed))
