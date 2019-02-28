@@ -3,6 +3,8 @@ module Common.Style
         ( button
         , activeButton
         , titleButton
+        , smallButton
+        , buttonWithWidth
         , noAutocapitalize
         , noAutocorrect
         , preWrap
@@ -13,6 +15,7 @@ module Common.Style
         , navBar
         , myFocusStyle
         , tableHeading
+        , panel
         , blue
         , orange
         , grey
@@ -28,6 +31,10 @@ import Element.Lazy
 import Html.Attributes
 
 
+panel =
+    [ Background.color grey, Element.paddingXY 12 12 ]
+
+
 tableHeading =
     [ Font.bold ]
 
@@ -37,6 +44,16 @@ titleButton highlighted =
         [ Font.color orange ]
     else
         [ Font.color white ]
+
+
+buttonWithWidth width_ =
+    [ Font.size 13
+    , width (px width_)
+    , Background.color black
+    , Font.color grey
+    , Element.paddingXY 10 6
+    ]
+        ++ basicButtonsStyle
 
 
 button : List (Element.Attr () msg)
@@ -52,6 +69,10 @@ activeButton active =
 
         False ->
             button
+
+
+smallButton =
+    [ Background.color black, Font.color grey, Font.size 12, Element.paddingXY 6 4, alignRight ] ++ basicButtonsStyle
 
 
 mainColumn w h =

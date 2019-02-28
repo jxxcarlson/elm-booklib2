@@ -3,12 +3,14 @@ module SharedState exposing (SharedState, SharedStateUpdate(..), initialSharedSt
 import Browser.Navigation
 import Time exposing (Posix)
 import User.Types exposing (User)
+import Book.Types exposing (Book)
 
 
 type alias SharedState =
     { navKey : Browser.Navigation.Key
     , currentTime : Posix
     , currentUser : Maybe User
+    , currentBook : Maybe Book
     }
 
 
@@ -17,6 +19,7 @@ type SharedStateUpdate
     | UpdateTime Posix
     | UpdateCurrentUser (Maybe User)
     | InvalidateCurrentUser
+    | UpdateCurrentBook (Maybe Book)
 
 
 initialSharedState : Browser.Navigation.Key -> Posix -> SharedState
@@ -24,6 +27,7 @@ initialSharedState navKey time =
     { navKey = navKey
     , currentTime = time
     , currentUser = Nothing
+    , currentBook = Nothing
     }
 
 
@@ -35,6 +39,9 @@ update sharedState sharedStateUpdate =
 
         UpdateCurrentUser currentUser ->
             { sharedState | currentUser = currentUser }
+
+        UpdateCurrentBook currentBook ->
+            { sharedState | currentBook = currentBook }
 
         InvalidateCurrentUser ->
             { sharedState | currentUser = Nothing }

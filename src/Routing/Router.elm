@@ -3,6 +3,7 @@ module Routing.Router exposing (Model, Msg(..), initialModel, init, pageView, up
 import Browser
 import Browser.Navigation exposing (Key)
 import Pages.Books as Books
+import Pages.CurrentBook as CurrentBook
 import Pages.CurrentUser as CurrentUser
 import Routing.Helpers exposing (Route(..), parseUrl, reverseRoute)
 import SharedState exposing (SharedState, SharedStateUpdate(..))
@@ -18,6 +19,7 @@ import User.Types
 
 type alias Model =
     { bookModel : Books.Model
+    , currentBookModel : CurrentBook.Model
     , currentUserModel : CurrentUser.Model
     , route : Route
     }
@@ -26,6 +28,7 @@ type alias Model =
 type Msg
     = UrlChange Url
     | BookMsg Books.Msg
+    | CurrentBookMsg CurrentBook.Msg
     | CurrentUserMsg User.Types.Msg
     | NavigateTo Route
 
@@ -36,10 +39,14 @@ initialModel url =
         bookModel =
             Books.init
 
+        currentBookModel =
+            CurrentBook.init
+
         currentUserModel =
             CurrentUser.initModel
     in
         { bookModel = bookModel
+        , currentBookModel = currentBookModel
         , currentUserModel = currentUserModel
         , route = parseUrl url
         }
@@ -51,10 +58,14 @@ init url =
         bookModel =
             Books.init
 
+        currentBookModel =
+            CurrentBook.init
+
         currentUserModel =
             CurrentUser.initModel
     in
         ( { bookModel = bookModel
+          , currentBookModel = currentBookModel
           , currentUserModel = currentUserModel
           , route = parseUrl url
           }
@@ -92,6 +103,9 @@ update sharedState msg model =
         BookMsg bookMsg ->
             updateBook sharedState model bookMsg
 
+        CurrentBookMsg currentBookMsg ->
+            updateCurrentBook sharedState model currentBookMsg
+
         CurrentUserMsg currentUserMsg ->
             updateCurrentUser sharedState model currentUserMsg
 
@@ -104,6 +118,18 @@ updateBook sharedState model bookMsg =
     in
         ( { model | bookModel = nextBookModel }
         , Cmd.map BookMsg bookCmd
+        , sharedStateUpdate
+        )
+
+
+updateCurrentBook : SharedState -> Model -> CurrentBook.Msg -> ( Model, Cmd Msg, SharedStateUpdate )
+updateCurrentBook sharedState model currentBookMsg =
+    let
+        ( nextCurrentBookModel, currentBookCmd, sharedStateUpdate ) =
+            CurrentBook.update sharedState currentBookMsg model.currentBookModel
+    in
+        ( { model | currentBookModel = nextCurrentBookModel }
+        , Cmd.map CurrentBookMsg currentBookCmd
         , sharedStateUpdate
         )
 
@@ -128,8 +154,11 @@ view msgMapper sharedState model =
                 BooksRoute ->
                     "Books"
 
+                CurrentBookRoute ->
+                    "Current Book"
+
                 CurrentUserRoute ->
-                    "CurrentUser"
+                    "Current User"
 
                 NotFoundRoute ->
                     "404"
@@ -142,6 +171,10 @@ view msgMapper sharedState model =
                     , Input.button (Style.activeButton (model.route == BooksRoute))
                         { onPress = Just (NavigateTo BooksRoute)
                         , label = el [] (text "Books")
+                        }
+                    , Input.button (Style.activeButton (model.route == CurrentBookRoute))
+                        { onPress = Just (NavigateTo CurrentBookRoute)
+                        , label = el [] (text "Current Book")
                         }
                     , Input.button (Style.activeButton (model.route == CurrentUserRoute))
                         { onPress = Just (NavigateTo CurrentUserRoute)
@@ -163,6 +196,10 @@ pageView sharedState model =
             BooksRoute ->
                 Books.view sharedState model.bookModel
                     |> Element.map BookMsg
+
+            CurrentBookRoute ->
+                CurrentBook.view sharedState model.currentBookModel
+                    |> Element.map CurrentBookMsg
 
             CurrentUserRoute ->
                 CurrentUser.view sharedState model.currentUserModel

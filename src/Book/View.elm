@@ -445,82 +445,8 @@ sharedBookDisplay model =
             currentSharedBookPanel book model
 
 
-currentBookPanel book model =
-    Element.column ([ width (px 360), height (px 314), spacing 12 ] ++ panelStyle)
-        [ Element.column [ spacing 8 ]
-            [ Element.el strongFieldStyle (text <| book.title)
-            , Element.el fieldStyle (text <| book.subtitle)
-            , Element.el fieldStyle (text <| book.category)
-            , Element.el [ clipX ] (text <| "by " ++ book.author)
-            , publicCheckbox model
-            ]
-        , Element.el [ moveUp 0, width (px 300) ] (Indicator.indicator 300 15 "orange" (pageRatio book))
-        , Element.el [ moveUp 15, Font.color Widget.blue, Font.bold, paddingXY 0 10 ] (text <| pageInfo book)
-        , Element.row [ spacing 15 ]
-            [ pagesInput model
-            , Element.row [ spacing 5 ]
-                [ Element.el [ Font.size 14, moveDown 10 ] (Element.text <| startMessage book)
-                , Element.el [ Font.size 14, moveDown 10 ] (Element.text "==>")
-                , Element.el [ Font.size 14, moveDown 10 ] (Element.text <| finishMessage book)
-                ]
-            ]
-        , readingRateDisplay model book
-        , Element.row [ spacing 20, moveUp 10 ] [ editBookButton, currentDateDisplay model, newBookButton model ]
-        ]
-
-
 
 --  , Element.el [paddingXY 10 0] (newBookButton model)
-
-
-readingRateDisplay : Model -> Books -> Element msg
-readingRateDisplay model book =
-    case ( book.startDateString /= "", book.finishDateString /= "" ) of
-        ( True, _ ) ->
-            Element.el [ Font.size 14, moveUp 10, moveRight 85 ] (Element.text <| readingRateString model book)
-
-        ( _, _ ) ->
-            Element.el [ Font.size 14, moveUp 10, moveRight 85 ] (Element.text <| "")
-
-
-readingRateString : Model -> Books -> String
-readingRateString model book =
-    (String.fromInt <| Basics.round <| readingRate model book) ++ " pp/day (" ++ (String.fromInt <| daysToComplete model book) ++ " days)"
-
-
-daysToComplete : Model -> Books -> Int
-daysToComplete model book =
-    case book.finishDateString /= "" of
-        True ->
-            Days.fromUSDate book.startDateString book.finishDateString
-
-        False ->
-            Days.fromUSDate book.startDateString (toUtcDateString model.currentTime)
-
-
-readingRate : Model -> Books -> Float
-readingRate model book =
-    (Basics.toFloat book.pagesRead) / (Basics.toFloat <| daysToComplete model book)
-
-
-startMessage : Books -> String
-startMessage book =
-    case book.startDateString == "" of
-        True ->
-            "Start date"
-
-        False ->
-            book.startDateString
-
-
-finishMessage : Books -> String
-finishMessage book =
-    case book.finishDateString == "" of
-        True ->
-            "Finish date"
-
-        False ->
-            book.finishDateString
 
 
 strongFieldStyle =
@@ -563,34 +489,6 @@ publicCheckbox model =
             }
 
 
-icon : Bool -> Element msg
-icon status =
-    case status of
-        True ->
-            el [ Font.size 14, Font.bold, moveDown 1 ] (text "Y")
-
-        False ->
-            el [ Font.size 14, Font.bold, moveDown 1 ] (text "N")
-
-
-pagesInput model =
-    let
-        pagesRead =
-            case model.currentBook of
-                Nothing ->
-                    0
-
-                Just book ->
-                    book.pagesRead
-    in
-        Input.text [ width (px 60), height (px 25) ]
-            { text = String.fromInt pagesRead
-            , placeholder = Nothing
-            , onChange = \new -> InputPagesRead new
-            , label = Input.labelAbove [ Font.size 14 ] (text "Pages read")
-            }
-
-
 updateTextBORN model =
     Input.button (Widget.buttonStyleWithWidth 75)
         { onPress = Just UpdateCurrentBook -- updateTextMessage model
@@ -605,13 +503,6 @@ updateTextMessage model =
 
         DisplayBlurb ->
             Just UpdateBlurb
-
-
-editBookButton =
-    Input.button (Widget.buttonStyleWithWidth 50)
-        { onPress = Just EditBook
-        , label = Element.text "Edit"
-        }
 
 
 
@@ -833,11 +724,6 @@ truncatedDisplay n str =
 
 
 {- Inputs -}
-
-
-currentDateDisplay : Model -> Element msg
-currentDateDisplay model =
-    Element.el [ Font.size 12, moveRight 15, moveDown 1 ] (Element.text <| toUtcDateString model.currentTime)
 
 
 toUtcString : Maybe Posix -> String
