@@ -8,19 +8,19 @@ import Book.MarkdownExtra as MarkdownExtra
 import Book.Types exposing (Book)
 
 
-notesViewedAsMarkdown : Maybe Book -> Element msg
-notesViewedAsMarkdown currentBook =
+notesViewedAsMarkdown : String -> String -> Maybe Book -> Element msg
+notesViewedAsMarkdown w h currentBook =
     case currentBook of
         Nothing ->
             Element.none
 
         Just book ->
-            Element.html <| Html.div (markdownStyle) <| [ MarkdownExtra.view book.notes ]
+            Element.html <| Html.div (markdownStyle w h) <| [ MarkdownExtra.view book.notes ]
 
 
-markdownStyle =
-    [ HA.style "height" "630px"
-    , HA.style "width" "500px"
+markdownStyle w h =
+    [ HA.style "height" h
+    , HA.style "width" w
     , HA.style "font-size" "12px"
     , HA.style "line-height" "15px"
     , HA.style "overflow-y" "scroll"

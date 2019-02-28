@@ -656,7 +656,7 @@ view sharedState model =
 bookListDisplay sharedState model =
     Element.row []
         [ bookListTable sharedState model
-        , Common.Book.notesViewedAsMarkdown sharedState.currentBook
+        , Common.Book.notesViewedAsMarkdown "400px" "630px" sharedState.currentBook
         ]
 
 

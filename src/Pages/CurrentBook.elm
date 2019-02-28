@@ -12,6 +12,7 @@ import Book.Types exposing (Book)
 import Book.MarkdownExtra as MarkdownExtra
 import Element exposing (..)
 import Element.Background as Background
+import Element.Border as Border
 import Element.Font as Font
 import Element.Input as Input
 import SharedState exposing (SharedState, SharedStateUpdate(..))
@@ -83,10 +84,25 @@ update sharedState msg model =
 
 view : SharedState -> Model -> Element Msg
 view sharedState model =
-    row (Style.mainColumn fill fill)
-        [ currentBookPanel sharedState model
-        , Common.Book.notesViewedAsMarkdown sharedState.currentBook
+    column (Style.mainColumn2 fill fill)
+        [ mainRow sharedState model
+        , footer sharedState model
         ]
+
+
+mainRow : SharedState -> Model -> Element Msg
+mainRow sharedState model =
+    row
+        ((Style.mainColumn2 fill fill)
+            ++ [ spacing 20 ]
+        )
+        [ currentBookPanel sharedState model
+        , Common.Book.notesViewedAsMarkdown "400px" "509px" sharedState.currentBook
+        ]
+
+
+grey p =
+    rgb p p p
 
 
 currentBookPanel : SharedState -> Model -> Element Msg
@@ -96,26 +112,33 @@ currentBookPanel sharedState model =
             el [] (text "No book selected")
 
         Just book ->
-            column ([ width (px 360), height (px 314), spacing 12 ] ++ Style.panel)
+            column ([ Background.color <| grey 0.9, padding 30, width (px 360), height (px 310), spacing 12, alignTop, Border.width 1 ])
                 [ column [ spacing 8 ]
                     [ el strongFieldStyle (text <| book.title)
                     , el fieldStyle (text <| book.subtitle)
                     , el fieldStyle (text <| book.category)
                     , el [ clipX ] (text <| "by " ++ book.author)
-                    , publicCheckbox book
                     ]
-                , el [ moveUp 0, width (px 300) ] (Indicator.indicator 300 15 "orange" (pageRatio book))
-                , el [ moveUp 15, Font.color Style.blue, Font.bold, paddingXY 0 10 ] (text <| pageInfo book)
-                , row [ spacing 15 ]
-                    [ pagesInput sharedState model
-                    , row [ spacing 5 ]
-                        [ el [ Font.size 14, moveDown 10 ] (text <| startMessage book)
-                        , el [ Font.size 14, moveDown 10 ] (text "==>")
-                        , el [ Font.size 14, moveDown 10 ] (text <| finishMessage book)
+                , column [ paddingXY 0 30, width (px 300) ]
+                    [ Indicator.indicator 300 15 "orange" (pageRatio book)
+                    , el [ moveDown 4, Font.size 16, Font.color Style.darkBlue, Font.bold, paddingXY 0 10 ] (text <| pageInfo book)
+                    , row [ spacing 5, moveUp 10, Font.color Style.darkBlue ]
+                        [ el [ Font.size 15, moveDown 10 ] (text <| startMessage book)
+                        , el [ Font.size 15, moveDown 10 ] (text "—")
+                        , el [ Font.size 15, moveDown 10 ] (text <| finishMessage book)
+                        ]
+                    , readingRateDisplay sharedState book
+                    ]
+                , column [ moveDown 30, moveLeft 30, paddingXY 20 20, Background.color <| grey 0.9, Border.width 1, width (px 360), height (px 200) ]
+                    [ row [ spacing 15 ]
+                        [ pagesInput sharedState model
+                        ]
+                    , column
+                        [ paddingXY 0 40, spacing 10 ]
+                        [ publicCheckbox book
+                        , row [ alignBottom, spacing 20 ] [ editBookButton, newBookButton ]
                         ]
                     ]
-                , readingRateDisplay sharedState book
-                , row [ spacing 20, moveUp 10 ] [ editBookButton, currentDateDisplay sharedState, newBookButton ]
                 ]
 
 
@@ -130,11 +153,11 @@ icon status =
 
 
 strongFieldStyle =
-    [ Font.bold, width (px 300), clipX ]
+    [ Font.size 24, Font.bold, width (px 300), clipX ]
 
 
 fieldStyle =
-    [ Font.size 14, width (px 300), clipX ]
+    [ Font.size 18, width (px 300), clipX ]
 
 
 pageRatio : Book -> Float
@@ -192,7 +215,7 @@ readingRateDisplay : SharedState -> Book -> Element msg
 readingRateDisplay sharedState book =
     case ( book.startDateString /= "", book.finishDateString /= "" ) of
         ( True, _ ) ->
-            Element.el [ Font.size 14 ] (Element.text <| readingRateString sharedState book)
+            Element.el [ moveDown 5, Font.size 16, Font.color Style.darkBlue ] (Element.text <| readingRateString sharedState book)
 
         ( _, _ ) ->
             Element.el [ Font.size 14 ] (Element.text <| "")
@@ -245,7 +268,7 @@ publicCheckbox book =
         { onChange = ToggleBookPublic
         , icon = icon
         , checked = book.public
-        , label = Input.labelLeft [ Font.size 14, moveDown 1 ] (text "Share book:")
+        , label = Input.labelLeft [ Font.size 18, moveDown 1 ] (text "Share book:")
         }
 
 
@@ -257,3 +280,21 @@ bookTitle book_ =
 
         Just book ->
             book.title
+
+
+footer : SharedState -> Model -> Element Msg
+footer sharedState model =
+    row Style.footer
+        [ el Style.footerItem (text <| userStatus sharedState.currentUser)
+        , el Style.footerItem (text <| "UTC: " ++ Utility.toUtcString (Just sharedState.currentTime))
+        ]
+
+
+userStatus : Maybe User -> String
+userStatus user_ =
+    case user_ of
+        Nothing ->
+            "Not signed in."
+
+        Just user ->
+            user.username ++ ", you are now signed in."

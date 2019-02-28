@@ -9,6 +9,7 @@ module Common.Style
         , noAutocorrect
         , preWrap
         , mainColumn
+        , mainColumn2
         , shadedColumn
         , footer
         , footerItem
@@ -17,6 +18,7 @@ module Common.Style
         , tableHeading
         , panel
         , blue
+        , darkBlue
         , orange
         , grey
         , white
@@ -25,6 +27,7 @@ module Common.Style
 
 import Element exposing (..)
 import Element.Background as Background
+import Element.Border as Border
 import Element.Font as Font
 import Element.Input
 import Element.Lazy
@@ -77,6 +80,10 @@ smallButton =
 
 mainColumn w h =
     [ paddingXY 0 40, spacing 24, width w, height h ]
+
+
+mainColumn2 w h =
+    [ paddingXY 20 20, spacing 24, width w, height h, Background.color grey ]
 
 
 shadedColumn w h =

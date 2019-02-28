@@ -20,8 +20,11 @@ toUtcString maybeTime =
             (String.fromInt (Time.toHour Time.utc time) |> String.padLeft 2 '0')
                 ++ ":"
                 ++ (String.fromInt (Time.toMinute Time.utc time) |> String.padLeft 2 '0')
-                ++ ":"
-                ++ (String.fromInt (Time.toSecond Time.utc time) |> String.padLeft 2 '0')
+
+
+
+-- ++ ":"
+-- ++ (String.fromInt (Time.toSecond Time.utc time) |> String.padLeft 2 '0')
 
 
 toUtcDateString : Maybe Posix -> String
