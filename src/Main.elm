@@ -9,6 +9,7 @@ import SharedState exposing (SharedState, SharedStateUpdate(..), initialSharedSt
 import Time exposing (Posix)
 import Url exposing (Url)
 import OutsideInfo exposing (InfoForElm(..), InfoForOutside(..))
+import Pages.Books
 
 
 main : Program Flags Model Msg
@@ -173,7 +174,6 @@ view model =
 --
 -- LOCAL STORAGE
 --
--- reconnectUser : Model -> Browser.Navigation.Key
 
 
 reconnectUser : Model -> Url -> Posix -> Browser.Navigation.Key -> InfoForElm -> ( Model, Cmd Msg )
@@ -186,5 +186,10 @@ reconnectUser model url posix navKey (LocalStorageInfo user) =
             Ready
                 (initialSharedState navKey posix (Just user))
                 (Router.initialModel url)
+
+        cmd =
+            Pages.Books.getBookList user.id user.token
+                |> Cmd.map Router.BookMsg
+                |> Cmd.map RouterMsg
     in
-        ( { model | appState = appState }, Cmd.none )
+        ( { model | appState = appState }, cmd )

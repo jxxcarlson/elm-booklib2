@@ -6,6 +6,7 @@ module Pages.Books
         , update
         , view
         , getBookListViaSharedState
+        , getBookList
         )
 
 import Http
