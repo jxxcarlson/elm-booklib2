@@ -91,41 +91,29 @@ update msg model =
                     ( model, Browser.Navigation.load url )
 
         Outside infoForElm ->
-            let
-                _ =
-                    Debug.log "CALLED Outside in Main" infoForElm
-            in
-                case model.appState of
-                    NotReady url posix navKey ->
-                        reconnectUser model url posix navKey infoForElm
+            case model.appState of
+                NotReady url posix navKey ->
+                    reconnectUser model url posix navKey infoForElm
 
-                    _ ->
-                        let
-                            _ =
-                                Debug.log "CALLED ERROR branch in Outside"
-                        in
-                            ( model, Cmd.none )
+                _ ->
+                    ( model, Cmd.none )
 
         LogErr _ ->
-            let
-                _ =
-                    Debug.log "BRANCH" "LogErr"
-            in
-                case model.appState of
-                    NotReady url posix navKey ->
-                        ( { model
-                            | appState =
-                                Ready
-                                    (initialSharedState navKey posix Nothing)
-                                    (Router.initialModel url)
-                            , url = url
-                            , navKey = navKey
-                          }
-                        , OutsideInfo.sendInfoOutside (AskToReconnectUser Json.Encode.null)
-                        )
+            case model.appState of
+                NotReady url posix navKey ->
+                    ( { model
+                        | appState =
+                            Ready
+                                (initialSharedState navKey posix Nothing)
+                                (Router.initialModel url)
+                        , url = url
+                        , navKey = navKey
+                      }
+                    , OutsideInfo.sendInfoOutside (AskToReconnectUser Json.Encode.null)
+                    )
 
-                    _ ->
-                        ( model, Cmd.none )
+                _ ->
+                    ( model, Cmd.none )
 
 
 updateTime : Model -> Posix -> ( Model, Cmd Msg )
@@ -161,12 +149,7 @@ updateRouter model routerMsg =
                 )
 
         _ ->
-            let
-                _ =
-                    Debug.log "We got a router message even though the app is not ready?"
-                        routerMsg
-            in
-                ( model, Cmd.none )
+            ( model, Cmd.none )
 
 
 view : Model -> Browser.Document Msg

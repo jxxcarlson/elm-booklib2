@@ -34,41 +34,33 @@ type InfoForElm
 
 sendInfoOutside : InfoForOutside -> Cmd msg
 sendInfoOutside info =
-    let
-        _ =
-            Debug.log "CALLING sendInfoOutside, info = " info
-    in
-        case info of
-            UserData value ->
-                infoForOutside { tag = "UserData", data = value }
+    case info of
+        UserData value ->
+            infoForOutside { tag = "UserData", data = value }
 
-            AskToReconnectUser value ->
-                infoForOutside { tag = "AskToReconnectUser", data = value }
+        AskToReconnectUser value ->
+            infoForOutside { tag = "AskToReconnectUser", data = value }
 
-            DisconnectUser value ->
-                infoForOutside { tag = "DisconnectUser", data = value }
+        DisconnectUser value ->
+            infoForOutside { tag = "DisconnectUser", data = value }
 
 
 getInfoFromOutside : (InfoForElm -> msg) -> (String -> msg) -> Sub msg
 getInfoFromOutside tagger onError =
-    let
-        _ =
-            Debug.log "CALLING" "getInfoFromOutside"
-    in
-        infoForElm
-            (\outsideInfo ->
-                case outsideInfo.tag of
-                    "ReconnectUser" ->
-                        case D.decodeValue userDecoderForOutside outsideInfo.data of
-                            Ok localStorageRecord ->
-                                tagger <| LocalStorageInfo (Debug.log "LSR" localStorageRecord)
+    infoForElm
+        (\outsideInfo ->
+            case outsideInfo.tag of
+                "ReconnectUser" ->
+                    case D.decodeValue userDecoderForOutside outsideInfo.data of
+                        Ok localStorageRecord ->
+                            tagger <| LocalStorageInfo localStorageRecord
 
-                            Err e ->
-                                onError (Debug.log "ERROR" "Error reconnecting user")
+                        Err e ->
+                            onError "Error reconnecting user"
 
-                    _ ->
-                        onError <| "Unexpected info from outside: "
-            )
+                _ ->
+                    onError <| "Unexpected info from outside: "
+        )
 
 
 userDecoderForOutside : D.Decoder User
