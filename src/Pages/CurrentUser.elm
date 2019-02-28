@@ -19,6 +19,7 @@ import User.Session as Session
 import User.Types exposing (User, Msg(..))
 import Common.Style as Style
 import Common.Utility as Utility
+import OutsideInfo exposing (InfoForOutside(..))
 
 
 type alias Model =
@@ -98,7 +99,10 @@ update sharedState msg model =
                 , password = ""
                 , state = SignedIn
               }
-            , pushUrl sharedState.navKey "#books"
+            , Cmd.batch
+                [ pushUrl sharedState.navKey "#books"
+                , OutsideInfo.sendInfoOutside (UserData (Session.userEncoder user))
+                ]
             , UpdateCurrentUser (Just user)
             )
 

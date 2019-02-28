@@ -3,10 +3,12 @@ module Main exposing (main)
 import Browser exposing (UrlRequest(..))
 import Browser.Navigation
 import Html exposing (..)
+import Json.Encode
 import Routing.Router as Router
 import SharedState exposing (SharedState, SharedStateUpdate(..), initialSharedState)
 import Time exposing (Posix)
 import Url exposing (Url)
+import OutsideInfo exposing (InfoForElm(..), InfoForOutside(..))
 
 
 main : Program Flags Model Msg
@@ -17,8 +19,15 @@ main =
         , view = view
         , onUrlChange = UrlChange
         , onUrlRequest = LinkClicked
-        , subscriptions = \_ -> Time.every 1000 TimeChange
+        , subscriptions = subscriptions
         }
+
+
+subscriptions model =
+    Sub.batch
+        [ OutsideInfo.getInfoFromOutside Outside LogErr
+        , Time.every 1000 TimeChange
+        ]
 
 
 type alias Model =
@@ -33,7 +42,7 @@ type alias Flags =
 
 
 type AppState
-    = NotReady Posix
+    = NotReady Url Posix Browser.Navigation.Key
     | Ready SharedState Router.Model
     | FailedToInitialize
 
@@ -43,20 +52,21 @@ type Msg
     | LinkClicked UrlRequest
     | TimeChange Posix
     | RouterMsg Router.Msg
+    | Outside InfoForElm
+    | LogErr String
 
 
 init : Flags -> Url -> Browser.Navigation.Key -> ( Model, Cmd Msg )
 init flags url navKey =
     ( { appState =
-            Ready
-                (initialSharedState navKey (Time.millisToPosix flags.currentTime))
-                (Router.initialModel url)
-
-      -- NotReady (Time.millisToPosix flags.currentTime)
+            -- Ready
+            --     (initialSharedState navKey (Time.millisToPosix flags.currentTime))
+            --     (Router.initialModel url)
+            NotReady url (Time.millisToPosix flags.currentTime) navKey
       , url = url
       , navKey = navKey
       }
-    , Cmd.none
+    , OutsideInfo.sendInfoOutside (AskToReconnectUser Json.Encode.null)
     )
 
 
@@ -80,12 +90,49 @@ update msg model =
                 External url ->
                     ( model, Browser.Navigation.load url )
 
+        Outside infoForElm ->
+            let
+                _ =
+                    Debug.log "CALLED Outside in Main" infoForElm
+            in
+                case model.appState of
+                    NotReady url posix navKey ->
+                        reconnectUser model url posix navKey infoForElm
+
+                    _ ->
+                        let
+                            _ =
+                                Debug.log "CALLED ERROR branch in Outside"
+                        in
+                            ( model, Cmd.none )
+
+        LogErr _ ->
+            let
+                _ =
+                    Debug.log "BRANCH" "LogErr"
+            in
+                case model.appState of
+                    NotReady url posix navKey ->
+                        ( { model
+                            | appState =
+                                Ready
+                                    (initialSharedState navKey posix Nothing)
+                                    (Router.initialModel url)
+                            , url = url
+                            , navKey = navKey
+                          }
+                        , OutsideInfo.sendInfoOutside (AskToReconnectUser Json.Encode.null)
+                        )
+
+                    _ ->
+                        ( model, Cmd.none )
+
 
 updateTime : Model -> Posix -> ( Model, Cmd Msg )
 updateTime model time =
     case model.appState of
-        NotReady _ ->
-            ( { model | appState = NotReady time }
+        NotReady url _ navKey ->
+            ( { model | appState = NotReady url time navKey }
             , Cmd.none
             )
 
@@ -128,7 +175,7 @@ view model =
         Ready sharedState routerModel ->
             Router.view RouterMsg sharedState routerModel
 
-        NotReady _ ->
+        NotReady _ _ _ ->
             { title = "Loading (1)"
             , body = [ text "Loading (2)" ]
             }
@@ -137,3 +184,24 @@ view model =
             { title = "Failure"
             , body = [ text "The application failed to initialize. " ]
             }
+
+
+
+--
+-- LOCAL STORAGE
+--
+-- reconnectUser : Model -> Browser.Navigation.Key
+
+
+reconnectUser : Model -> Url -> Posix -> Browser.Navigation.Key -> InfoForElm -> ( Model, Cmd Msg )
+reconnectUser model url posix navKey (LocalStorageInfo user) =
+    let
+        beginningDate =
+            user.beginningDate
+
+        appState =
+            Ready
+                (initialSharedState navKey posix (Just user))
+                (Router.initialModel url)
+    in
+        ( { model | appState = appState }, Cmd.none )

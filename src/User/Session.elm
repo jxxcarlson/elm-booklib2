@@ -1,4 +1,4 @@
-module User.Session exposing (authenticate, registerUser)
+module User.Session exposing (authenticate, registerUser, userEncoder)
 
 import Http
 import Json.Decode as Decode exposing (Decoder)
@@ -70,6 +70,28 @@ userDecoder =
         |> required "followers" (Decode.list Decode.string)
         |> required "admin" Decode.bool
         |> required "inserted_at" (Decode.map usDateStringFromElixirDateString Decode.string)
+
+
+userEncoder : User -> Encode.Value
+userEncoder user =
+    Encode.object
+        [ ( "username", Encode.string user.username )
+        , ( "id", Encode.int user.id )
+        , ( "firstname", Encode.string user.firstname )
+        , ( "email", Encode.string user.email )
+        , ( "token", Encode.string user.token )
+        , ( "blurb", Encode.string user.blurb )
+        , ( "public", Encode.bool user.public )
+        , ( "follow", followEncoder user.follow )
+        , ( "followers", followEncoder user.followers )
+        , ( "admin", Encode.bool user.admin )
+        , ( "beginningDate", Encode.string user.beginningDate )
+        ]
+
+
+followEncoder : List String -> Encode.Value
+followEncoder stringList =
+    Encode.list Encode.string stringList
 
 
 

@@ -22,11 +22,11 @@ type SharedStateUpdate
     | UpdateCurrentBook (Maybe Book)
 
 
-initialSharedState : Browser.Navigation.Key -> Posix -> SharedState
-initialSharedState navKey time =
+initialSharedState : Browser.Navigation.Key -> Posix -> Maybe User -> SharedState
+initialSharedState navKey time currentUser =
     { navKey = navKey
     , currentTime = time
-    , currentUser = Nothing
+    , currentUser = currentUser
     , currentBook = Nothing
     }
 
