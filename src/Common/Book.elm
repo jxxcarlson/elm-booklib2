@@ -1,11 +1,10 @@
 module Common.Book exposing (notesViewedAsMarkdown)
 
-import Html exposing (..)
-import Html.Attributes as HA
-import Element exposing (..)
-import Markdown
 import Book.MarkdownExtra as MarkdownExtra
 import Book.Types exposing (Book)
+import Element exposing (..)
+import Html exposing (..)
+import Html.Attributes as HA
 
 
 notesViewedAsMarkdown : String -> String -> Maybe Book -> Element msg

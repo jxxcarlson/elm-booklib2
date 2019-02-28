@@ -1,12 +1,11 @@
-port module OutsideInfo
-    exposing
-        ( sendInfoOutside
-        , getInfoFromOutside
-        , InfoForElm(..)
-        , InfoForOutside(..)
-        )
+port module OutsideInfo exposing
+    ( InfoForElm(..)
+    , InfoForOutside(..)
+    , getInfoFromOutside
+    , sendInfoOutside
+    )
 
-import Json.Decode as D exposing (decodeValue, decodeString, string)
+import Json.Decode as D
 import Json.Decode.Pipeline exposing (required)
 import Json.Encode
 import User.Types exposing (User)
@@ -83,6 +82,7 @@ stringToBool : String -> Bool
 stringToBool str =
     if str == "true" then
         True
+
     else
         False
 
@@ -101,5 +101,6 @@ normalize : String -> String
 normalize str =
     if String.endsWith "," str then
         String.dropRight 1 str
+
     else
         str

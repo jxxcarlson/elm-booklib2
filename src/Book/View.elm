@@ -5,24 +5,11 @@ import Element.Background as Background
 import Element.Font as Font
 import Element.Input as Input
 import Element.Keyed as Keyed
-import Element.Lazy
-import Markdown
-import Books.MarkdownExtra as MD
 import Html as H
 import Html.Attributes as HA
-import Widget
-    exposing
-        ( buttonStyle
-        , tableHeadingStyle
-        , panelStyle
-        , titleButtonStyle
-        )
-import Utility
-import Indicator
-import Books.Model exposing (Books, Model, BookMsg(..), AppState(..), NotesViewMode(..), TextDisplayMode(..), TextRenderMode(..), booksCompleted)
-import Books.Request as Request
-import Days
-import Time exposing (Posix, Month(..))
+import Markdown
+import Time exposing (Month(..), Posix)
+
 
 
 -- import User.Model
@@ -55,6 +42,7 @@ view model =
 preBookPanel model =
     if model.bookList == [] then
         startupBookPanel model
+
     else
         bookPanel model
 
@@ -63,6 +51,7 @@ bookPanel : Model -> Element BookMsg
 bookPanel model =
     if model.maybeUser == Nothing then
         Element.el [] (Element.text (bookListTitle model))
+
     else
         Element.column []
             [ Element.row [ width (px 800) ]
@@ -77,6 +66,7 @@ sharedBookPanel : Model -> Element BookMsg
 sharedBookPanel model =
     if model.maybeUser == Nothing then
         Element.el [] (Element.text (bookListTitle model))
+
     else
         Element.column []
             [ Element.row [ width (px 800) ]
@@ -91,6 +81,7 @@ startupBookPanel : Model -> Element BookMsg
 startupBookPanel model =
     if model.maybeUser == Nothing then
         Element.el [] (Element.text (bookListTitle model))
+
     else
         Element.column []
             [ Element.row [ width (px 800) ]
@@ -169,7 +160,7 @@ textView model =
 toggleNotesViewModeButton : Model -> Element BookMsg
 toggleNotesViewModeButton model =
     Input.button Widget.smallButtonStyle
-        { onPress = Just (ToggleNotesViewMode)
+        { onPress = Just ToggleNotesViewMode
         , label = Element.text (noteViewModeIndicator model)
         }
 
@@ -177,7 +168,7 @@ toggleNotesViewModeButton model =
 toggleBlurbAndNotesButton : Model -> Element BookMsg
 toggleBlurbAndNotesButton model =
     Input.button Widget.smallButtonStyle
-        { onPress = Just (ToggleBlurbAndNotes)
+        { onPress = Just ToggleBlurbAndNotes
         , label = Element.text (noteAndBlurbModeIndicator model)
         }
 
@@ -197,7 +188,7 @@ editButton model =
 
 editButton_ model =
     Input.button Widget.smallColoredButtonStyle
-        { onPress = Just (ToggleMarkdown)
+        { onPress = Just ToggleMarkdown
         , label = Element.text "Edit"
         }
 
@@ -250,13 +241,13 @@ notesInput model =
                 Just book ->
                     book.notes
     in
-        Input.multiline (textInputStyle model)
-            { onChange = recordNotesChanges model
-            , text = notes
-            , placeholder = Nothing
-            , label = Input.labelAbove [ Font.size 0, Font.bold ] (text "")
-            , spellcheck = False
-            }
+    Input.multiline (textInputStyle model)
+        { onChange = recordNotesChanges model
+        , text = notes
+        , placeholder = Nothing
+        , label = Input.labelAbove [ Font.size 0, Font.bold ] (text "")
+        , spellcheck = False
+        }
 
 
 notesViewedAsMarkdown : Model -> Element msg
@@ -293,7 +284,7 @@ markdownViewHeight model =
 
 toggleMarkdownViewButton model =
     Input.button Widget.smallButtonStyle
-        { onPress = Just (ToggleMarkdown)
+        { onPress = Just ToggleMarkdown
         , label = Element.text (toggleMarkdownButtonTitle model)
         }
 
@@ -371,13 +362,13 @@ blurbInput model =
                         Just user ->
                             user.blurb
     in
-        Input.multiline (textInputStyle model)
-            { onChange = InputBlurb
-            , text = blurb
-            , placeholder = Nothing
-            , label = Input.labelAbove [ Font.size 0, Font.bold ] (text "")
-            , spellcheck = False
-            }
+    Input.multiline (textInputStyle model)
+        { onChange = InputBlurb
+        , text = blurb
+        , placeholder = Nothing
+        , label = Input.labelAbove [ Font.size 0, Font.bold ] (text "")
+        , spellcheck = False
+        }
 
 
 textInputStyle model =
@@ -395,10 +386,10 @@ textInputStyle model =
 notesViewHeight model =
     case model.notesViewMode of
         NotesViewShort ->
-            (px 273)
+            px 273
 
         NotesViewLong ->
-            (px 548)
+            px 548
 
 
 bookListDisplay model =
@@ -418,7 +409,7 @@ bookListDisplay model =
 newBookButton_ : Model -> Element BookMsg
 newBookButton_ model =
     Input.button Widget.smallButtonStyle
-        { onPress = Just (NewBook)
+        { onPress = Just NewBook
         , label = Element.text "New book"
         }
 
@@ -480,13 +471,13 @@ publicCheckbox model =
                 Just book ->
                     book.public
     in
-        Input.checkbox
-            []
-            { onChange = ToggleBookPublic
-            , icon = icon
-            , checked = public
-            , label = Input.labelLeft [ Font.size 14, moveDown 1 ] (text "Share book:")
-            }
+    Input.checkbox
+        []
+        { onChange = ToggleBookPublic
+        , icon = icon
+        , checked = public
+        , label = Input.labelLeft [ Font.size 14, moveDown 1 ] (text "Share book:")
+        }
 
 
 updateTextBORN model =
@@ -541,7 +532,7 @@ editBookPanel model =
 saveChangesButton : Int -> Model -> Element BookMsg
 saveChangesButton width_ model =
     Input.button (Widget.buttonStyleWithWidth width_)
-        { onPress = Just (SaveBookEditChanges)
+        { onPress = Just SaveBookEditChanges
         , label = Element.text "Save Changes"
         }
 
@@ -549,7 +540,7 @@ saveChangesButton width_ model =
 cancelNewBookButton : Int -> Model -> Element BookMsg
 cancelNewBookButton width_ model =
     Input.button (Widget.buttonStyleWithWidth width_)
-        { onPress = Just (CancelNewBook)
+        { onPress = Just CancelNewBook
         , label = Element.text "Cancel"
         }
 
@@ -557,7 +548,7 @@ cancelNewBookButton width_ model =
 createNewBookButton : Int -> Model -> Element BookMsg
 createNewBookButton width_ model =
     Input.button (Widget.buttonStyleWithWidth width_)
-        { onPress = Just (CreateNewBook)
+        { onPress = Just CreateNewBook
         , label = Element.text "Create"
         }
 
@@ -716,10 +707,11 @@ truncatedDisplay n str =
         truncatedStr =
             String.left n str
     in
-        if String.length truncatedStr < String.length str then
-            truncatedStr ++ " ..."
-        else
-            str
+    if String.length truncatedStr < String.length str then
+        truncatedStr ++ " ..."
+
+    else
+        str
 
 
 

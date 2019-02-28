@@ -1,25 +1,23 @@
-module Pages.CurrentUser
-    exposing
-        ( Model
-        , currentSharedStateView
-        , initModel
-        , update
-        , view
-        )
+module Pages.CurrentUser exposing
+    ( Model
+    , currentSharedStateView
+    , initModel
+    , update
+    , view
+    )
 
 import Browser.Navigation exposing (pushUrl)
-import Routing.Helpers exposing (Route(..), reverseRoute)
-import SharedState exposing (SharedState, SharedStateUpdate(..))
-import Time
-import Http exposing (Error(..))
+import Common.Style as Style
+import Common.Utility as Utility
 import Element exposing (..)
 import Element.Font as Font
 import Element.Input as Input
-import User.Session as Session
-import User.Types exposing (User, Msg(..))
-import Common.Style as Style
-import Common.Utility as Utility
+import Http exposing (Error(..))
 import OutsideInfo exposing (InfoForOutside(..))
+import Routing.Helpers exposing (Route(..), reverseRoute)
+import SharedState exposing (SharedState, SharedStateUpdate(..))
+import User.Session as Session
+import User.Types exposing (Msg(..), User)
 
 
 type alias Model =
@@ -154,6 +152,7 @@ showIf : Bool -> Element Msg -> Element Msg
 showIf flag element =
     if flag then
         element
+
     else
         Element.none
 

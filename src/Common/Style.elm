@@ -1,36 +1,32 @@
-module Common.Style
-    exposing
-        ( button
-        , activeButton
-        , titleButton
-        , smallButton
-        , buttonWithWidth
-        , noAutocapitalize
-        , noAutocorrect
-        , preWrap
-        , mainColumn
-        , mainColumn2
-        , shadedColumn
-        , footer
-        , footerItem
-        , navBar
-        , myFocusStyle
-        , tableHeading
-        , panel
-        , blue
-        , darkBlue
-        , orange
-        , grey
-        , white
-        , charcoal
-        )
+module Common.Style exposing
+    ( activeButton
+    , blue
+    , button
+    , buttonWithWidth
+    , charcoal
+    , darkBlue
+    , footer
+    , footerItem
+    , grey
+    , mainColumn
+    , mainColumn2
+    , myFocusStyle
+    , navBar
+    , noAutocapitalize
+    , noAutocorrect
+    , orange
+    , panel
+    , preWrap
+    , shadedColumn
+    , smallButton
+    , tableHeading
+    , titleButton
+    , white
+    )
 
 import Element exposing (..)
 import Element.Background as Background
-import Element.Border as Border
 import Element.Font as Font
-import Element.Input
-import Element.Lazy
 import Html.Attributes
 
 
@@ -45,6 +41,7 @@ tableHeading =
 titleButton highlighted =
     if highlighted then
         [ Font.color orange ]
+
     else
         [ Font.color white ]
 
@@ -161,7 +158,7 @@ grey =
         g =
             0.7
     in
-        Element.rgb g g g
+    Element.rgb g g g
 
 
 darkRed =

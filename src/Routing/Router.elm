@@ -1,19 +1,18 @@
-module Routing.Router exposing (Model, Msg(..), initialModel, init, pageView, update, updateBook, updateCurrentUser, view)
+module Routing.Router exposing (Model, Msg(..), init, initialModel, pageView, update, updateBook, updateCurrentUser, view)
 
-import Browser
 import Browser.Navigation exposing (Key)
+import Common.Style as Style
+import Element exposing (..)
+import Element.Background as Background
+import Element.Font as Font
+import Element.Input as Input
+import Html exposing (Html)
 import Pages.Books as Books
 import Pages.CurrentBook as CurrentBook
 import Pages.CurrentUser as CurrentUser
 import Routing.Helpers exposing (Route(..), parseUrl, reverseRoute)
 import SharedState exposing (SharedState, SharedStateUpdate(..))
 import Url exposing (Url)
-import Html exposing (Html)
-import Element exposing (..)
-import Element.Font as Font
-import Element.Input as Input
-import Element.Background as Background
-import Common.Style as Style
 import User.Types
 
 
@@ -45,11 +44,11 @@ initialModel url =
         currentUserModel =
             CurrentUser.initModel
     in
-        { bookModel = bookModel
-        , currentBookModel = currentBookModel
-        , currentUserModel = currentUserModel
-        , route = parseUrl url
-        }
+    { bookModel = bookModel
+    , currentBookModel = currentBookModel
+    , currentUserModel = currentUserModel
+    , route = parseUrl url
+    }
 
 
 init : Url -> ( Model, Cmd Msg )
@@ -64,13 +63,13 @@ init url =
         currentUserModel =
             CurrentUser.initModel
     in
-        ( { bookModel = bookModel
-          , currentBookModel = currentBookModel
-          , currentUserModel = currentUserModel
-          , route = parseUrl url
-          }
-        , Cmd.map BookMsg Cmd.none
-        )
+    ( { bookModel = bookModel
+      , currentBookModel = currentBookModel
+      , currentUserModel = currentUserModel
+      , route = parseUrl url
+      }
+    , Cmd.map BookMsg Cmd.none
+    )
 
 
 update : SharedState -> Msg -> Model -> ( Model, Cmd Msg, SharedStateUpdate )
@@ -79,7 +78,7 @@ update sharedState msg model =
         UrlChange location ->
             let
                 route =
-                    (parseUrl location)
+                    parseUrl location
 
                 cmd =
                     case route of
@@ -89,10 +88,10 @@ update sharedState msg model =
                         _ ->
                             Cmd.none
             in
-                ( { model | route = route }
-                , Cmd.map BookMsg cmd
-                , NoUpdate
-                )
+            ( { model | route = route }
+            , Cmd.map BookMsg cmd
+            , NoUpdate
+            )
 
         NavigateTo route ->
             ( model
@@ -116,10 +115,10 @@ updateBook sharedState model bookMsg =
         ( nextBookModel, bookCmd, sharedStateUpdate ) =
             Books.update sharedState bookMsg model.bookModel
     in
-        ( { model | bookModel = nextBookModel }
-        , Cmd.map BookMsg bookCmd
-        , sharedStateUpdate
-        )
+    ( { model | bookModel = nextBookModel }
+    , Cmd.map BookMsg bookCmd
+    , sharedStateUpdate
+    )
 
 
 updateCurrentBook : SharedState -> Model -> CurrentBook.Msg -> ( Model, Cmd Msg, SharedStateUpdate )
@@ -128,10 +127,10 @@ updateCurrentBook sharedState model currentBookMsg =
         ( nextCurrentBookModel, currentBookCmd, sharedStateUpdate ) =
             CurrentBook.update sharedState currentBookMsg model.currentBookModel
     in
-        ( { model | currentBookModel = nextCurrentBookModel }
-        , Cmd.map CurrentBookMsg currentBookCmd
-        , sharedStateUpdate
-        )
+    ( { model | currentBookModel = nextCurrentBookModel }
+    , Cmd.map CurrentBookMsg currentBookCmd
+    , sharedStateUpdate
+    )
 
 
 updateCurrentUser : SharedState -> Model -> User.Types.Msg -> ( Model, Cmd Msg, SharedStateUpdate )
@@ -140,10 +139,10 @@ updateCurrentUser sharedState model settingsMsg =
         ( nextSettingsModel, settingsCmd, sharedStateUpdate ) =
             CurrentUser.update sharedState settingsMsg model.currentUserModel
     in
-        ( { model | currentUserModel = nextSettingsModel }
-        , Cmd.map CurrentUserMsg settingsCmd
-        , sharedStateUpdate
-        )
+    ( { model | currentUserModel = nextSettingsModel }
+    , Cmd.map CurrentUserMsg settingsCmd
+    , sharedStateUpdate
+    )
 
 
 view : (Msg -> msg) -> SharedState -> Model -> { body : List (Html.Html msg), title : String }
@@ -166,7 +165,7 @@ view msgMapper sharedState model =
         body_ =
             column [ padding 20, Background.color Style.grey, width fill, height fill ]
                 [ row
-                    (Style.navBar (fill))
+                    (Style.navBar fill)
                     [ el [ Font.bold, Font.color Style.white ] (text "BookLib")
                     , Input.button (Style.activeButton (model.route == BooksRoute))
                         { onPress = Just (NavigateTo BooksRoute)
@@ -184,9 +183,9 @@ view msgMapper sharedState model =
                 , pageView sharedState model
                 ]
     in
-        { title = "BookLib"
-        , body = body_ |> Element.layoutWith { options = [ Style.myFocusStyle ] } [] |> Html.map msgMapper |> \x -> [ x ]
-        }
+    { title = "BookLib"
+    , body = body_ |> Element.layoutWith { options = [ Style.myFocusStyle ] } [] |> Html.map msgMapper |> (\x -> [ x ])
+    }
 
 
 pageView : SharedState -> Model -> Element Msg

@@ -1,12 +1,12 @@
 module User.Session exposing (authenticate, registerUser, userEncoder)
 
+import Common.Days as Days
+import Configuration
 import Http
 import Json.Decode as Decode exposing (Decoder)
+import Json.Decode.Pipeline exposing (required)
 import Json.Encode as Encode
-import Json.Decode.Pipeline exposing (required, hardcoded)
-import Configuration
-import Common.Days as Days
-import User.Types exposing (User, Msg(..))
+import User.Types exposing (Msg(..), User)
 
 
 authenticate : String -> String -> Cmd Msg
@@ -106,14 +106,14 @@ intListFromElixirDateString str =
         maybeElixirDate =
             String.split "T" str |> List.head
     in
-        case maybeElixirDate of
-            Nothing ->
-                []
+    case maybeElixirDate of
+        Nothing ->
+            []
 
-            Just str_ ->
-                String.split "-" str_
-                    |> List.map String.toInt
-                    |> List.map (Maybe.withDefault 0)
+        Just str_ ->
+            String.split "-" str_
+                |> List.map String.toInt
+                |> List.map (Maybe.withDefault 0)
 
 
 usDateStringFromElixirDateString : String -> String

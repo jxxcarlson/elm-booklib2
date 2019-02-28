@@ -1,9 +1,8 @@
 module Common.Indicator exposing (indicator)
 
+import Element
 import Svg exposing (rect, svg)
 import Svg.Attributes as SA
-import Html.Attributes exposing (..)
-import Element
 
 
 indicator barWidth barHeight color fraction =

@@ -1,28 +1,18 @@
 module Pages.CurrentBook exposing (Model, Msg(..), init, update, view)
 
-import Http
-import Html
-import Html.Attributes as HA
-import Time exposing (Posix)
-import Json.Decode as Decode exposing (Decoder)
-import Json.Encode as Encode
-import Json.Decode.Pipeline exposing (required, hardcoded)
-import Markdown
 import Book.Types exposing (Book)
-import Book.MarkdownExtra as MarkdownExtra
+import Common.Book
+import Common.Days as Days
+import Common.Indicator as Indicator
+import Common.Style as Style
+import Common.Utility as Utility
 import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
 import Element.Font as Font
 import Element.Input as Input
 import SharedState exposing (SharedState, SharedStateUpdate(..))
-import Common.Style as Style
-import Common.Utility as Utility
-import Common.Indicator as Indicator
-import Common.Days as Days
-import Common.Book
 import User.Types exposing (User)
-import Configuration
 
 
 type alias Model =
@@ -70,10 +60,10 @@ update sharedState msg model =
                         -- updatedBookList =
                         --     Utility.replaceIf (\runningBook -> runningBook.id == nextBook.id) nextBook model.bookList
                     in
-                        ( model
-                        , Cmd.none
-                        , SharedState.UpdateCurrentBook (Just nextBook)
-                        )
+                    ( model
+                    , Cmd.none
+                    , SharedState.UpdateCurrentBook (Just nextBook)
+                    )
 
 
 
@@ -93,7 +83,7 @@ view sharedState model =
 mainRow : SharedState -> Model -> Element Msg
 mainRow sharedState model =
     row
-        ((Style.mainColumn2 fill fill)
+        (Style.mainColumn2 fill fill
             ++ [ spacing 20 ]
         )
         [ currentBookPanel sharedState model
@@ -112,7 +102,7 @@ currentBookPanel sharedState model =
             el [] (text "No book selected")
 
         Just book ->
-            column ([ Background.color <| grey 0.9, padding 30, width (px 360), height (px 310), spacing 12, alignTop, Border.width 1 ])
+            column [ Background.color <| grey 0.9, padding 30, width (px 360), height (px 310), spacing 12, alignTop, Border.width 1 ]
                 [ column [ spacing 8 ]
                     [ el strongFieldStyle (text <| book.title)
                     , el fieldStyle (text <| book.subtitle)
@@ -162,18 +152,18 @@ fieldStyle =
 
 pageRatio : Book -> Float
 pageRatio book =
-    (toFloat book.pagesRead) / (toFloat book.pages)
+    toFloat book.pagesRead / toFloat book.pages
 
 
 pageInfo book =
     let
         pp =
-            (String.fromInt book.pagesRead) ++ "/" ++ (String.fromInt book.pages)
+            String.fromInt book.pagesRead ++ "/" ++ String.fromInt book.pages
 
         pc =
-            String.fromInt <| Basics.round <| 100 * (Basics.toFloat book.pagesRead) / (Basics.toFloat book.pages)
+            String.fromInt <| Basics.round <| 100 * Basics.toFloat book.pagesRead / Basics.toFloat book.pages
     in
-        pp ++ " (" ++ pc ++ "%)"
+    pp ++ " (" ++ pc ++ "%)"
 
 
 pagesInput : SharedState -> Model -> Element Msg
@@ -238,13 +228,13 @@ daysToComplete sharedState book =
 
 readingRate : SharedState -> Book -> Float
 readingRate shareState book =
-    (Basics.toFloat book.pagesRead) / (Basics.toFloat <| daysToComplete shareState book)
+    Basics.toFloat book.pagesRead / (Basics.toFloat <| daysToComplete shareState book)
 
 
 newBookButton : Element Msg
 newBookButton =
     Input.button Style.smallButton
-        { onPress = Just (NoOp) -- NewBook
+        { onPress = Just NoOp -- NewBook
         , label = Element.text "New book"
         }
 
