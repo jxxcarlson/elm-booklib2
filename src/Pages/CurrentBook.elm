@@ -13,6 +13,7 @@ import Element.Background as Background
 import Element.Border as Border
 import Element.Font as Font
 import Element.Input as Input
+import Element.Keyed as Keyed
 import Http
 import SharedState exposing (SharedState, SharedStateUpdate(..))
 import User.Types exposing (User)
@@ -32,6 +33,7 @@ type alias Model =
     , textRenderMode : TextRenderMode
     , counter : Int
     , appState : AppState
+    , message : String
     }
 
 
@@ -57,6 +59,7 @@ init =
     , textRenderMode = MarkDownView
     , counter = 0
     , appState = ReadingBook
+    , message = ""
     }
 
 
@@ -79,8 +82,7 @@ type Msg
     | InputFinishDate String
     | UpdateBlurb
     | NewBook
-    | CancelNewBook
-    | CreateNewBook
+    | CreateBook
     | EditBook
     | SaveBookEditChanges
     | ToggleBlurbAndNotes
@@ -311,53 +313,27 @@ update sharedState msg model =
             in
             ( model, Cmd.none, UpdateCurrentUser nextCurrentUser )
 
-        CreateNewBook ->
-            let
-                newBook =
-                    { id = 0
-                    , title = model.title
-                    , subtitle = model.subtitle
-                    , category = model.category
-                    , author = model.author
-                    , pages = model.pages
-                    , notes = "Just started ..."
-                    , pagesRead = 0
-                    , rating = 0
-                    , public = False
-                    , startDateString = ""
-                    , finishDateString = ""
-                    }
-
-                token =
-                    case sharedState.currentUser of
-                        Nothing ->
-                            ""
-
-                        Just user ->
-                            user.token
-
-                userid =
-                    case sharedState.currentUser of
-                        Nothing ->
-                            0
-
-                        Just user ->
-                            user.id
-            in
-            ( { model
-                | -- previousCurrentBook = model.currentBook
-                  notes = newBook.notes
-                , pagesRead = newBook.pagesRead
-                , textRenderMode = PlainTextView
-              }
-            , createBook userid newBook token
-            , SharedState.UpdateCurrentBook (Just newBook)
+        NewBook ->
+            ( { model | appState = CreatingBook }
+            , Cmd.none
+            , SharedState.NoUpdate
             )
 
+        CreateBook ->
+            createNewBook sharedState model
+
         BookIsCreated (Ok str) ->
-            ( model, Cmd.none, NoUpdate )
+            let
+                _ =
+                    Debug.log "BookIsCreated, OK, str" str
+            in
+            ( { model | message = str }, Cmd.none, NoUpdate )
 
         BookIsCreated (Err err) ->
+            let
+                _ =
+                    Debug.log "BookIsCreated, Err" err
+            in
             ( model, Cmd.none, NoUpdate )
 
         ToggleBlurbAndNotes ->
@@ -378,28 +354,6 @@ update sharedState msg model =
 
         UpdateBlurb ->
             ( model, Cmd.none, NoUpdate )
-
-        NewBook ->
-            ( { model
-                | appState = CreatingBook
-                , title = ""
-                , subtitle = ""
-                , author = ""
-                , pages = 1
-                , pagesRead = 0
-                , notes = "Just started"
-              }
-            , Cmd.none
-            , NoUpdate
-            )
-
-        CancelNewBook ->
-            ( { model
-                | appState = ReadingBook
-              }
-            , Cmd.none
-            , NoUpdate
-            )
 
         EditBook ->
             let
@@ -559,13 +513,13 @@ mainRow sharedState model =
                 Common.Book.notesViewedAsMarkdown "400px" "509px" sharedState.currentBook
 
             EditingNote ->
-                notesInput (px 400) (px 509) sharedState
+                notesInput (px 400) (px 509) sharedState model
 
             EditingBook ->
                 editBookPanel sharedState
 
             CreatingBook ->
-                Element.none
+                newBookPanel sharedState model
         ]
 
 
@@ -616,7 +570,7 @@ currentBookPanel sharedState model =
                 ]
 
 
-notesInput h w sharedState =
+notesInput h w sharedState model =
     let
         notes =
             case sharedState.currentBook of
@@ -626,13 +580,16 @@ notesInput h w sharedState =
                 Just book ->
                     book.notes
     in
-    Input.multiline (textInputStyle (px 350) (px 530))
-        { onChange = InputNotes
-        , text = notes
-        , placeholder = Nothing
-        , label = Input.labelAbove [ Font.size 0, Font.bold ] (text "")
-        , spellcheck = False
-        }
+    Keyed.el []
+        ( String.fromInt model.counter
+        , Input.multiline (textInputStyle (px 350) (px 530))
+            { onChange = InputNotes
+            , text = notes
+            , placeholder = Nothing
+            , label = Input.labelAbove [ Font.size 0, Font.bold ] (text "")
+            , spellcheck = False
+            }
+        )
 
 
 textInputStyle w h =
@@ -644,6 +601,7 @@ textInputStyle w h =
     , Font.size 13
     , paddingXY 0 20
     , Background.color Style.lightGrey
+    , Border.width 2
     ]
 
 
@@ -756,6 +714,14 @@ newBookButton model =
         }
 
 
+createBookButton : Model -> Element Msg
+createBookButton model =
+    Input.button (Style.activeButton (model.appState == CreatingBook))
+        { onPress = Just CreateBook
+        , label = Element.text "Create"
+        }
+
+
 editBookButton model =
     Input.button (Style.activeButton (model.appState == EditingBook))
         { onPress = Just SetModeToEditingBook
@@ -818,6 +784,7 @@ footer sharedState model =
     row Style.footer
         [ el Style.footerItem (text <| "UTC: " ++ Utility.toUtcString (Just sharedState.currentTime))
         , el Style.footerItem (text <| userStatus sharedState.currentUser)
+        , el Style.footerItem (text <| "Message: " ++ model.message)
         ]
 
 
@@ -833,13 +800,13 @@ userStatus user_ =
 
 
 --
--- INPUT
+-- INPUT BOOK METADATA
 --
 
 
 editBookPanel : SharedState -> Element Msg
 editBookPanel sharedState =
-    Element.column [ paddingXY 10 10, spacing 10, height (px 520) ]
+    Element.column [ paddingXY 10 10, spacing 10, height (px 531), Border.width 1 ]
         [ Element.el [ Font.bold ] (text <| "Edit book")
         , inputTitle sharedState
         , inputSubtitle sharedState
@@ -848,6 +815,20 @@ editBookPanel sharedState =
         , inputPages sharedState
         , inputStartDate sharedState
         , inputDateFinished sharedState
+        ]
+
+
+newBookPanel : SharedState -> Model -> Element Msg
+newBookPanel sharedState model =
+    Element.column [ paddingXY 10 10, spacing 10, height (px 531), Border.width 1 ]
+        [ Element.el [ Font.bold ] (text <| "New book")
+        , inputTitle sharedState
+        , inputSubtitle sharedState
+        , inputCategory sharedState
+        , inputAuthor sharedState
+        , inputPages sharedState
+        , inputStartDate sharedState
+        , createBookButton model
         ]
 
 
@@ -912,3 +893,58 @@ inputPages sharedState =
         , onChange = InputPages
         , label = Input.labelAbove [ Font.size 14 ] (text "Pages")
         }
+
+
+
+--
+-- HELPERS
+--
+
+
+createNewBook : SharedState -> Model -> ( Model, Cmd Msg, SharedStateUpdate )
+createNewBook sharedState model =
+    let
+        --        newBook =
+        --            { id = 0
+        --            , title = model.title
+        --            , subtitle = model.subtitle
+        --            , category = model.category
+        --            , author = model.author
+        --            , pages = model.pages
+        --            , notes = "Just started ..."
+        --            , pagesRead = 0
+        --            , rating = 0
+        --            , public = False
+        --            , startDateString = ""
+        --            , finishDateString = ""
+        --            }
+        token =
+            case sharedState.currentUser of
+                Nothing ->
+                    ""
+
+                Just user ->
+                    user.token
+
+        userid =
+            case sharedState.currentUser of
+                Nothing ->
+                    0
+
+                Just user ->
+                    user.id
+
+        cmd =
+            case sharedState.currentBook of
+                Nothing ->
+                    Cmd.none
+
+                Just book ->
+                    createBook userid book token
+    in
+    ( { model
+        | appState = CreatingBook
+      }
+    , cmd
+    , SharedState.UpdateCurrentBook sharedState.currentBook
+    )

@@ -1,4 +1,4 @@
-module Book.Types exposing (Book)
+module Book.Types exposing (Book, blankBook)
 
 
 type alias Book =
@@ -14,4 +14,20 @@ type alias Book =
     , category : String
     , startDateString : String
     , finishDateString : String
+    }
+
+
+blankBook =
+    { id = 0
+    , title = "New book"
+    , subtitle = ""
+    , author = ""
+    , notes = ""
+    , pages = 0
+    , pagesRead = 0
+    , rating = 0
+    , public = False
+    , category = ""
+    , startDateString = ""
+    , finishDateString = ""
     }
