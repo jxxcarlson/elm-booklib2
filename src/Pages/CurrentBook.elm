@@ -38,7 +38,7 @@ type alias Model =
 type AppState
     = ReadingBook
     | EditingBook
-    | CreatingNewBook
+    | CreatingBook
 
 
 init : Model
@@ -84,6 +84,9 @@ type Msg
     | SaveBookEditChanges
     | ToggleBlurbAndNotes
     | ToggleMarkdown
+    | SetModeToReading
+    | SetModeToEditing
+    | SetModeToCreating
 
 
 type TextDisplayMode
@@ -345,7 +348,7 @@ update sharedState msg model =
 
         NewBook ->
             ( { model
-                | appState = CreatingNewBook
+                | appState = CreatingBook
                 , title = ""
                 , subtitle = ""
                 , author = ""
@@ -441,6 +444,15 @@ update sharedState msg model =
 
                 ( _, _ ) ->
                     ( model, Cmd.none, NoUpdate )
+
+        SetModeToReading ->
+            ( { model | appState = ReadingBook }, Cmd.none, SharedState.NoUpdate )
+
+        SetModeToEditing ->
+            ( { model | appState = EditingBook }, Cmd.none, SharedState.NoUpdate )
+
+        SetModeToCreating ->
+            ( { model | appState = CreatingBook }, Cmd.none, SharedState.NoUpdate )
 
 
 createBook : Int -> Book -> String -> Cmd Msg
@@ -546,7 +558,7 @@ currentBookPanel sharedState model =
                     , row [ paddingXY 0 12 ] [ updateBookButton ]
                     , column
                         [ paddingXY 0 40, spacing 10 ]
-                        [ row [ alignBottom, spacing 20 ] [ editBookButton, newBookButton ]
+                        [ row [ alignBottom, spacing 20 ] [ readBookButton model, editBookButton model, newBookButton model ]
                         ]
                     ]
                 ]
@@ -649,18 +661,25 @@ updateBookButton =
         }
 
 
-newBookButton : Element Msg
-newBookButton =
-    Input.button Style.button
-        { onPress = Just NoOp -- NewBook
-        , label = Element.text "New book"
+newBookButton : Model -> Element Msg
+newBookButton model =
+    Input.button (Style.activeButton (model.appState == CreatingBook))
+        { onPress = Just SetModeToCreating
+        , label = Element.text "New"
         }
 
 
-editBookButton =
-    Input.button (Style.buttonWithWidth 50)
-        { onPress = Just EditBook
+editBookButton model =
+    Input.button (Style.activeButton (model.appState == EditingBook))
+        { onPress = Just SetModeToEditing
         , label = Element.text "Edit"
+        }
+
+
+readBookButton model =
+    Input.button (Style.activeButton (model.appState == ReadingBook))
+        { onPress = Just SetModeToReading
+        , label = Element.text "Read"
         }
 
 

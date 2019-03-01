@@ -143,8 +143,8 @@ view sharedState model =
 footer : SharedState -> Model -> Element Msg
 footer sharedState model =
     row Style.footer
-        [ el Style.footerItem (text <| stateAsString model.state)
-        , el Style.footerItem (text <| "UTC: " ++ Utility.toUtcString (Just sharedState.currentTime))
+        [ el Style.footerItem (text <| "UTC: " ++ Utility.toUtcString (Just sharedState.currentTime))
+        , el Style.footerItem (text <| stateAsString sharedState model.state)
         ]
 
 
@@ -275,14 +275,14 @@ currentSharedStateView sharedState =
 --
 
 
-stateAsString : State -> String
-stateAsString state =
+stateAsString : SharedState -> State -> String
+stateAsString sharedState state =
     case state of
         NotSignedIn ->
             "Not signed in"
 
         SignedIn ->
-            "Signed in"
+            "Signed in as " ++ userStatus sharedState.currentUser
 
         SigningIn ->
             "Signing in"
@@ -291,14 +291,14 @@ stateAsString state =
             "Registering"
 
 
-userStatus : Maybe User -> Element msg
+userStatus : Maybe User -> String
 userStatus user_ =
     case user_ of
         Nothing ->
-            el [] (text "Not signed in.")
+            ""
 
         Just user ->
-            el [] (text <| user.username ++ ", you are now signed in.")
+            user.username
 
 
 type Error
