@@ -36,9 +36,6 @@ bookListTitle model =
 
 
 
-wordCount : String -> Int
-wordCount str =
-    str |> String.words |> List.length
 
 
 wordCountOfText : Model -> Int

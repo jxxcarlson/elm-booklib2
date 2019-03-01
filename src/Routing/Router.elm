@@ -8,7 +8,7 @@ import Element.Font as Font
 import Element.Input as Input
 import Html exposing (Html)
 import Pages.Books as Books
-import Pages.CurrentBook as CurrentBook
+import Pages.CurrentBook as CurrentBook exposing (AppState(..))
 import Pages.CurrentUser as CurrentUser
 import Routing.Helpers exposing (Route(..), parseUrl, reverseRoute)
 import SharedState exposing (SharedState, SharedStateUpdate(..))
@@ -110,7 +110,19 @@ update sharedState msg model =
             )
 
         NavigateTo route ->
-            ( model
+            let
+                oldCurrentBookModel =
+                    model.currentBookModel
+
+                newCurrentBooksModel =
+                    case route of
+                        CurrentBookRoute ->
+                            oldCurrentBookModel
+
+                        _ ->
+                            { oldCurrentBookModel | appState = ReadingBook }
+            in
+            ( { model | currentBookModel = newCurrentBooksModel }
             , Browser.Navigation.pushUrl sharedState.navKey (reverseRoute route)
             , NoUpdate
             )
@@ -185,11 +197,11 @@ view msgMapper sharedState model =
                     [ el [ Font.bold, Font.color Style.white ] (text "BookLib")
                     , Input.button (Style.activeButton (model.route == BooksRoute))
                         { onPress = Just (NavigateTo BooksRoute)
-                        , label = el [] (text "Books")
+                        , label = el [] (text "Reading List")
                         }
                     , Input.button (Style.activeButton (model.route == CurrentBookRoute))
                         { onPress = Just (NavigateTo CurrentBookRoute)
-                        , label = el [] (text "Current Book")
+                        , label = el [] (text "Book")
                         }
                     , Input.button (Style.activeButton (model.route == CurrentUserRoute))
                         { onPress = Just (NavigateTo CurrentUserRoute)

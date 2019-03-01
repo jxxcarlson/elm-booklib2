@@ -386,7 +386,23 @@ footer sharedState model =
     row Style.footer
         [ el Style.footerItem (text <| "UTC: " ++ Utility.toUtcString (Just sharedState.currentTime))
         , el Style.footerItem (text <| userStatus sharedState.currentUser)
+        , wordCountOfCurrentNotes sharedState
         ]
+
+
+wordCountOfCurrentNotes : SharedState -> Element Msg
+wordCountOfCurrentNotes sharedState =
+    case sharedState.currentBook of
+        Nothing ->
+            Element.none
+
+        Just book ->
+            el Style.footerItem (text <| "Word count: " ++ String.fromInt (wordCount book.notes))
+
+
+wordCount : String -> Int
+wordCount str =
+    str |> String.words |> List.length
 
 
 userStatus : Maybe User -> String

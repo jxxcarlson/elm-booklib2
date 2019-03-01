@@ -1,4 +1,4 @@
-module Pages.CurrentBook exposing (Model, Msg(..), init, update, view)
+module Pages.CurrentBook exposing (AppState(..), Model, Msg(..), init, update, view)
 
 import Book.Coders
 import Book.Types exposing (Book)
@@ -16,6 +16,7 @@ import Element.Font as Font
 import Element.Input as Input
 import Element.Keyed as Keyed
 import Http
+import Pages.Books
 import SharedState exposing (SharedState, SharedStateUpdate(..))
 import User.Types exposing (User)
 
@@ -35,6 +36,7 @@ type alias Model =
     , counter : Int
     , appState : AppState
     , message : String
+    , deleteBookState : DeleteBookState
     }
 
 
@@ -43,6 +45,11 @@ type AppState
     | EditingBook
     | EditingNote
     | CreatingBook
+
+
+type DeleteBookState
+    = Ready
+    | Armed
 
 
 init : Model
@@ -61,6 +68,7 @@ init =
     , counter = 0
     , appState = ReadingBook
     , message = ""
+    , deleteBookState = Ready
     }
 
 
@@ -68,10 +76,6 @@ type Msg
     = NoOp
     | ToggleBookPublic Bool
     | InputPagesRead String
-    | UpdateBook
-    | BookIsUpdated (Result Http.Error String)
-    | BookIsCreated (Result Http.Error String)
-    | UpdateCurrentBook
     | InputNotes String
     | InputTitle String
     | InputSubtitle String
@@ -82,17 +86,26 @@ type Msg
     | InputStartDate String
     | InputFinishDate String
     | UpdateBlurb
+      --
     | NewBook
     | CreateBook
     | EditBook
     | DeleteBook
+    | UpdateBook
+    | BookIsCreated (Result Http.Error String)
+    | BookIsUpdated (Result Http.Error String)
+    | BookIsDeleted (Result Http.Error String)
+    | UpdateCurrentBook
     | SaveBookEditChanges
+      --
     | ToggleBlurbAndNotes
     | ToggleMarkdown
     | SetModeToReading
     | SetModeToEditingBook
     | SetModeToEditingNote
     | SetModeToCreating
+    | ArmDeleteState
+    | DisarmArmDeleteState
 
 
 type TextDisplayMode
@@ -143,16 +156,22 @@ update sharedState msg model =
                     ( model, Cmd.none, NoUpdate )
 
                 ( Just book, Just user ) ->
-                    ( model, updateBook book user.token, SharedState.UpdateCurrentBook <| Just book )
+                    ( model, Cmd.batch [ pushUrl sharedState.navKey "#books", updateBook book user.token ], SharedState.UpdateCurrentBook <| Just book )
 
                 _ ->
                     ( model, Cmd.none, NoUpdate )
 
         BookIsUpdated (Ok str) ->
-            ( model, Cmd.none, NoUpdate )
+            ( { model | deleteBookState = Ready }, pushUrl sharedState.navKey "#books", NoUpdate )
 
         BookIsUpdated (Err err) ->
-            ( model, Cmd.none, NoUpdate )
+            ( model, pushUrl sharedState.navKey "#books", NoUpdate )
+
+        BookIsDeleted (Ok str) ->
+            ( { model | deleteBookState = Ready }, pushUrl sharedState.navKey "#books", NoUpdate )
+
+        BookIsDeleted (Err err) ->
+            ( { model | deleteBookState = Ready }, pushUrl sharedState.navKey "#books", NoUpdate )
 
         UpdateCurrentBook ->
             let
@@ -327,16 +346,16 @@ update sharedState msg model =
         BookIsCreated (Ok str) ->
             let
                 _ =
-                    Debug.log "BookIsCreated, OK, str" str
+                    Debug.log "BOOK CREATED" str
             in
-            ( { model | message = str }, Cmd.none, NoUpdate )
+            ( { model | message = str }, pushUrl sharedState.navKey "#books", NoUpdate )
 
         BookIsCreated (Err err) ->
             let
                 _ =
-                    Debug.log "BookIsCreated, Err" err
+                    Debug.log "BOOK CREATED -ERR" err
             in
-            ( model, Cmd.none, NoUpdate )
+            ( model, pushUrl sharedState.navKey "#books", NoUpdate )
 
         ToggleBlurbAndNotes ->
             case model.textDisplayMode of
@@ -357,16 +376,22 @@ update sharedState msg model =
         UpdateBlurb ->
             ( model, Cmd.none, NoUpdate )
 
+        ArmDeleteState ->
+            ( { model | deleteBookState = Armed }, Cmd.none, NoUpdate )
+
+        DisarmArmDeleteState ->
+            ( { model | deleteBookState = Ready }, Cmd.none, NoUpdate )
+
         DeleteBook ->
             case ( sharedState.currentBook, sharedState.currentUser ) of
                 ( Nothing, _ ) ->
                     ( model, Cmd.none, NoUpdate )
 
                 ( Just book, Just user ) ->
-                    ( model, Cmd.batch [ pushUrl sharedState.navKey "#books", deleteBook book user.token ], SharedState.UpdateCurrentBook Nothing )
+                    ( model, deleteBook book user.token, SharedState.UpdateCurrentBook Nothing )
 
                 ( _, _ ) ->
-                    ( model, Cmd.none, NoUpdate )
+                    ( { model | deleteBookState = Ready }, Cmd.none, NoUpdate )
 
         EditBook ->
             let
@@ -491,7 +516,7 @@ deleteBook book token =
         , headers = [ Http.header "Authorization" ("Bearer " ++ token) ]
         , url = Configuration.backend ++ "/api/books/" ++ String.fromInt book.id
         , body = Http.jsonBody (Book.Coders.bookRecordEncoder book)
-        , expect = Http.expectJson BookIsUpdated Book.Coders.statusDecoder
+        , expect = Http.expectJson BookIsDeleted Book.Coders.statusDecoder
         , timeout = Nothing
         , tracker = Nothing
         }
@@ -747,10 +772,20 @@ newBookButton model =
 
 deleteBookButton : Model -> Element Msg
 deleteBookButton model =
-    Input.button (Style.activeButton (model.appState == CreatingBook))
-        { onPress = Just DeleteBook
+    Input.button (Style.activeButtonRed (model.deleteBookState == Armed))
+        { onPress = Just (deleteBookMsg model)
         , label = Element.text "Delete"
         }
+
+
+deleteBookMsg : Model -> Msg
+deleteBookMsg model =
+    case model.deleteBookState of
+        Ready ->
+            ArmDeleteState
+
+        Armed ->
+            DeleteBook
 
 
 createBookButton : Model -> Element Msg
@@ -823,8 +858,23 @@ footer sharedState model =
     row Style.footer
         [ el Style.footerItem (text <| "UTC: " ++ Utility.toUtcString (Just sharedState.currentTime))
         , el Style.footerItem (text <| userStatus sharedState.currentUser)
-        , el Style.footerItem (text <| "Message: " ++ model.message)
+        , wordCountOfCurrentNotes sharedState
         ]
+
+
+wordCountOfCurrentNotes : SharedState -> Element Msg
+wordCountOfCurrentNotes sharedState =
+    case sharedState.currentBook of
+        Nothing ->
+            Element.none
+
+        Just book ->
+            el Style.footerItem (text <| "Word count: " ++ String.fromInt (wordCount book.notes))
+
+
+wordCount : String -> Int
+wordCount str =
+    str |> String.words |> List.length
 
 
 userStatus : Maybe User -> String
