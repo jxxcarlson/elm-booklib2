@@ -363,7 +363,7 @@ update sharedState msg model =
                     ( model, Cmd.none, NoUpdate )
 
                 ( Just book, Just user ) ->
-                    ( model, Cmd.batch [ pushUrl sharedState.navKey "#books", deleteBook book user.token ], NoUpdate )
+                    ( model, Cmd.batch [ pushUrl sharedState.navKey "#books", deleteBook book user.token ], SharedState.UpdateCurrentBook Nothing )
 
                 ( _, _ ) ->
                     ( model, Cmd.none, NoUpdate )
