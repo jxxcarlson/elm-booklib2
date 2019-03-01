@@ -27,7 +27,7 @@ main =
 subscriptions model =
     Sub.batch
         [ OutsideInfo.getInfoFromOutside Outside LogErr
-        , Time.every 10000 TimeChange
+        , Time.every 1000 TimeChange
         ]
 
 

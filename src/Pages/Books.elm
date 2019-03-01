@@ -330,8 +330,16 @@ pageInfo book =
 totalsString : SharedState -> Model -> String
 totalsString sharedState model =
     let
+        startDate =
+            case sharedState.currentUser of
+                Nothing ->
+                    "6/1/2018"
+
+                Just user ->
+                    user.beginningDate
+
         daysElapsed =
-            Days.fromUSDate model.startDateString (Utility.toUtcDateString <| Just sharedState.currentTime)
+            Days.fromUSDate startDate (Utility.toUtcDateString <| Just sharedState.currentTime)
 
         pagesReadPerDay =
             Basics.round (Basics.toFloat model.totalPagesRead / Basics.toFloat daysElapsed)
@@ -387,7 +395,18 @@ footer sharedState model =
         [ el Style.footerItem (text <| "UTC: " ++ Utility.toUtcString (Just sharedState.currentTime))
         , el Style.footerItem (text <| userStatus sharedState.currentUser)
         , wordCountOfCurrentNotes sharedState
+        , userBegginingDate sharedState
         ]
+
+
+userBegginingDate : SharedState -> Element Msg
+userBegginingDate sharedState =
+    case sharedState.currentUser of
+        Nothing ->
+            Element.none
+
+        Just user ->
+            el Style.footerItem (text <| "Joined: " ++ user.beginningDate)
 
 
 wordCountOfCurrentNotes : SharedState -> Element Msg

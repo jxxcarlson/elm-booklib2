@@ -736,7 +736,13 @@ readingRateDisplay sharedState book =
 
 readingRateString : SharedState -> Book -> String
 readingRateString sharedState book =
-    (String.fromInt <| Basics.round <| readingRate sharedState book) ++ " pp/day (" ++ (String.fromInt <| daysToComplete sharedState book) ++ " days)"
+    (String.fromInt <|
+        Basics.round <|
+            readingRate sharedState book
+    )
+        ++ " pp/day ("
+        ++ (String.fromInt <| daysToComplete sharedState book)
+        ++ " days)"
 
 
 daysToComplete : SharedState -> Book -> Int
