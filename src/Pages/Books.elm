@@ -287,9 +287,6 @@ update sharedState msg model =
         BookIsUpdated (Ok str) ->
             ( model, Cmd.none, NoUpdate )
 
-        BookIsUpdated (Err err) ->
-            ( model, Cmd.none, NoUpdate )
-
         BookIsCreated (Ok str) ->
             ( model, Cmd.none, NoUpdate )
 

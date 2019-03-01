@@ -43,7 +43,19 @@ update sharedState msg model =
             ( model, Cmd.none, NoUpdate )
 
         InputPagesRead str ->
-            ( model, Cmd.none, NoUpdate )
+            let
+                nextBook =
+                    case ( sharedState.currentBook, String.toInt str ) of
+                        ( Nothing, _ ) ->
+                            Nothing
+
+                        ( Just book, Just n ) ->
+                            Just { book | pagesRead = n }
+
+                        ( _, _ ) ->
+                            Nothing
+            in
+            ( model, Cmd.none, UpdateCurrentBook nextBook )
 
         ToggleBookPublic val ->
             case sharedState.currentBook of
@@ -122,6 +134,7 @@ currentBookPanel sharedState model =
                 , column [ moveDown 30, moveLeft 30, paddingXY 20 20, Background.color <| grey 0.9, Border.width 1, width (px 360), height (px 200) ]
                     [ row [ spacing 15 ]
                         [ pagesInput sharedState model
+                        , updateBookButton
                         ]
                     , column
                         [ paddingXY 0 40, spacing 10 ]
@@ -177,7 +190,7 @@ pagesInput sharedState model =
                 { text = String.fromInt book.pagesRead
                 , placeholder = Nothing
                 , onChange = InputPagesRead
-                , label = Input.labelAbove [ Font.size 14 ] (text "Pages read")
+                , label = Input.labelLeft [ Font.size 16, moveDown 4 ] (text "Pages read ")
                 }
 
 
@@ -231,9 +244,17 @@ readingRate shareState book =
     Basics.toFloat book.pagesRead / (Basics.toFloat <| daysToComplete shareState book)
 
 
+updateBookButton : Element Msg
+updateBookButton =
+    Input.button Style.button
+        { onPress = Just NoOp -- NewBook
+        , label = Element.text "Update"
+        }
+
+
 newBookButton : Element Msg
 newBookButton =
-    Input.button Style.smallButton
+    Input.button Style.button
         { onPress = Just NoOp -- NewBook
         , label = Element.text "New book"
         }
