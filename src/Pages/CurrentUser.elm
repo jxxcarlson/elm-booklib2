@@ -17,7 +17,7 @@ import OutsideInfo exposing (InfoForOutside(..))
 import Routing.Helpers exposing (Route(..), reverseRoute)
 import SharedState exposing (SharedState, SharedStateUpdate(..))
 import User.Session as Session
-import User.Types exposing (Msg(..), User)
+import User.Types exposing (Msg(..), State(..), User)
 
 
 type alias Model =
@@ -27,13 +27,6 @@ type alias Model =
     , username : String
     , state : State
     }
-
-
-type State
-    = NotSignedIn
-    | SigningIn
-    | Registering
-    | SignedIn
 
 
 initModel : Model
@@ -124,6 +117,9 @@ update sharedState msg model =
 
         NavigateTo route ->
             ( model, pushUrl sharedState.navKey (reverseRoute route), NoUpdate )
+
+        SetState state ->
+            ( { model | state = state }, Cmd.none, NoUpdate )
 
 
 view : SharedState -> Model -> Element Msg

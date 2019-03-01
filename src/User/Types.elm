@@ -1,7 +1,7 @@
-module User.Types exposing (User, Msg(..))
+module User.Types exposing (Msg(..), State(..), User)
 
-import Routing.Helpers exposing (Route)
 import Http
+import Routing.Helpers exposing (Route)
 
 
 type alias User =
@@ -32,3 +32,11 @@ type Msg
     | CancelRegistration
     | CancelSignin
     | SubmitRegistration
+    | SetState State
+
+
+type State
+    = NotSignedIn
+    | SigningIn
+    | Registering
+    | SignedIn

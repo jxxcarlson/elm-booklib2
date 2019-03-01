@@ -13,7 +13,7 @@ import Pages.CurrentUser as CurrentUser
 import Routing.Helpers exposing (Route(..), parseUrl, reverseRoute)
 import SharedState exposing (SharedState, SharedStateUpdate(..))
 import Url exposing (Url)
-import User.Types
+import User.Types exposing (State(..))
 
 
 type alias Model =
@@ -83,13 +83,29 @@ update sharedState msg model =
                 cmd =
                     case route of
                         BooksRoute ->
-                            Books.getBookListViaSharedState sharedState
+                            Books.getBookListViaSharedState sharedState |> Cmd.map BookMsg
 
                         _ ->
                             Cmd.none
+
+                oldUserModel =
+                    model.currentUserModel
+
+                newUserModel =
+                    case route of
+                        CurrentUserRoute ->
+                            case sharedState.currentUser of
+                                Nothing ->
+                                    { oldUserModel | state = NotSignedIn }
+
+                                Just _ ->
+                                    { oldUserModel | state = SignedIn }
+
+                        _ ->
+                            oldUserModel
             in
-            ( { model | route = route }
-            , Cmd.map BookMsg cmd
+            ( { model | route = route, currentUserModel = newUserModel }
+            , cmd
             , NoUpdate
             )
 
@@ -134,13 +150,13 @@ updateCurrentBook sharedState model currentBookMsg =
 
 
 updateCurrentUser : SharedState -> Model -> User.Types.Msg -> ( Model, Cmd Msg, SharedStateUpdate )
-updateCurrentUser sharedState model settingsMsg =
+updateCurrentUser sharedState model userMsg =
     let
-        ( nextSettingsModel, settingsCmd, sharedStateUpdate ) =
-            CurrentUser.update sharedState settingsMsg model.currentUserModel
+        ( nextUserModel, userCmd, sharedStateUpdate ) =
+            CurrentUser.update sharedState userMsg model.currentUserModel
     in
-    ( { model | currentUserModel = nextSettingsModel }
-    , Cmd.map CurrentUserMsg settingsCmd
+    ( { model | currentUserModel = nextUserModel }
+    , Cmd.map CurrentUserMsg userCmd
     , sharedStateUpdate
     )
 

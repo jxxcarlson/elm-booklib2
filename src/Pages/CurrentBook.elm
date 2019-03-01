@@ -2,6 +2,7 @@ module Pages.CurrentBook exposing (Model, Msg(..), init, update, view)
 
 import Book.Coders
 import Book.Types exposing (Book)
+import Browser.Navigation exposing (pushUrl)
 import Common.Book
 import Common.Days as Days
 import Common.Indicator as Indicator
@@ -84,6 +85,7 @@ type Msg
     | NewBook
     | CreateBook
     | EditBook
+    | DeleteBook
     | SaveBookEditChanges
     | ToggleBlurbAndNotes
     | ToggleMarkdown
@@ -316,7 +318,7 @@ update sharedState msg model =
         NewBook ->
             ( { model | appState = CreatingBook }
             , Cmd.none
-            , SharedState.NoUpdate
+            , SharedState.UpdateCurrentBook (Just Book.Types.blankBook)
             )
 
         CreateBook ->
@@ -354,6 +356,17 @@ update sharedState msg model =
 
         UpdateBlurb ->
             ( model, Cmd.none, NoUpdate )
+
+        DeleteBook ->
+            case ( sharedState.currentBook, sharedState.currentUser ) of
+                ( Nothing, _ ) ->
+                    ( model, Cmd.none, NoUpdate )
+
+                ( Just book, Just user ) ->
+                    ( model, Cmd.batch [ pushUrl sharedState.navKey "#books", deleteBook book user.token ], NoUpdate )
+
+                ( _, _ ) ->
+                    ( model, Cmd.none, NoUpdate )
 
         EditBook ->
             let
@@ -471,6 +484,19 @@ updateBook book token =
         }
 
 
+deleteBook : Book -> String -> Cmd Msg
+deleteBook book token =
+    Http.request
+        { method = "Delete"
+        , headers = [ Http.header "Authorization" ("Bearer " ++ token) ]
+        , url = Configuration.backend ++ "/api/books/" ++ String.fromInt book.id
+        , body = Http.jsonBody (Book.Coders.bookRecordEncoder book)
+        , expect = Http.expectJson BookIsUpdated Book.Coders.statusDecoder
+        , timeout = Nothing
+        , tracker = Nothing
+        }
+
+
 
 --
 -- HELPERS
@@ -510,7 +536,9 @@ mainRow sharedState model =
         [ currentBookPanel sharedState model
         , case model.appState of
             ReadingBook ->
-                Common.Book.notesViewedAsMarkdown "400px" "509px" sharedState.currentBook
+                column [ Border.width 1 ]
+                    [ Common.Book.notesViewedAsMarkdown "400px" "509px" sharedState.currentBook
+                    ]
 
             EditingNote ->
                 notesInput (px 400) (px 509) sharedState model
@@ -556,13 +584,16 @@ currentBookPanel sharedState model =
                         [ pagesInput sharedState model
                         , publicCheckbox book
                         ]
-                    , row [ paddingXY 0 30 ] [ updateBookButton ]
+                    , row [ paddingXY 0 10 ] [ updateBookButton ]
                     , column
                         [ paddingXY 0 8, spacing 10 ]
                         [ row [ alignBottom, spacing 20 ]
                             [ readBookButton model
                             , editBookButton model
                             , editNoteButton model
+                            ]
+                        , row [ spacing 10 ]
+                            [ deleteBookButton model
                             , newBookButton model
                             ]
                         ]
@@ -709,8 +740,16 @@ updateBookButton =
 newBookButton : Model -> Element Msg
 newBookButton model =
     Input.button (Style.activeButton (model.appState == CreatingBook))
-        { onPress = Just SetModeToCreating
+        { onPress = Just NewBook
         , label = Element.text "New"
+        }
+
+
+deleteBookButton : Model -> Element Msg
+deleteBookButton model =
+    Input.button (Style.activeButton (model.appState == CreatingBook))
+        { onPress = Just DeleteBook
+        , label = Element.text "Delete"
         }
 
 
@@ -725,7 +764,7 @@ createBookButton model =
 editBookButton model =
     Input.button (Style.activeButton (model.appState == EditingBook))
         { onPress = Just SetModeToEditingBook
-        , label = Element.text "Edit"
+        , label = Element.text "Edit Book"
         }
 
 
@@ -828,7 +867,7 @@ newBookPanel sharedState model =
         , inputAuthor sharedState
         , inputPages sharedState
         , inputStartDate sharedState
-        , createBookButton model
+        , row [ moveDown 18 ] [ createBookButton model ]
         ]
 
 
@@ -904,20 +943,6 @@ inputPages sharedState =
 createNewBook : SharedState -> Model -> ( Model, Cmd Msg, SharedStateUpdate )
 createNewBook sharedState model =
     let
-        --        newBook =
-        --            { id = 0
-        --            , title = model.title
-        --            , subtitle = model.subtitle
-        --            , category = model.category
-        --            , author = model.author
-        --            , pages = model.pages
-        --            , notes = "Just started ..."
-        --            , pagesRead = 0
-        --            , rating = 0
-        --            , public = False
-        --            , startDateString = ""
-        --            , finishDateString = ""
-        --            }
         token =
             case sharedState.currentUser of
                 Nothing ->

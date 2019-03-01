@@ -18,6 +18,7 @@ import Common.Utility as Utility
 import Configuration
 import Element exposing (..)
 import Element.Background as Background
+import Element.Border as Border
 import Element.Font as Font
 import Element.Input as Input
 import Http
@@ -231,7 +232,7 @@ view sharedState model =
 bookListDisplay sharedState model =
     Element.row []
         [ bookListTable sharedState model
-        , Common.Book.notesViewedAsMarkdown "400px" "580px" sharedState.currentBook
+        , column [ Border.width 1, moveRight 12 ] [ Common.Book.notesViewedAsMarkdown "400px" "579px" sharedState.currentBook ]
         ]
 
 
