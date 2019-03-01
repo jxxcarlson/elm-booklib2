@@ -9,6 +9,7 @@ module Common.Style exposing
     , footer
     , footerItem
     , grey
+    , lightGrey
     , mainColumn
     , mainColumn2
     , myFocusStyle
@@ -16,7 +17,6 @@ module Common.Style exposing
     , noAutocapitalize
     , noAutocorrect
     , orange
-    , panel
     , preWrap
     , shadedColumn
     , smallButton
@@ -29,10 +29,6 @@ import Element exposing (..)
 import Element.Background as Background
 import Element.Font as Font
 import Html.Attributes
-
-
-panel =
-    [ Background.color grey, Element.paddingXY 12 12 ]
 
 
 tableHeading =
@@ -51,7 +47,7 @@ buttonWithWidth width_ =
     [ Font.size 13
     , width (px width_)
     , Background.color black
-    , Font.color grey
+    , Font.color (makeGrey 0.9)
     , Element.paddingXY 10 6
     ]
         ++ basicButtonsStyle
@@ -150,16 +146,20 @@ activeButtonStyle =
 --
 
 
+grey =
+    makeGrey 0.95
+
+
 charcoal =
     Element.rgb 0.4 0.4 0.4
 
 
-grey =
-    let
-        g =
-            0.7
-    in
+makeGrey g =
     Element.rgb g g g
+
+
+lightGrey =
+    makeGrey 0.95
 
 
 darkRed =

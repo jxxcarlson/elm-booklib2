@@ -518,7 +518,15 @@ mainRow sharedState model =
             ++ [ spacing 20 ]
         )
         [ currentBookPanel sharedState model
-        , Common.Book.notesViewedAsMarkdown "400px" "509px" sharedState.currentBook
+        , case model.appState of
+            ReadingBook ->
+                Common.Book.notesViewedAsMarkdown "400px" "509px" sharedState.currentBook
+
+            EditingBook ->
+                notesInput (px 400) (px 509) sharedState
+
+            CreatingBook ->
+                Element.none
         ]
 
 
@@ -555,13 +563,48 @@ currentBookPanel sharedState model =
                         [ pagesInput sharedState model
                         , publicCheckbox book
                         ]
-                    , row [ paddingXY 0 12 ] [ updateBookButton ]
+                    , row [ paddingXY 0 30 ] [ updateBookButton ]
                     , column
-                        [ paddingXY 0 40, spacing 10 ]
+                        [ paddingXY 0 8, spacing 10 ]
                         [ row [ alignBottom, spacing 20 ] [ readBookButton model, editBookButton model, newBookButton model ]
                         ]
                     ]
                 ]
+
+
+notesInput h w sharedState =
+    let
+        notes =
+            case sharedState.currentBook of
+                Nothing ->
+                    ""
+
+                Just book ->
+                    book.notes
+    in
+    Input.multiline (textInputStyle (px 350) (px 530))
+        { onChange = InputNotes
+        , text = notes
+        , placeholder = Nothing
+        , label = Input.labelAbove [ Font.size 0, Font.bold ] (text "")
+        , spellcheck = False
+        }
+
+
+textInputStyle w h =
+    [ Style.preWrap
+    , height h
+    , width w
+    , scrollbarY
+    , clipX
+    , Font.size 13
+    , paddingXY 0 20
+    , Background.color Style.lightGrey
+    ]
+
+
+recordNotesChanges =
+    \str -> InputNotes str
 
 
 strongFieldStyle =
@@ -655,9 +698,9 @@ readingRate shareState book =
 
 updateBookButton : Element Msg
 updateBookButton =
-    Input.button Style.button
+    Input.button (Style.button ++ [ width (px 280) ])
         { onPress = Just UpdateBook
-        , label = Element.text "Update"
+        , label = el [ centerX ] (Element.text "Update")
         }
 
 
