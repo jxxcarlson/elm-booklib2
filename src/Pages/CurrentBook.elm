@@ -541,25 +541,15 @@ currentBookPanel sharedState model =
                 , column [ moveDown 30, moveLeft 30, paddingXY 20 20, Background.color <| grey 0.9, Border.width 1, width (px 360), height (px 200) ]
                     [ row [ spacing 15 ]
                         [ pagesInput sharedState model
-                        , updateBookButton
+                        , publicCheckbox book
                         ]
+                    , row [ paddingXY 0 12 ] [ updateBookButton ]
                     , column
                         [ paddingXY 0 40, spacing 10 ]
-                        [ publicCheckbox book
-                        , row [ alignBottom, spacing 20 ] [ editBookButton, newBookButton ]
+                        [ row [ alignBottom, spacing 20 ] [ editBookButton, newBookButton ]
                         ]
                     ]
                 ]
-
-
-icon : Bool -> Element msg
-icon status =
-    case status of
-        True ->
-            el [ Font.size 14, Font.bold, moveDown 1 ] (text "Y")
-
-        False ->
-            el [ Font.size 14, Font.bold, moveDown 1 ] (text "N")
 
 
 strongFieldStyle =
@@ -669,7 +659,7 @@ newBookButton =
 
 editBookButton =
     Input.button (Style.buttonWithWidth 50)
-        { onPress = Just NoOp -- EditBook
+        { onPress = Just EditBook
         , label = Element.text "Edit"
         }
 
@@ -686,8 +676,18 @@ publicCheckbox book =
         { onChange = ToggleBookPublic
         , icon = icon
         , checked = book.public
-        , label = Input.labelLeft [ Font.size 18, moveDown 1 ] (text "Share book:")
+        , label = Input.labelLeft [ Font.size 16, moveDown 1 ] (text "Share book:")
         }
+
+
+icon : Bool -> Element msg
+icon status =
+    case status of
+        True ->
+            el [ Font.size 18, Font.bold, Font.color Style.blue, moveDown 1 ] (text "Yes")
+
+        False ->
+            el [ Font.size 18, Font.bold, Font.color Style.darkRed, moveDown 1 ] (text "No")
 
 
 bookTitle : Maybe Book -> String
@@ -703,8 +703,8 @@ bookTitle book_ =
 footer : SharedState -> Model -> Element Msg
 footer sharedState model =
     row Style.footer
-        [ el Style.footerItem (text <| userStatus sharedState.currentUser)
-        , el Style.footerItem (text <| "UTC: " ++ Utility.toUtcString (Just sharedState.currentTime))
+        [ el Style.footerItem (text <| "UTC: " ++ Utility.toUtcString (Just sharedState.currentTime))
+        , el Style.footerItem (text <| userStatus sharedState.currentUser)
         ]
 
 
@@ -715,4 +715,4 @@ userStatus user_ =
             "Not signed in."
 
         Just user ->
-            user.username ++ ", you are now signed in."
+            "Signed in as " ++ user.username

@@ -22,7 +22,6 @@ import Element.Font as Font
 import Element.Input as Input
 import Http
 import SharedState exposing (SharedState, SharedStateUpdate(..))
-import Time exposing (Posix)
 import User.Session
 import User.Types exposing (User)
 
@@ -34,59 +33,26 @@ import User.Types exposing (User)
 
 
 type alias Model =
-    { previousCurrentBook : Maybe Book
-    , bookList : List Book
+    { bookList : List Book
     , totalPagesRead : Int
-    , dateStartedReadingString : String
-    , title : String
-    , subtitle : String
-    , author : String
-    , pages : Int
     , pagesRead : Int
     , notes : String
-    , category : String
-    , blurb : String
-    , sharedBlurb : String
-    , startDateString : String
     , finishDateString : String
     , errorMessage : String
-    , appState : AppState
-    , counter : Int
-    , currentTime : Maybe Posix
-    , beginningDate : String
+    , startDateString : String
     }
 
 
 init : Model
 init =
-    { previousCurrentBook = Nothing
-    , bookList = []
+    { bookList = []
     , totalPagesRead = 0
-    , dateStartedReadingString = ""
-    , title = ""
-    , subtitle = ""
-    , author = ""
-    , pages = 0
     , pagesRead = 0
     , notes = ""
-    , blurb = ""
-    , sharedBlurb = ""
-    , category = ""
     , errorMessage = ""
-    , startDateString = ""
     , finishDateString = ""
-    , appState = ReadingMyBooks
-    , counter = 0
-    , currentTime = Nothing
-    , beginningDate = ""
+    , startDateString = ""
     }
-
-
-type AppState
-    = CreatingNewBook
-    | ReadingMyBooks
-    | EditingBook
-    | SharingBooks String
 
 
 bookIsCompleted : Book -> Int
@@ -115,7 +81,7 @@ type Msg
     | RequestBookList Int String
     | SetCurrentBook Book
     | GetSharedBooks String
-    | ReceiveSharedBlurb (Result Http.Error String)
+      -- | ReceiveSharedBlurb (Result Http.Error String)
     | GetCurrentUserBookList
     | NoOp
 
@@ -211,15 +177,14 @@ update sharedState msg model =
                     ( model, Cmd.none, NoUpdate )
 
                 Just user ->
-                    ( { model | appState = ReadingMyBooks }
+                    ( model
                     , getBookList user.id user.token
                     , NoUpdate
                     )
 
         SetCurrentBook book ->
             ( { model
-                | counter = model.counter + 1
-                , startDateString = book.startDateString
+                | startDateString = book.startDateString
                 , finishDateString = book.finishDateString
               }
             , Cmd.none
@@ -232,22 +197,24 @@ update sharedState msg model =
                     ( model, Cmd.none, NoUpdate )
 
                 Just user ->
-                    ( { model | appState = SharingBooks username }
+                    ( model
                     , Cmd.batch
                         [ getSharedBooks username user.token
-                        , getSharedBlurb username user.token
+
+                        -- , getSharedBlurb username user.token
                         ]
                     , NoUpdate
                     )
 
-        ReceiveSharedBlurb (Ok str) ->
-            ( { model | sharedBlurb = str }, Cmd.none, NoUpdate )
-
-        ReceiveSharedBlurb (Err err) ->
-            ( model, Cmd.none, NoUpdate )
 
 
-
+--
+--        ReceiveSharedBlurb (Ok str) ->
+--            ( { model | sharedBlurb = str }, Cmd.none, NoUpdate )
+--
+--        ReceiveSharedBlurb (Err err) ->
+--            ( model, Cmd.none, NoUpdate )
+--
 --
 -- VIEW
 --
@@ -264,14 +231,14 @@ view sharedState model =
 bookListDisplay sharedState model =
     Element.row []
         [ bookListTable sharedState model
-        , Common.Book.notesViewedAsMarkdown "400px" "630px" sharedState.currentBook
+        , Common.Book.notesViewedAsMarkdown "400px" "580px" sharedState.currentBook
         ]
 
 
 bookListTable sharedState model =
     Element.column
         [ width fill
-        , height (px 650)
+        , height (px 600)
         , spacing 10
         , padding 10
         , Background.color Style.charcoal
@@ -363,14 +330,14 @@ totalsString : SharedState -> Model -> String
 totalsString sharedState model =
     let
         daysElapsed =
-            Days.fromUSDate model.beginningDate (Utility.toUtcDateString <| Just sharedState.currentTime)
+            Days.fromUSDate model.startDateString (Utility.toUtcDateString <| Just sharedState.currentTime)
 
         pagesReadPerDay =
             Basics.round (Basics.toFloat model.totalPagesRead / Basics.toFloat daysElapsed)
     in
     String.fromInt model.totalPagesRead
         ++ " pages since "
-        ++ model.beginningDate
+        ++ model.startDateString
         ++ " — "
         ++ String.fromInt pagesReadPerDay
         ++ " pp/day"
@@ -416,9 +383,19 @@ getBooksButton =
 footer : SharedState -> Model -> Element Msg
 footer sharedState model =
     row Style.footer
-        [ el Style.footerItem (text <| userStatus sharedState.currentUser)
-        , el Style.footerItem (text <| "UTC: " ++ Utility.toUtcString (Just sharedState.currentTime))
+        [ el Style.footerItem (text <| "UTC: " ++ Utility.toUtcString (Just sharedState.currentTime))
+        , el Style.footerItem (text <| userStatus sharedState.currentUser)
         ]
+
+
+userStatus : Maybe User -> String
+userStatus user_ =
+    case user_ of
+        Nothing ->
+            "Not signed in."
+
+        Just user ->
+            "Signed is as " ++ user.username
 
 
 
@@ -476,20 +453,18 @@ getSharedBooks username token =
         }
 
 
-getSharedBlurb : String -> String -> Cmd Msg
-getSharedBlurb username token =
-    Http.request
-        { method = "Get"
-        , headers = []
-        , url = Configuration.backend ++ "/api/blurb/" ++ username
-        , body = Http.jsonBody (User.Session.tokenEncoder token)
-        , expect = Http.expectJson ReceiveSharedBlurb Book.Coders.blurbDecoder
-        , timeout = Nothing
-        , tracker = Nothing
-        }
 
-
-
+--getSharedBlurb : String -> String -> Cmd Msg
+--getSharedBlurb username token =
+--    Http.request
+--        { method = "Get"
+--        , headers = []
+--        , url = Configuration.backend ++ "/api/blurb/" ++ username
+--        , body = Http.jsonBody (User.Session.tokenEncoder token)
+--        , expect = Http.expectJson ReceiveSharedBlurb Book.Coders.blurbDecoder
+--        , timeout = Nothing
+--        , tracker = Nothing
+--        }
 --- NN
 
 
@@ -515,13 +490,3 @@ doRequestBookList user_ =
 computeTotalPagesRead : List Book -> Int
 computeTotalPagesRead bookList =
     bookList |> List.map .pagesRead |> List.sum
-
-
-userStatus : Maybe User -> String
-userStatus user_ =
-    case user_ of
-        Nothing ->
-            "Not signed in."
-
-        Just user ->
-            "Signed is as " ++ user.username

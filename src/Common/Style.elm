@@ -5,6 +5,7 @@ module Common.Style exposing
     , buttonWithWidth
     , charcoal
     , darkBlue
+    , darkRed
     , footer
     , footerItem
     , grey
