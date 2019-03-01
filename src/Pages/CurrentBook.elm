@@ -38,6 +38,7 @@ type alias Model =
 type AppState
     = ReadingBook
     | EditingBook
+    | EditingNote
     | CreatingBook
 
 
@@ -85,7 +86,8 @@ type Msg
     | ToggleBlurbAndNotes
     | ToggleMarkdown
     | SetModeToReading
-    | SetModeToEditing
+    | SetModeToEditingBook
+    | SetModeToEditingNote
     | SetModeToCreating
 
 
@@ -188,19 +190,56 @@ update sharedState msg model =
                     )
 
         InputTitle str ->
-            ( { model | title = str }, Cmd.none, NoUpdate )
+            let
+                nextBook =
+                    Maybe.map (\book -> { book | title = str }) sharedState.currentBook
+            in
+            ( model, Cmd.none, SharedState.UpdateCurrentBook nextBook )
 
         InputSubtitle str ->
-            ( { model | subtitle = str }, Cmd.none, NoUpdate )
+            let
+                nextBook =
+                    Maybe.map (\book -> { book | subtitle = str }) sharedState.currentBook
+            in
+            ( model, Cmd.none, SharedState.UpdateCurrentBook nextBook )
 
         InputCategory str ->
-            ( { model | category = str }, Cmd.none, NoUpdate )
+            let
+                nextBook =
+                    Maybe.map (\book -> { book | category = str }) sharedState.currentBook
+            in
+            ( model, Cmd.none, SharedState.UpdateCurrentBook nextBook )
 
         InputAuthor str ->
-            ( { model | author = str }, Cmd.none, NoUpdate )
+            let
+                nextBook =
+                    Maybe.map (\book -> { book | author = str }) sharedState.currentBook
+            in
+            ( model, Cmd.none, SharedState.UpdateCurrentBook nextBook )
 
         InputPages str ->
-            ( { model | pages = str |> String.toInt |> Maybe.withDefault 0 }, Cmd.none, NoUpdate )
+            let
+                pages =
+                    str |> String.toInt |> Maybe.withDefault 0
+
+                nextBook =
+                    Maybe.map (\book -> { book | pages = pages }) sharedState.currentBook
+            in
+            ( model, Cmd.none, SharedState.UpdateCurrentBook nextBook )
+
+        InputStartDate str ->
+            let
+                nextBook =
+                    Maybe.map (\book -> { book | startDateString = str }) sharedState.currentBook
+            in
+            ( model, Cmd.none, SharedState.UpdateCurrentBook nextBook )
+
+        InputFinishDate str ->
+            let
+                nextBook =
+                    Maybe.map (\book -> { book | finishDateString = str }) sharedState.currentBook
+            in
+            ( model, Cmd.none, SharedState.UpdateCurrentBook nextBook )
 
         InputPagesRead str ->
             let
@@ -320,12 +359,6 @@ update sharedState msg model =
 
         BookIsCreated (Err err) ->
             ( model, Cmd.none, NoUpdate )
-
-        InputStartDate str ->
-            ( { model | startDateString = str }, Cmd.none, NoUpdate )
-
-        InputFinishDate str ->
-            ( { model | finishDateString = str }, Cmd.none, NoUpdate )
 
         ToggleBlurbAndNotes ->
             case model.textDisplayMode of
@@ -448,8 +481,11 @@ update sharedState msg model =
         SetModeToReading ->
             ( { model | appState = ReadingBook }, Cmd.none, SharedState.NoUpdate )
 
-        SetModeToEditing ->
+        SetModeToEditingBook ->
             ( { model | appState = EditingBook }, Cmd.none, SharedState.NoUpdate )
+
+        SetModeToEditingNote ->
+            ( { model | appState = EditingNote }, Cmd.none, SharedState.NoUpdate )
 
         SetModeToCreating ->
             ( { model | appState = CreatingBook }, Cmd.none, SharedState.NoUpdate )
@@ -522,8 +558,11 @@ mainRow sharedState model =
             ReadingBook ->
                 Common.Book.notesViewedAsMarkdown "400px" "509px" sharedState.currentBook
 
-            EditingBook ->
+            EditingNote ->
                 notesInput (px 400) (px 509) sharedState
+
+            EditingBook ->
+                editBookPanel sharedState
 
             CreatingBook ->
                 Element.none
@@ -566,7 +605,12 @@ currentBookPanel sharedState model =
                     , row [ paddingXY 0 30 ] [ updateBookButton ]
                     , column
                         [ paddingXY 0 8, spacing 10 ]
-                        [ row [ alignBottom, spacing 20 ] [ readBookButton model, editBookButton model, newBookButton model ]
+                        [ row [ alignBottom, spacing 20 ]
+                            [ readBookButton model
+                            , editBookButton model
+                            , editNoteButton model
+                            , newBookButton model
+                            ]
                         ]
                     ]
                 ]
@@ -698,7 +742,7 @@ readingRate shareState book =
 
 updateBookButton : Element Msg
 updateBookButton =
-    Input.button (Style.button ++ [ width (px 280) ])
+    Input.button (Style.button ++ [ width (px 310) ])
         { onPress = Just UpdateBook
         , label = el [ centerX ] (Element.text "Update")
         }
@@ -714,8 +758,15 @@ newBookButton model =
 
 editBookButton model =
     Input.button (Style.activeButton (model.appState == EditingBook))
-        { onPress = Just SetModeToEditing
+        { onPress = Just SetModeToEditingBook
         , label = Element.text "Edit"
+        }
+
+
+editNoteButton model =
+    Input.button (Style.activeButton (model.appState == EditingNote))
+        { onPress = Just SetModeToEditingNote
+        , label = Element.text "Edit Notes"
         }
 
 
@@ -778,3 +829,86 @@ userStatus user_ =
 
         Just user ->
             "Signed in as " ++ user.username
+
+
+
+--
+-- INPUT
+--
+
+
+editBookPanel : SharedState -> Element Msg
+editBookPanel sharedState =
+    Element.column [ paddingXY 10 10, spacing 10, height (px 520) ]
+        [ Element.el [ Font.bold ] (text <| "Edit book")
+        , inputTitle sharedState
+        , inputSubtitle sharedState
+        , inputCategory sharedState
+        , inputAuthor sharedState
+        , inputPages sharedState
+        , inputStartDate sharedState
+        , inputDateFinished sharedState
+        ]
+
+
+inputTitle sharedState =
+    Input.text [ width (px 300), height (px 30) ]
+        { text = sharedState.currentBook |> Maybe.map .title |> Maybe.withDefault ""
+        , placeholder = Nothing
+        , onChange = \new -> InputTitle new
+        , label = Input.labelAbove [ Font.size 14 ] (text "Title")
+        }
+
+
+inputStartDate sharedState =
+    Input.text [ width (px 300), height (px 30) ]
+        { text = sharedState.currentBook |> Maybe.map .startDateString |> Maybe.withDefault ""
+        , placeholder = Just <| Input.placeholder [ moveUp 6 ] (Element.text "1/15/2018")
+        , onChange = \dateString -> InputStartDate dateString
+        , label = Input.labelAbove [ Font.size 14 ] (text "Started")
+        }
+
+
+inputDateFinished sharedState =
+    Input.text [ width (px 300), height (px 30) ]
+        { text = sharedState.currentBook |> Maybe.map .finishDateString |> Maybe.withDefault ""
+        , placeholder = Just <| Input.placeholder [ moveUp 6 ] (Element.text "2/28/2018")
+        , onChange = \dateString -> InputFinishDate dateString
+        , label = Input.labelAbove [ Font.size 14 ] (text "Finished")
+        }
+
+
+inputSubtitle sharedState =
+    Input.text [ width (px 300), height (px 30) ]
+        { text = sharedState.currentBook |> Maybe.map .subtitle |> Maybe.withDefault ""
+        , placeholder = Nothing
+        , onChange = \new -> InputSubtitle new
+        , label = Input.labelAbove [ Font.size 14 ] (text "Subtitle")
+        }
+
+
+inputCategory sharedState =
+    Input.text [ width (px 300), height (px 30) ]
+        { text = sharedState.currentBook |> Maybe.map .category |> Maybe.withDefault ""
+        , placeholder = Nothing
+        , onChange = \new -> InputCategory new
+        , label = Input.labelAbove [ Font.size 14 ] (text "Category")
+        }
+
+
+inputAuthor sharedState =
+    Input.text [ width (px 300), height (px 30) ]
+        { text = sharedState.currentBook |> Maybe.map .author |> Maybe.withDefault ""
+        , placeholder = Nothing
+        , onChange = \new -> InputAuthor new
+        , label = Input.labelAbove [ Font.size 14 ] (text "Author")
+        }
+
+
+inputPages sharedState =
+    Input.text [ width (px 300), height (px 30) ]
+        { text = sharedState.currentBook |> Maybe.map .pages |> Maybe.map String.fromInt |> Maybe.withDefault ""
+        , placeholder = Nothing
+        , onChange = InputPages
+        , label = Input.labelAbove [ Font.size 14 ] (text "Pages")
+        }
