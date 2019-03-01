@@ -1,33 +1,99 @@
 module Pages.CurrentBook exposing (Model, Msg(..), init, update, view)
 
+import Book.Coders
 import Book.Types exposing (Book)
 import Common.Book
 import Common.Days as Days
 import Common.Indicator as Indicator
 import Common.Style as Style
 import Common.Utility as Utility
+import Configuration
 import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
 import Element.Font as Font
 import Element.Input as Input
+import Http
 import SharedState exposing (SharedState, SharedStateUpdate(..))
 import User.Types exposing (User)
 
 
 type alias Model =
-    { pagesRead : String }
+    { title : String
+    , author : String
+    , subtitle : String
+    , notes : String
+    , category : String
+    , pages : Int
+    , pagesRead : Int
+    , startDateString : String
+    , finishDateString : String
+    , textDisplayMode : TextDisplayMode
+    , textRenderMode : TextRenderMode
+    , counter : Int
+    , appState : AppState
+    }
+
+
+type AppState
+    = ReadingBook
+    | EditingBook
+    | CreatingNewBook
+
+
+init : Model
+init =
+    { title = ""
+    , author = ""
+    , subtitle = ""
+    , notes = ""
+    , category = ""
+    , pages = 0
+    , pagesRead = 0
+    , startDateString = ""
+    , finishDateString = ""
+    , textDisplayMode = DisplayNotes
+    , textRenderMode = MarkDownView
+    , counter = 0
+    , appState = ReadingBook
+    }
 
 
 type Msg
     = NoOp
     | ToggleBookPublic Bool
     | InputPagesRead String
+    | UpdateBook
+    | BookIsUpdated (Result Http.Error String)
+    | BookIsCreated (Result Http.Error String)
+    | UpdateCurrentBook
+    | InputNotes String
+    | InputTitle String
+    | InputSubtitle String
+    | InputCategory String
+    | InputAuthor String
+    | InputPages String
+    | InputBlurb String
+    | InputStartDate String
+    | InputFinishDate String
+    | UpdateBlurb
+    | NewBook
+    | CancelNewBook
+    | CreateNewBook
+    | EditBook
+    | SaveBookEditChanges
+    | ToggleBlurbAndNotes
+    | ToggleMarkdown
 
 
-init : Model
-init =
-    { pagesRead = "" }
+type TextDisplayMode
+    = DisplayNotes
+    | DisplayBlurb
+
+
+type TextRenderMode
+    = PlainTextView
+    | MarkDownView
 
 
 
@@ -41,21 +107,6 @@ update sharedState msg model =
     case msg of
         NoOp ->
             ( model, Cmd.none, NoUpdate )
-
-        InputPagesRead str ->
-            let
-                nextBook =
-                    case ( sharedState.currentBook, String.toInt str ) of
-                        ( Nothing, _ ) ->
-                            Nothing
-
-                        ( Just book, Just n ) ->
-                            Just { book | pagesRead = n }
-
-                        ( _, _ ) ->
-                            Nothing
-            in
-            ( model, Cmd.none, UpdateCurrentBook nextBook )
 
         ToggleBookPublic val ->
             case sharedState.currentBook of
@@ -76,6 +127,362 @@ update sharedState msg model =
                     , Cmd.none
                     , SharedState.UpdateCurrentBook (Just nextBook)
                     )
+
+        UpdateBook ->
+            case ( sharedState.currentBook, sharedState.currentUser ) of
+                ( Nothing, Nothing ) ->
+                    ( model, Cmd.none, NoUpdate )
+
+                ( Just book, Just user ) ->
+                    ( model, updateBook book user.token, SharedState.UpdateCurrentBook <| Just book )
+
+                _ ->
+                    ( model, Cmd.none, NoUpdate )
+
+        BookIsUpdated (Ok str) ->
+            ( model, Cmd.none, NoUpdate )
+
+        BookIsUpdated (Err err) ->
+            ( model, Cmd.none, NoUpdate )
+
+        UpdateCurrentBook ->
+            let
+                nextCurrentBook =
+                    case sharedState.currentBook of
+                        Nothing ->
+                            Nothing
+
+                        Just book ->
+                            Just { book | pagesRead = model.pagesRead }
+
+                token =
+                    case sharedState.currentUser of
+                        Nothing ->
+                            ""
+
+                        Just user ->
+                            user.token
+
+                updateBookCmd =
+                    case nextCurrentBook of
+                        Nothing ->
+                            Cmd.none
+
+                        Just book ->
+                            updateBook book token
+            in
+            case nextCurrentBook of
+                Nothing ->
+                    ( model, Cmd.none, NoUpdate )
+
+                Just book ->
+                    ( { model
+                        | notes = book.notes
+                        , pagesRead = book.pagesRead
+                      }
+                    , updateBookCmd
+                    , SharedState.UpdateCurrentBook nextCurrentBook
+                    )
+
+        InputTitle str ->
+            ( { model | title = str }, Cmd.none, NoUpdate )
+
+        InputSubtitle str ->
+            ( { model | subtitle = str }, Cmd.none, NoUpdate )
+
+        InputCategory str ->
+            ( { model | category = str }, Cmd.none, NoUpdate )
+
+        InputAuthor str ->
+            ( { model | author = str }, Cmd.none, NoUpdate )
+
+        InputPages str ->
+            ( { model | pages = str |> String.toInt |> Maybe.withDefault 0 }, Cmd.none, NoUpdate )
+
+        InputPagesRead str ->
+            let
+                userid =
+                    case sharedState.currentUser of
+                        Nothing ->
+                            0
+
+                        Just user ->
+                            user.id
+
+                ( nextBook, deltaPages ) =
+                    case sharedState.currentBook of
+                        Nothing ->
+                            ( Nothing, 0 )
+
+                        Just book ->
+                            ( Just { book | pagesRead = str |> String.toInt |> Maybe.withDefault 0 }
+                            , (str |> String.toInt |> Maybe.withDefault 0) - book.pagesRead
+                            )
+
+                command =
+                    case nextBook of
+                        Nothing ->
+                            Cmd.none
+
+                        Just book ->
+                            updateBook book (userToken sharedState)
+            in
+            ( { model
+                | pagesRead = str |> String.toInt |> Maybe.withDefault 0
+              }
+            , command
+            , SharedState.UpdateCurrentBook nextBook
+            )
+
+        InputNotes str ->
+            let
+                updatedBook =
+                    case sharedState.currentBook of
+                        Nothing ->
+                            Nothing
+
+                        Just book ->
+                            Just { book | notes = str }
+
+                command =
+                    case updatedBook of
+                        Nothing ->
+                            Cmd.none
+
+                        Just book ->
+                            updateBook book (userToken sharedState)
+            in
+            ( model
+            , command
+            , SharedState.UpdateCurrentBook updatedBook
+            )
+
+        InputBlurb str ->
+            let
+                nextCurrentUser =
+                    case sharedState.currentUser of
+                        Nothing ->
+                            Nothing
+
+                        Just user ->
+                            Just { user | blurb = str }
+            in
+            ( model, Cmd.none, UpdateCurrentUser nextCurrentUser )
+
+        CreateNewBook ->
+            let
+                newBook =
+                    { id = 0
+                    , title = model.title
+                    , subtitle = model.subtitle
+                    , category = model.category
+                    , author = model.author
+                    , pages = model.pages
+                    , notes = "Just started ..."
+                    , pagesRead = 0
+                    , rating = 0
+                    , public = False
+                    , startDateString = ""
+                    , finishDateString = ""
+                    }
+
+                token =
+                    case sharedState.currentUser of
+                        Nothing ->
+                            ""
+
+                        Just user ->
+                            user.token
+
+                userid =
+                    case sharedState.currentUser of
+                        Nothing ->
+                            0
+
+                        Just user ->
+                            user.id
+            in
+            ( { model
+                | -- previousCurrentBook = model.currentBook
+                  notes = newBook.notes
+                , pagesRead = newBook.pagesRead
+                , textRenderMode = PlainTextView
+              }
+            , createBook userid newBook token
+            , SharedState.UpdateCurrentBook (Just newBook)
+            )
+
+        BookIsCreated (Ok str) ->
+            ( model, Cmd.none, NoUpdate )
+
+        BookIsCreated (Err err) ->
+            ( model, Cmd.none, NoUpdate )
+
+        InputStartDate str ->
+            ( { model | startDateString = str }, Cmd.none, NoUpdate )
+
+        InputFinishDate str ->
+            ( { model | finishDateString = str }, Cmd.none, NoUpdate )
+
+        ToggleBlurbAndNotes ->
+            case model.textDisplayMode of
+                DisplayNotes ->
+                    ( { model | counter = model.counter + 1, textDisplayMode = DisplayBlurb }, Cmd.none, NoUpdate )
+
+                DisplayBlurb ->
+                    ( { model | counter = model.counter + 1, textDisplayMode = DisplayNotes }, Cmd.none, NoUpdate )
+
+        ToggleMarkdown ->
+            case model.textRenderMode of
+                PlainTextView ->
+                    ( { model | textRenderMode = MarkDownView }, Cmd.none, NoUpdate )
+
+                MarkDownView ->
+                    ( { model | textRenderMode = PlainTextView }, Cmd.none, NoUpdate )
+
+        UpdateBlurb ->
+            ( model, Cmd.none, NoUpdate )
+
+        NewBook ->
+            ( { model
+                | appState = CreatingNewBook
+                , title = ""
+                , subtitle = ""
+                , author = ""
+                , pages = 1
+                , pagesRead = 0
+                , notes = "Just started"
+              }
+            , Cmd.none
+            , NoUpdate
+            )
+
+        CancelNewBook ->
+            ( { model
+                | appState = ReadingBook
+              }
+            , Cmd.none
+            , NoUpdate
+            )
+
+        EditBook ->
+            let
+                title =
+                    case sharedState.currentBook of
+                        Nothing ->
+                            ""
+
+                        Just book ->
+                            book.title
+
+                subtitle =
+                    case sharedState.currentBook of
+                        Nothing ->
+                            ""
+
+                        Just book ->
+                            book.subtitle
+
+                category =
+                    case sharedState.currentBook of
+                        Nothing ->
+                            ""
+
+                        Just book ->
+                            book.category
+
+                author =
+                    case sharedState.currentBook of
+                        Nothing ->
+                            ""
+
+                        Just book ->
+                            book.author
+
+                pages =
+                    case sharedState.currentBook of
+                        Nothing ->
+                            1
+
+                        Just book ->
+                            book.pages
+            in
+            ( { model
+                | appState = EditingBook
+                , title = title
+                , subtitle = subtitle
+                , category = category
+                , author = author
+                , pages = pages
+              }
+            , Cmd.none
+            , NoUpdate
+            )
+
+        SaveBookEditChanges ->
+            case ( sharedState.currentBook, sharedState.currentUser ) of
+                ( Just book, Just user ) ->
+                    let
+                        updatedBook =
+                            { book
+                                | title = model.title
+                                , subtitle = model.subtitle
+                                , category = model.category
+                                , author = model.author
+                                , pages = model.pages
+                                , startDateString = model.startDateString
+                                , finishDateString = model.finishDateString
+                            }
+                    in
+                    ( model
+                    , updateBook updatedBook user.token
+                    , SharedState.UpdateCurrentBook (Just updatedBook)
+                    )
+
+                ( _, _ ) ->
+                    ( model, Cmd.none, NoUpdate )
+
+
+createBook : Int -> Book -> String -> Cmd Msg
+createBook userid book token =
+    Http.request
+        { method = "Post"
+        , headers = [ Http.header "Authorization" ("Bearer " ++ token) ]
+        , url = Configuration.backend ++ "/api/books"
+        , body = Http.jsonBody (Book.Coders.newBookRecordEncoder userid book)
+        , expect = Http.expectJson BookIsCreated Book.Coders.statusDecoder
+        , timeout = Nothing
+        , tracker = Nothing
+        }
+
+
+updateBook : Book -> String -> Cmd Msg
+updateBook book token =
+    Http.request
+        { method = "Put"
+        , headers = [ Http.header "Authorization" ("Bearer " ++ token) ]
+        , url = Configuration.backend ++ "/api/books/" ++ String.fromInt book.id
+        , body = Http.jsonBody (Book.Coders.bookRecordEncoder book)
+        , expect = Http.expectJson BookIsUpdated Book.Coders.statusDecoder
+        , timeout = Nothing
+        , tracker = Nothing
+        }
+
+
+
+--
+-- HELPERS
+--
+
+
+userToken : SharedState -> String
+userToken sharedState =
+    case sharedState.currentUser of
+        Nothing ->
+            ""
+
+        Just user ->
+            user.token
 
 
 
@@ -247,7 +654,7 @@ readingRate shareState book =
 updateBookButton : Element Msg
 updateBookButton =
     Input.button Style.button
-        { onPress = Just NoOp -- NewBook
+        { onPress = Just UpdateBook
         , label = Element.text "Update"
         }
 

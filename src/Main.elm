@@ -4,12 +4,12 @@ import Browser exposing (UrlRequest(..))
 import Browser.Navigation
 import Html exposing (..)
 import Json.Encode
+import OutsideInfo exposing (InfoForElm(..), InfoForOutside(..))
+import Pages.Books
 import Routing.Router as Router
 import SharedState exposing (SharedState, SharedStateUpdate(..), initialSharedState)
 import Time exposing (Posix)
 import Url exposing (Url)
-import OutsideInfo exposing (InfoForElm(..), InfoForOutside(..))
-import Pages.Books
 
 
 main : Program Flags Model Msg
@@ -27,7 +27,7 @@ main =
 subscriptions model =
     Sub.batch
         [ OutsideInfo.getInfoFromOutside Outside LogErr
-        , Time.every 1000 TimeChange
+        , Time.every 10000 TimeChange
         ]
 
 
@@ -145,9 +145,9 @@ updateRouter model routerMsg =
                 ( nextRouterModel, routerCmd, sharedStateUpdate ) =
                     Router.update sharedState routerMsg routerModel
             in
-                ( { model | appState = Ready nextSharedState nextRouterModel }
-                , Cmd.map RouterMsg routerCmd
-                )
+            ( { model | appState = Ready nextSharedState nextRouterModel }
+            , Cmd.map RouterMsg routerCmd
+            )
 
         _ ->
             ( model, Cmd.none )
@@ -192,4 +192,4 @@ reconnectUser model url posix navKey (LocalStorageInfo user) =
                 |> Cmd.map Router.BookMsg
                 |> Cmd.map RouterMsg
     in
-        ( { model | appState = appState }, cmd )
+    ( { model | appState = appState }, cmd )

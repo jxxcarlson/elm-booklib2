@@ -8,6 +8,7 @@ module Pages.Books exposing
     , view
     )
 
+import Book.Coders
 import Book.Types exposing (Book)
 import Common.Book
 import Common.Days as Days
@@ -20,11 +21,9 @@ import Element.Background as Background
 import Element.Font as Font
 import Element.Input as Input
 import Http
-import Json.Decode as Decode exposing (Decoder)
-import Json.Decode.Pipeline exposing (required)
-import Json.Encode as Encode
 import SharedState exposing (SharedState, SharedStateUpdate(..))
 import Time exposing (Posix)
+import User.Session
 import User.Types exposing (User)
 
 
@@ -52,9 +51,6 @@ type alias Model =
     , finishDateString : String
     , errorMessage : String
     , appState : AppState
-    , notesViewMode : NotesViewMode
-    , textDisplayMode : TextDisplayMode
-    , textRenderMode : TextRenderMode
     , counter : Int
     , currentTime : Maybe Posix
     , beginningDate : String
@@ -80,9 +76,6 @@ init =
     , startDateString = ""
     , finishDateString = ""
     , appState = ReadingMyBooks
-    , notesViewMode = NotesViewShort
-    , textDisplayMode = DisplayNotes
-    , textRenderMode = MarkDownView
     , counter = 0
     , currentTime = Nothing
     , beginningDate = ""
@@ -94,21 +87,6 @@ type AppState
     | ReadingMyBooks
     | EditingBook
     | SharingBooks String
-
-
-type TextDisplayMode
-    = DisplayNotes
-    | DisplayBlurb
-
-
-type NotesViewMode
-    = NotesViewShort
-    | NotesViewLong
-
-
-type TextRenderMode
-    = PlainTextView
-    | MarkDownView
 
 
 bookIsCompleted : Book -> Int
@@ -135,32 +113,10 @@ type Msg
     = ReceiveBookList (Result Http.Error (List Book))
     | ComputePagesRead (Result Http.Error (List Book))
     | RequestBookList Int String
-    | InputPagesRead String
-    | InputNotes String
-    | InputTitle String
-    | InputSubtitle String
-    | InputCategory String
-    | InputAuthor String
-    | InputPages String
-    | InputBlurb String
-    | InputStartDate String
-    | InputFinishDate String
     | SetCurrentBook Book
-    | UpdateCurrentBook
-    | UpdateBlurb
-    | BookIsUpdated (Result Http.Error String)
-    | NewBook
-    | CancelNewBook
-    | CreateNewBook
-    | EditBook
-    | SaveBookEditChanges
-    | BookIsCreated (Result Http.Error String)
     | GetSharedBooks String
     | ReceiveSharedBlurb (Result Http.Error String)
     | GetCurrentUserBookList
-    | ToggleNotesViewMode
-    | ToggleBlurbAndNotes
-    | ToggleMarkdown
     | NoOp
 
 
@@ -178,119 +134,6 @@ update : SharedState -> Msg -> Model -> ( Model, Cmd Msg, SharedStateUpdate )
 update sharedState msg model =
     case msg of
         NoOp ->
-            ( model, Cmd.none, NoUpdate )
-
-        NewBook ->
-            ( { model
-                | appState = CreatingNewBook
-                , title = ""
-                , subtitle = ""
-                , author = ""
-                , pages = 1
-                , pagesRead = 0
-                , notes = "Just started"
-              }
-            , Cmd.none
-            , NoUpdate
-            )
-
-        CancelNewBook ->
-            ( { model
-                | appState = ReadingMyBooks
-                , -- currentBook = model.previousCurrentBook,
-                  previousCurrentBook = Nothing
-              }
-            , Cmd.none
-            , NoUpdate
-            )
-
-        EditBook ->
-            let
-                title =
-                    case sharedState.currentBook of
-                        Nothing ->
-                            ""
-
-                        Just book ->
-                            book.title
-
-                subtitle =
-                    case sharedState.currentBook of
-                        Nothing ->
-                            ""
-
-                        Just book ->
-                            book.subtitle
-
-                category =
-                    case sharedState.currentBook of
-                        Nothing ->
-                            ""
-
-                        Just book ->
-                            book.category
-
-                author =
-                    case sharedState.currentBook of
-                        Nothing ->
-                            ""
-
-                        Just book ->
-                            book.author
-
-                pages =
-                    case sharedState.currentBook of
-                        Nothing ->
-                            1
-
-                        Just book ->
-                            book.pages
-            in
-            ( { model
-                | appState = EditingBook
-                , title = title
-                , subtitle = subtitle
-                , category = category
-                , author = author
-                , pages = pages
-              }
-            , Cmd.none
-            , NoUpdate
-            )
-
-        SaveBookEditChanges ->
-            case ( sharedState.currentBook, sharedState.currentUser ) of
-                ( Just book, Just user ) ->
-                    let
-                        updatedBook =
-                            { book
-                                | title = model.title
-                                , subtitle = model.subtitle
-                                , category = model.category
-                                , author = model.author
-                                , pages = model.pages
-                                , startDateString = model.startDateString
-                                , finishDateString = model.finishDateString
-                            }
-
-                        bookList =
-                            Utility.replaceIf (\runningBook -> runningBook.id == updatedBook.id) updatedBook model.bookList
-                    in
-                    ( { model | appState = ReadingMyBooks, bookList = bookList }
-                    , updateBook updatedBook user.token
-                    , SharedState.UpdateCurrentBook (Just updatedBook)
-                    )
-
-                ( _, _ ) ->
-                    ( model, Cmd.none, NoUpdate )
-
-        BookIsUpdated (Ok str) ->
-            ( model, Cmd.none, NoUpdate )
-
-        BookIsCreated (Ok str) ->
-            ( model, Cmd.none, NoUpdate )
-
-        BookIsCreated (Err err) ->
             ( model, Cmd.none, NoUpdate )
 
         ReceiveBookList (Ok bookList) ->
@@ -368,158 +211,10 @@ update sharedState msg model =
                     ( model, Cmd.none, NoUpdate )
 
                 Just user ->
-                    ( { model | appState = ReadingMyBooks, textRenderMode = MarkDownView }
+                    ( { model | appState = ReadingMyBooks }
                     , getBookList user.id user.token
                     , NoUpdate
                     )
-
-        InputTitle str ->
-            ( { model | title = str }, Cmd.none, NoUpdate )
-
-        InputSubtitle str ->
-            ( { model | subtitle = str }, Cmd.none, NoUpdate )
-
-        InputCategory str ->
-            ( { model | category = str }, Cmd.none, NoUpdate )
-
-        InputAuthor str ->
-            ( { model | author = str }, Cmd.none, NoUpdate )
-
-        InputPages str ->
-            ( { model | pages = str |> String.toInt |> Maybe.withDefault 0 }, Cmd.none, NoUpdate )
-
-        InputPagesRead str ->
-            let
-                userid =
-                    case sharedState.currentUser of
-                        Nothing ->
-                            0
-
-                        Just user ->
-                            user.id
-
-                ( nextBook, deltaPages ) =
-                    case sharedState.currentBook of
-                        Nothing ->
-                            ( Nothing, 0 )
-
-                        Just book ->
-                            ( Just { book | pagesRead = str |> String.toInt |> Maybe.withDefault 0 }
-                            , (str |> String.toInt |> Maybe.withDefault 0) - book.pagesRead
-                            )
-
-                command =
-                    case nextBook of
-                        Nothing ->
-                            Cmd.none
-
-                        Just book ->
-                            updateBook book (userToken sharedState)
-
-                updatedBookList =
-                    case nextBook of
-                        Nothing ->
-                            model.bookList
-
-                        Just book ->
-                            Utility.replaceIf (\runningBook -> runningBook.id == book.id) book model.bookList
-            in
-            ( { model
-                | pagesRead = str |> String.toInt |> Maybe.withDefault 0
-                , bookList = updatedBookList
-                , totalPagesRead = model.totalPagesRead + deltaPages
-              }
-            , command
-            , SharedState.UpdateCurrentBook nextBook
-            )
-
-        InputNotes str ->
-            let
-                updatedBook =
-                    case sharedState.currentBook of
-                        Nothing ->
-                            Nothing
-
-                        Just book ->
-                            Just { book | notes = str }
-
-                command =
-                    case updatedBook of
-                        Nothing ->
-                            Cmd.none
-
-                        Just book ->
-                            updateBook book (userToken sharedState)
-
-                updatedBookList =
-                    case updatedBook of
-                        Nothing ->
-                            model.bookList
-
-                        Just book ->
-                            Utility.replaceIf (\runningBook -> runningBook.id == book.id) book model.bookList
-            in
-            ( { model | bookList = updatedBookList }
-            , command
-            , SharedState.UpdateCurrentBook updatedBook
-            )
-
-        InputBlurb str ->
-            let
-                nextCurrentUser =
-                    case sharedState.currentUser of
-                        Nothing ->
-                            Nothing
-
-                        Just user ->
-                            Just { user | blurb = str }
-            in
-            ( model, Cmd.none, UpdateCurrentUser nextCurrentUser )
-
-        CreateNewBook ->
-            let
-                newBook =
-                    { id = 0
-                    , title = model.title
-                    , subtitle = model.subtitle
-                    , category = model.category
-                    , author = model.author
-                    , pages = model.pages
-                    , notes = "Just started ..."
-                    , pagesRead = 0
-                    , rating = 0
-                    , public = False
-                    , startDateString = ""
-                    , finishDateString = ""
-                    }
-
-                token =
-                    case sharedState.currentUser of
-                        Nothing ->
-                            ""
-
-                        Just user ->
-                            user.token
-
-                userid =
-                    case sharedState.currentUser of
-                        Nothing ->
-                            0
-
-                        Just user ->
-                            user.id
-            in
-            ( { model
-                | -- previousCurrentBook = model.currentBook
-                  notes = newBook.notes
-                , pagesRead = newBook.pagesRead
-                , bookList = newBook :: model.bookList
-                , appState = ReadingMyBooks
-                , textRenderMode = PlainTextView
-              }
-            , createBook userid newBook token
-            , SharedState.UpdateCurrentBook (Just newBook)
-            )
 
         SetCurrentBook book ->
             ( { model
@@ -531,64 +226,13 @@ update sharedState msg model =
             , SharedState.UpdateCurrentBook (Just book)
             )
 
-        UpdateCurrentBook ->
-            let
-                nextCurrentBook =
-                    case sharedState.currentBook of
-                        Nothing ->
-                            Nothing
-
-                        Just book ->
-                            Just { book | pagesRead = model.pagesRead }
-
-                bookList =
-                    case nextCurrentBook of
-                        Nothing ->
-                            model.bookList
-
-                        Just book ->
-                            Utility.replaceIf (\runningBook -> runningBook.id == book.id) book model.bookList
-
-                token =
-                    case sharedState.currentUser of
-                        Nothing ->
-                            ""
-
-                        Just user ->
-                            user.token
-
-                updateBookCmd =
-                    case nextCurrentBook of
-                        Nothing ->
-                            Cmd.none
-
-                        Just book ->
-                            updateBook book token
-            in
-            case nextCurrentBook of
-                Nothing ->
-                    ( model, Cmd.none, NoUpdate )
-
-                Just book ->
-                    ( { model
-                        | bookList = bookList
-                        , notes = book.notes
-                        , pagesRead = book.pagesRead
-                      }
-                    , updateBookCmd
-                    , SharedState.UpdateCurrentBook nextCurrentBook
-                    )
-
-        UpdateBlurb ->
-            ( model, Cmd.none, NoUpdate )
-
         GetSharedBooks username ->
             case sharedState.currentUser of
                 Nothing ->
                     ( model, Cmd.none, NoUpdate )
 
                 Just user ->
-                    ( { model | appState = SharingBooks username, textRenderMode = MarkDownView }
+                    ( { model | appState = SharingBooks username }
                     , Cmd.batch
                         [ getSharedBooks username user.token
                         , getSharedBlurb username user.token
@@ -601,40 +245,6 @@ update sharedState msg model =
 
         ReceiveSharedBlurb (Err err) ->
             ( model, Cmd.none, NoUpdate )
-
-        ToggleNotesViewMode ->
-            let
-                nextMode =
-                    case model.notesViewMode of
-                        NotesViewShort ->
-                            NotesViewLong
-
-                        NotesViewLong ->
-                            NotesViewShort
-            in
-            ( { model | notesViewMode = nextMode }, Cmd.none, NoUpdate )
-
-        ToggleBlurbAndNotes ->
-            case model.textDisplayMode of
-                DisplayNotes ->
-                    ( { model | counter = model.counter + 1, textDisplayMode = DisplayBlurb }, Cmd.none, NoUpdate )
-
-                DisplayBlurb ->
-                    ( { model | counter = model.counter + 1, textDisplayMode = DisplayNotes }, Cmd.none, NoUpdate )
-
-        ToggleMarkdown ->
-            case model.textRenderMode of
-                PlainTextView ->
-                    ( { model | textRenderMode = MarkDownView }, Cmd.none, NoUpdate )
-
-                MarkDownView ->
-                    ( { model | textRenderMode = PlainTextView }, Cmd.none, NoUpdate )
-
-        InputStartDate str ->
-            ( { model | startDateString = str }, Cmd.none, NoUpdate )
-
-        InputFinishDate str ->
-            ( { model | finishDateString = str }, Cmd.none, NoUpdate )
 
 
 
@@ -833,8 +443,8 @@ getBookList userid token =
         { method = "Get"
         , headers = []
         , url = Configuration.backend ++ "/api/books?userid=" ++ String.fromInt userid
-        , body = Http.jsonBody (tokenEncoder token)
-        , expect = Http.expectJson ReceiveBookList bookListDecoder
+        , body = Http.jsonBody (User.Session.tokenEncoder token)
+        , expect = Http.expectJson ReceiveBookList Book.Coders.bookListDecoder
         , timeout = Nothing
         , tracker = Nothing
         }
@@ -846,8 +456,8 @@ computePagesRead userid token =
         { method = "Get"
         , headers = []
         , url = Configuration.backend ++ "/api/books?userid=" ++ String.fromInt userid
-        , body = Http.jsonBody (tokenEncoder token)
-        , expect = Http.expectJson ComputePagesRead bookListDecoder
+        , body = Http.jsonBody (User.Session.tokenEncoder token)
+        , expect = Http.expectJson ComputePagesRead Book.Coders.bookListDecoder
         , timeout = Nothing
         , tracker = Nothing
         }
@@ -859,8 +469,8 @@ getSharedBooks username token =
         { method = "Get"
         , headers = []
         , url = Configuration.backend ++ "/api/books?shared=" ++ username
-        , body = Http.jsonBody (tokenEncoder token)
-        , expect = Http.expectJson ReceiveBookList bookListDecoder
+        , body = Http.jsonBody (User.Session.tokenEncoder token)
+        , expect = Http.expectJson ReceiveBookList Book.Coders.bookListDecoder
         , timeout = Nothing
         , tracker = Nothing
         }
@@ -872,34 +482,8 @@ getSharedBlurb username token =
         { method = "Get"
         , headers = []
         , url = Configuration.backend ++ "/api/blurb/" ++ username
-        , body = Http.jsonBody (tokenEncoder token)
-        , expect = Http.expectJson ReceiveSharedBlurb blurbDecoder
-        , timeout = Nothing
-        , tracker = Nothing
-        }
-
-
-updateBook : Book -> String -> Cmd Msg
-updateBook book token =
-    Http.request
-        { method = "Put"
-        , headers = [ Http.header "Authorization" ("Bearer " ++ token) ]
-        , url = Configuration.backend ++ "/api/books/" ++ String.fromInt book.id
-        , body = Http.jsonBody (bookRecordEncoder book)
-        , expect = Http.expectJson BookIsUpdated statusDecoder
-        , timeout = Nothing
-        , tracker = Nothing
-        }
-
-
-createBook : Int -> Book -> String -> Cmd Msg
-createBook userid book token =
-    Http.request
-        { method = "Post"
-        , headers = [ Http.header "Authorization" ("Bearer " ++ token) ]
-        , url = Configuration.backend ++ "/api/books"
-        , body = Http.jsonBody (newBookRecordEncoder userid book)
-        , expect = Http.expectJson BookIsCreated statusDecoder
+        , body = Http.jsonBody (User.Session.tokenEncoder token)
+        , expect = Http.expectJson ReceiveSharedBlurb Book.Coders.blurbDecoder
         , timeout = Nothing
         , tracker = Nothing
         }
@@ -921,101 +505,6 @@ doRequestBookList user_ =
 
 
 --
--- ENCODERS AND DECODERS
---
-
-
-tokenEncoder : String -> Encode.Value
-tokenEncoder token =
-    Encode.object
-        [ ( "token", Encode.string token )
-        ]
-
-
-bookRecordEncoder : Book -> Encode.Value
-bookRecordEncoder book =
-    Encode.object
-        [ ( "book", bookEncoder book )
-        ]
-
-
-bookEncoder : Book -> Encode.Value
-bookEncoder book =
-    Encode.object
-        [ ( "id", Encode.int book.id )
-        , ( "title", Encode.string book.title )
-        , ( "subtitle", Encode.string book.subtitle )
-        , ( "author", Encode.string book.author )
-        , ( "notes", Encode.string book.notes )
-        , ( "pages", Encode.int book.pages )
-        , ( "pages_read", Encode.int book.pagesRead )
-        , ( "rating", Encode.int book.rating )
-        , ( "public", Encode.bool book.public )
-        , ( "category", Encode.string book.category )
-        , ( "start_date_string", Encode.string book.startDateString )
-        , ( "finish_date_string", Encode.string book.finishDateString )
-        ]
-
-
-newBookRecordEncoder : Int -> Book -> Encode.Value
-newBookRecordEncoder userid book =
-    Encode.object
-        [ ( "book", newBookEncoder userid book )
-        ]
-
-
-newBookEncoder : Int -> Book -> Encode.Value
-newBookEncoder userid book =
-    Encode.object
-        [ ( "id", Encode.int book.id )
-        , ( "user_id", Encode.int userid )
-        , ( "title", Encode.string book.title )
-        , ( "subtitle", Encode.string book.subtitle )
-        , ( "author", Encode.string book.author )
-        , ( "notes", Encode.string book.notes )
-        , ( "pages", Encode.int book.pages )
-        , ( "pages_read", Encode.int book.pagesRead )
-        , ( "rating", Encode.int book.rating )
-        , ( "public", Encode.bool book.public )
-        , ( "category", Encode.string book.category )
-        , ( "start_date_string", Encode.string book.startDateString )
-        ]
-
-
-bookDecoder : Decode.Decoder Book
-bookDecoder =
-    Decode.succeed Book
-        |> required "id" Decode.int
-        |> required "title" Decode.string
-        |> required "subtitle" Decode.string
-        |> required "author" Decode.string
-        |> required "notes" Decode.string
-        |> required "pages" Decode.int
-        |> required "pagesRead" Decode.int
-        |> required "rating" Decode.int
-        |> required "public" Decode.bool
-        |> required "category" Decode.string
-        |> required "startDateString" Decode.string
-        |> required "finishDateString" Decode.string
-
-
-blurbDecoder : Decode.Decoder String
-blurbDecoder =
-    Decode.field "blurb" Decode.string
-
-
-statusDecoder : Decode.Decoder String
-statusDecoder =
-    Decode.field "status" Decode.string
-
-
-bookListDecoder : Decode.Decoder (List Book)
-bookListDecoder =
-    Decode.field "data" (Decode.list bookDecoder)
-
-
-
---
 -- REQUEST
 --
 --
@@ -1026,16 +515,6 @@ bookListDecoder =
 computeTotalPagesRead : List Book -> Int
 computeTotalPagesRead bookList =
     bookList |> List.map .pagesRead |> List.sum
-
-
-userToken : SharedState -> String
-userToken sharedState =
-    case sharedState.currentUser of
-        Nothing ->
-            ""
-
-        Just user ->
-            user.token
 
 
 userStatus : Maybe User -> String

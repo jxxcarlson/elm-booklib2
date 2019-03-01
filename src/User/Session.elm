@@ -1,4 +1,4 @@
-module User.Session exposing (authenticate, registerUser, userEncoder)
+module User.Session exposing (authenticate, registerUser, tokenEncoder, userEncoder)
 
 import Common.Days as Days
 import Configuration
@@ -31,6 +31,13 @@ registerUser username email password =
 --
 -- ENCODERS AND DECODERS
 --
+
+
+tokenEncoder : String -> Encode.Value
+tokenEncoder token =
+    Encode.object
+        [ ( "token", Encode.string token )
+        ]
 
 
 authorizationEncoder : String -> String -> Encode.Value
