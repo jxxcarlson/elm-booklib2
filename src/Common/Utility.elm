@@ -1,13 +1,13 @@
-module Common.Utility
-    exposing
-        ( replaceIf
-        , toUtcString
-        , toUtcDateString
-        , softBreakAlt
-        )
+module Common.Utility exposing
+    ( replaceIf
+    , softBreakAlt
+    , toUtcDateString
+    , toUtcString
+    , toggleList
+    )
 
 import Regex
-import Time exposing (Posix, Month(..))
+import Time exposing (Month(..), Posix)
 
 
 toUtcString : Maybe Posix -> String
@@ -96,6 +96,7 @@ updateIf predicate update list =
         (\item ->
             if predicate item then
                 update item
+
             else
                 item
         )
@@ -113,6 +114,7 @@ remove x xs =
         y :: ys ->
             if x == y then
                 ys
+
             else
                 y :: remove x ys
 
@@ -124,6 +126,7 @@ toggleList : a -> List a -> List a
 toggleList x xs =
     if List.member x xs then
         remove x xs
+
     else
         x :: xs
 
@@ -132,10 +135,11 @@ softBreak : Int -> String -> List String
 softBreak width string =
     if width <= 0 then
         []
+
     else
         string
             |> Regex.find (softBreakRegexp width)
-            |> List.map (.match)
+            |> List.map .match
 
 
 
@@ -150,6 +154,7 @@ softBreakAltAux : Int -> String -> List String
 softBreakAltAux width string =
     if String.length string < width then
         [ string ]
+
     else
         softBreak width string
 
@@ -173,13 +178,14 @@ flattenList stringList =
         n =
             List.length stringList
     in
-        if n < 2 then
-            List.head stringList |> Maybe.withDefault ""
-        else
-            stringList |> String.join ("\n")
+    if n < 2 then
+        List.head stringList |> Maybe.withDefault ""
+
+    else
+        stringList |> String.join "\n"
 
 
 softBreakRegexp : Int -> Regex.Regex
 softBreakRegexp width =
     Maybe.withDefault Regex.never <|
-        Regex.fromString (".{1," ++ (String.fromInt width) ++ "}(\\s+|$)|\\S+?(\\s+|$)")
+        Regex.fromString (".{1," ++ String.fromInt width ++ "}(\\s+|$)|\\S+?(\\s+|$)")

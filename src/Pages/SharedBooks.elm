@@ -3,6 +3,7 @@ module Pages.SharedBooks exposing
     , Msg(..)
     , getBookList
     , getBookListViaSharedState
+    , getPublicUsers
     , init
     , update
     , view
@@ -12,7 +13,6 @@ import Book.Coders
 import Book.Types exposing (Book)
 import Common.Book
 import Common.Days as Days
-import Common.Indicator as Indicator
 import Common.Style as Style
 import Common.Utility as Utility
 import Configuration
@@ -23,8 +23,9 @@ import Element.Font as Font
 import Element.Input as Input
 import Http
 import SharedState exposing (SharedState, SharedStateUpdate(..))
+import User.Coders
 import User.Session
-import User.Types exposing (User)
+import User.Types exposing (PublicUser, User)
 
 
 
@@ -35,6 +36,7 @@ import User.Types exposing (User)
 
 type alias Model =
     { bookList : List Book
+    , publicUserList : List PublicUser
     , totalPagesRead : Int
     , pagesRead : Int
     , notes : String
@@ -47,6 +49,7 @@ type alias Model =
 init : Model
 init =
     { bookList = []
+    , publicUserList = []
     , totalPagesRead = 0
     , pagesRead = 0
     , notes = ""
@@ -79,12 +82,16 @@ booksCompleted bookList =
 type Msg
     = ReceiveBookList (Result Http.Error (List Book))
     | ComputePagesRead (Result Http.Error (List Book))
+    | ReceivePublicUsers (Result Http.Error (List PublicUser))
+    | ReceiveUpdateUser (Result Http.Error String)
     | RequestBookList Int String
     | SetCurrentBook Book
     | GetSharedBooks String
       -- | ReceiveSharedBlurb (Result Http.Error String)
     | GetCurrentUserBookList
     | NoOp
+      --
+    | FollowUser String
 
 
 
@@ -206,6 +213,44 @@ update sharedState msg model =
                         ]
                     , NoUpdate
                     )
+
+        ReceivePublicUsers (Ok publicUserList) ->
+            ( { model | publicUserList = publicUserList }, Cmd.none, NoUpdate )
+
+        ReceivePublicUsers (Err _) ->
+            ( { model | errorMessage = "ERROR, Cant't get public users" }, Cmd.none, NoUpdate )
+
+        FollowUser newFollowedUserName ->
+            let
+                ( currentUser, cmd ) =
+                    case sharedState.currentUser of
+                        Nothing ->
+                            ( Nothing, Cmd.none )
+
+                        Just user ->
+                            let
+                                queryString =
+                                    if List.member newFollowedUserName user.follow then
+                                        "unfollow_user=" ++ newFollowedUserName
+
+                                    else
+                                        "follow_user=" ++ newFollowedUserName
+
+                                updatedUser =
+                                    { user | follow = Utility.toggleList newFollowedUserName user.follow }
+                            in
+                            ( Just updatedUser, updateUserWithQS user queryString updatedUser.token )
+            in
+            ( model, cmd, SharedState.UpdateCurrentUser currentUser )
+
+        ReceiveUpdateUser (Ok status_) ->
+            ( { model | errorMessage = status_ }
+            , Cmd.none
+            , NoUpdate
+            )
+
+        ReceiveUpdateUser (Err _) ->
+            ( { model | errorMessage = "Status error" }, Cmd.none, NoUpdate )
 
 
 view : SharedState -> Model -> Element Msg
@@ -451,6 +496,25 @@ getBookList userid token =
         }
 
 
+updateUserWithQS : User -> String -> String -> Cmd Msg
+updateUserWithQS user queryString token =
+    Http.request
+        { method = "Put"
+        , headers = [ Http.header "Authorization" ("Bearer " ++ token) ]
+        , url = Configuration.backend ++ "/api/users/" ++ String.fromInt user.id ++ "?" ++ queryString
+        , body = Http.jsonBody (User.Coders.userRecordEncoder user)
+        , expect = Http.expectJson ReceiveUpdateUser User.Coders.statusDecoder
+        , timeout = Nothing
+        , tracker = Nothing
+        }
+
+
+
+--
+--
+--
+
+
 computePagesRead : Int -> String -> Cmd Msg
 computePagesRead userid token =
     Http.request
@@ -464,6 +528,8 @@ computePagesRead userid token =
         }
 
 
+{-| Get shared books by username
+-}
 getSharedBooks : String -> String -> Cmd Msg
 getSharedBooks username token =
     Http.request
@@ -477,19 +543,22 @@ getSharedBooks username token =
         }
 
 
+getPublicUsers : SharedState -> Cmd Msg
+getPublicUsers sharedState =
+    case sharedState.currentUser of
+        Nothing ->
+            Cmd.none
 
---getSharedBlurb : String -> String -> Cmd Msg
---getSharedBlurb username token =
---    Http.request
---        { method = "Get"
---        , headers = []
---        , url = Configuration.backend ++ "/api/blurb/" ++ username
---        , body = Http.jsonBody (User.Session.tokenEncoder token)
---        , expect = Http.expectJson ReceiveSharedBlurb Book.Coders.blurbDecoder
---        , timeout = Nothing
---        , tracker = Nothing
---        }
---- NN
+        Just user ->
+            Http.request
+                { method = "Get"
+                , headers = []
+                , url = Configuration.backend ++ "/api/users?public=yes"
+                , body = Http.jsonBody (User.Session.tokenEncoder user.token)
+                , expect = Http.expectJson ReceivePublicUsers User.Coders.publicUserListDecoder
+                , timeout = Nothing
+                , tracker = Nothing
+                }
 
 
 doRequestBookList : Maybe User -> Msg
@@ -514,3 +583,120 @@ doRequestBookList user_ =
 computeTotalPagesRead : List Book -> Int
 computeTotalPagesRead bookList =
     bookList |> List.map .pagesRead |> List.sum
+
+
+
+--
+-- SHAREDSTUFF
+--
+
+
+userInfoView : SharedState -> Model -> Element Msg
+userInfoView sharedState model =
+    Element.column [ width (px 250), moveUp 6, height (px 693), Background.color Style.grey, padding 15, spacing 10 ]
+        [ Element.el [ Font.bold, Font.size 14 ] (Element.text (publicUserTitle model))
+        , Element.column [ spacing 5 ] (List.map (\publicUser -> displayPublicUser sharedState model publicUser) (publicUsersMinusFollowers sharedState model))
+        , displayFollowers sharedState model
+        ]
+
+
+publicUsersMinusFollowers sharedUserState model =
+    case sharedUserState.currentUser of
+        Nothing ->
+            []
+
+        Just user ->
+            model.publicUserList
+                |> List.filter (\running_user -> not (List.member running_user.username user.followers))
+
+
+displayFollowers : SharedState -> Model -> Element Msg
+displayFollowers sharedState model =
+    let
+        theFollowers =
+            followerList sharedState
+    in
+    if theFollowers == [] then
+        Element.none
+
+    else
+        column []
+            [ el [ Font.bold, Font.size 14 ] (text "Followers")
+
+            --            , column [ spacing 5 ]
+            --              (List.map (\username ->(displayPublicUser sharedState model username) (followerList2 sharedState))
+            ]
+
+
+followerList2 sharedState =
+    sharedState
+        |> followerList
+        |> List.map (\name -> { user = name })
+
+
+followerList sharedState =
+    case sharedState.currentUser of
+        Nothing ->
+            []
+
+        Just user ->
+            user.followers |> fixBozoList
+
+
+fixBozoList list =
+    if list == [ "" ] then
+        []
+
+    else
+        list
+
+
+publicUserTitle model =
+    let
+        n =
+            List.length model.publicUserList |> String.fromInt
+    in
+    "Shared book lists: " ++ n
+
+
+displayPublicUser : SharedState -> Model -> User.Types.PublicUser -> Element Msg
+displayPublicUser sharedState model publicUser =
+    row [ spacing 8 ]
+        [ el [ Font.size 13 ] (getShareBooksButton publicUser.username)
+        , el [ Font.size 13 ] (followUserButton sharedState model publicUser.username)
+        ]
+
+
+displayPublicUserSimple : User.Types.PublicUser -> Element Msg
+displayPublicUserSimple publicUser =
+    Element.row [ spacing 8 ]
+        [ Element.el [ Font.size 13 ] (getShareBooksButton publicUser.username)
+        ]
+
+
+followUserButton : SharedState -> Model -> String -> Element Msg
+followUserButton sharedState model publicUsername =
+    let
+        indicator =
+            case sharedState.currentUser of
+                Nothing ->
+                    ( "Follow", False )
+
+                Just user ->
+                    if List.member publicUsername user.follow then
+                        ( "Following", True )
+
+                    else
+                        ( "Follow", False )
+    in
+    Input.button (Style.listElementButtonStyleWithWidth2 65 (Tuple.second indicator))
+        { onPress = Just (FollowUser publicUsername)
+        , label = Element.text (Tuple.first indicator)
+        }
+
+
+getShareBooksButton publicUser =
+    Input.button Style.button
+        { onPress = Just (GetSharedBooks publicUser)
+        , label = Element.text publicUser
+        }

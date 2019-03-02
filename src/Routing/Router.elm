@@ -96,6 +96,9 @@ update sharedState msg model =
                         BooksRoute ->
                             Books.getBookListViaSharedState sharedState |> Cmd.map BookMsg
 
+                        SharedBooksRoute ->
+                            SharedBooks.getPublicUsers sharedState |> Cmd.map SharedBookMsg
+
                         _ ->
                             Cmd.none
 
@@ -167,7 +170,7 @@ updateSharedBook : SharedState -> Model -> SharedBooks.Msg -> ( Model, Cmd Msg, 
 updateSharedBook sharedState model sharedBookMsg =
     let
         ( nextSharedBookModel, sharedBookCmd, sharedStateUpdate ) =
-            SharedBooks.update sharedState sharedBookMsg model.bookModel
+            SharedBooks.update sharedState sharedBookMsg model.sharedBookModel
     in
     ( { model | sharedBookModel = nextSharedBookModel }
     , Cmd.map SharedBookMsg sharedBookCmd

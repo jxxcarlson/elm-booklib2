@@ -11,6 +11,7 @@ module Common.Style exposing
     , footerItem
     , grey
     , lightGrey
+    , listElementButtonStyleWithWidth2
     , mainColumn
     , mainColumn2
     , myFocusStyle
@@ -154,6 +155,28 @@ activeButtonStyle =
 activeButtonRedStyle : List (Element.Attr () msg)
 activeButtonRedStyle =
     [ Background.color (Element.rgb 1 0 0), Font.color white, Element.paddingXY 10 6 ] ++ basicButtonsStyle
+
+
+
+--
+-- SHARED BOOKS
+--
+
+
+listElementButtonStyleWithWidth2 width_ selected_ =
+    if selected_ == False then
+        [ width (px width_)
+        , Background.color charcoal
+        , Font.color white
+        , Font.size 12
+        , Element.paddingXY 6 4
+        , alignRight
+        ]
+            ++ basicButtonsStyle
+
+    else
+        [ width (px width_), Background.color blue, Font.color white, Font.size 12, Element.paddingXY 6 4, alignRight ]
+            ++ basicButtonsStyle
 
 
 

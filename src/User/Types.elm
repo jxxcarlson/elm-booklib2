@@ -1,4 +1,4 @@
-module User.Types exposing (Msg(..), State(..), User)
+module User.Types exposing (Msg(..), PublicUser, State(..), User)
 
 import Http
 import Routing.Helpers exposing (Route)
@@ -40,3 +40,7 @@ type State
     | SigningIn
     | Registering
     | SignedIn
+
+
+type alias PublicUser =
+    { username : String }
