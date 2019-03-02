@@ -6,6 +6,7 @@ import Url.Parser exposing ((</>))
 
 type Route
     = BooksRoute
+    | SharedBooksRoute
     | CurrentBookRoute
     | CurrentUserRoute
     | NotFoundRoute
@@ -20,6 +21,9 @@ reverseRoute route =
         BooksRoute ->
             "#/books"
 
+        SharedBooksRoute ->
+            "#/sharedbooks"
+
         CurrentBookRoute ->
             "#/currentbook"
 
@@ -32,6 +36,7 @@ routeParser =
         [ Url.Parser.map CurrentUserRoute Url.Parser.top
         , Url.Parser.map BooksRoute (Url.Parser.s "books")
         , Url.Parser.map CurrentBookRoute (Url.Parser.s "currentbook")
+        , Url.Parser.map SharedBooksRoute (Url.Parser.s "sharedbooks")
         ]
 
 

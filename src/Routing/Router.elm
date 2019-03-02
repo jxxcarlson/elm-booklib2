@@ -10,6 +10,7 @@ import Html exposing (Html)
 import Pages.Books as Books
 import Pages.CurrentBook as CurrentBook exposing (AppState(..))
 import Pages.CurrentUser as CurrentUser
+import Pages.SharedBooks as SharedBooks
 import Routing.Helpers exposing (Route(..), parseUrl, reverseRoute)
 import SharedState exposing (SharedState, SharedStateUpdate(..))
 import Url exposing (Url)
@@ -18,6 +19,7 @@ import User.Types exposing (State(..))
 
 type alias Model =
     { bookModel : Books.Model
+    , sharedBookModel : SharedBooks.Model
     , currentBookModel : CurrentBook.Model
     , currentUserModel : CurrentUser.Model
     , route : Route
@@ -27,6 +29,7 @@ type alias Model =
 type Msg
     = UrlChange Url
     | BookMsg Books.Msg
+    | SharedBookMsg SharedBooks.Msg
     | CurrentBookMsg CurrentBook.Msg
     | CurrentUserMsg User.Types.Msg
     | NavigateTo Route
@@ -38,6 +41,9 @@ initialModel url =
         bookModel =
             Books.init
 
+        sharedBookModel =
+            SharedBooks.init
+
         currentBookModel =
             CurrentBook.init
 
@@ -46,6 +52,7 @@ initialModel url =
     in
     { bookModel = bookModel
     , currentBookModel = currentBookModel
+    , sharedBookModel = sharedBookModel
     , currentUserModel = currentUserModel
     , route = parseUrl url
     }
@@ -60,10 +67,14 @@ init url =
         currentBookModel =
             CurrentBook.init
 
+        sharedBookModel =
+            SharedBooks.init
+
         currentUserModel =
             CurrentUser.initModel
     in
     ( { bookModel = bookModel
+      , sharedBookModel = sharedBookModel
       , currentBookModel = currentBookModel
       , currentUserModel = currentUserModel
       , route = parseUrl url
@@ -130,6 +141,9 @@ update sharedState msg model =
         BookMsg bookMsg ->
             updateBook sharedState model bookMsg
 
+        SharedBookMsg sharedBookMsg ->
+            updateSharedBook sharedState model sharedBookMsg
+
         CurrentBookMsg currentBookMsg ->
             updateCurrentBook sharedState model currentBookMsg
 
@@ -145,6 +159,18 @@ updateBook sharedState model bookMsg =
     in
     ( { model | bookModel = nextBookModel }
     , Cmd.map BookMsg bookCmd
+    , sharedStateUpdate
+    )
+
+
+updateSharedBook : SharedState -> Model -> SharedBooks.Msg -> ( Model, Cmd Msg, SharedStateUpdate )
+updateSharedBook sharedState model sharedBookMsg =
+    let
+        ( nextSharedBookModel, sharedBookCmd, sharedStateUpdate ) =
+            SharedBooks.update sharedState sharedBookMsg model.bookModel
+    in
+    ( { model | sharedBookModel = nextSharedBookModel }
+    , Cmd.map SharedBookMsg sharedBookCmd
     , sharedStateUpdate
     )
 
@@ -181,6 +207,9 @@ view msgMapper sharedState model =
                 BooksRoute ->
                     "Books"
 
+                SharedBooksRoute ->
+                    "Shared Books"
+
                 CurrentBookRoute ->
                     "Current Book"
 
@@ -198,6 +227,10 @@ view msgMapper sharedState model =
                     , Input.button (Style.activeButton (model.route == BooksRoute))
                         { onPress = Just (NavigateTo BooksRoute)
                         , label = el [] (text "Reading List")
+                        }
+                    , Input.button (Style.activeButton (model.route == SharedBooksRoute))
+                        { onPress = Just (NavigateTo SharedBooksRoute)
+                        , label = el [] (text "Shared Books")
                         }
                     , Input.button (Style.activeButton (model.route == CurrentBookRoute))
                         { onPress = Just (NavigateTo CurrentBookRoute)
@@ -223,6 +256,10 @@ pageView sharedState model =
             BooksRoute ->
                 Books.view sharedState model.bookModel
                     |> Element.map BookMsg
+
+            SharedBooksRoute ->
+                SharedBooks.view sharedState model.sharedBookModel
+                    |> Element.map SharedBookMsg
 
             CurrentBookRoute ->
                 CurrentBook.view sharedState model.currentBookModel
