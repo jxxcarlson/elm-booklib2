@@ -228,17 +228,17 @@ view msgMapper sharedState model =
                         { onPress = Just (NavigateTo BooksRoute)
                         , label = el [] (text "Reading List")
                         }
+                    , Input.button (Style.activeButton (model.route == CurrentBookRoute))
+                        { onPress = Just (NavigateTo CurrentBookRoute)
+                        , label = el [] (text "The Book")
+                        }
                     , Input.button (Style.activeButton (model.route == SharedBooksRoute))
                         { onPress = Just (NavigateTo SharedBooksRoute)
                         , label = el [] (text "Shared Books")
                         }
-                    , Input.button (Style.activeButton (model.route == CurrentBookRoute))
-                        { onPress = Just (NavigateTo CurrentBookRoute)
-                        , label = el [] (text "Book")
-                        }
                     , Input.button (Style.activeButton (model.route == CurrentUserRoute))
                         { onPress = Just (NavigateTo CurrentUserRoute)
-                        , label = el [] (text "Sign in")
+                        , label = el [] (text "User")
                         }
                     ]
                 , pageView sharedState model

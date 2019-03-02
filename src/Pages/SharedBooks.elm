@@ -208,19 +208,6 @@ update sharedState msg model =
                     )
 
 
-
---
---        ReceiveSharedBlurb (Ok str) ->
---            ( { model | sharedBlurb = str }, Cmd.none, NoUpdate )
---
---        ReceiveSharedBlurb (Err err) ->
---            ( model, Cmd.none, NoUpdate )
---
---
--- VIEW
---
-
-
 view : SharedState -> Model -> Element Msg
 view sharedState model =
     column (Style.mainColumn fill fill)
@@ -230,15 +217,28 @@ view sharedState model =
 
 
 bookListDisplay sharedState model =
-    Element.row []
-        [ bookListTable sharedState model
+    Element.row [ spacing 20 ]
+        [ sharedUserDisplay sharedState model
+        , bookListTable sharedState model
         , column [ Border.width 1, moveRight 12 ] [ Common.Book.notesViewedAsMarkdown "400px" "579px" sharedState.currentBook ]
         ]
 
 
+sharedUserDisplay sharedState model =
+    Element.column
+        [ width (px 400)
+        , height (px 600)
+        , spacing 10
+        , padding 10
+        , Background.color Style.charcoal
+        , Font.color Style.white
+        ]
+        [ el [] (text "WORK IN PROGRESS") ]
+
+
 bookListTable sharedState model =
     Element.column
-        [ width fill
+        [ width (px 500)
         , height (px 600)
         , spacing 10
         , padding 10
@@ -294,18 +294,6 @@ listBooks sharedState model =
               , view =
                     \book ->
                         Element.text book.category
-              }
-            , { header = Element.el Style.tableHeading (Element.text "")
-              , width = px 110
-              , view =
-                    \book ->
-                        Element.el [] (Indicator.indicator 100 10 "orange" (pageRatio book))
-              }
-            , { header = Element.el Style.tableHeading (Element.text "Progress")
-              , width = px 110
-              , view =
-                    \book ->
-                        Element.text (pageInfo book)
               }
             ]
         }
