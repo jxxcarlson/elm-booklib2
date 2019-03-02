@@ -37,7 +37,7 @@ import User.Types exposing (PublicUser, User)
 type alias Model =
     { bookList : List Book
     , publicUserList : List PublicUser
-    , currentPublicUser : Maybe User
+    , currentPublicUser : Maybe PublicUser
     , totalPagesRead : Int
     , pagesRead : Int
     , notes : String
@@ -207,11 +207,9 @@ update sharedState msg model =
                     ( model, Cmd.none, NoUpdate )
 
                 Just user ->
-                    ( model
+                    ( { model | currentPublicUser = Just { username = username } }
                     , Cmd.batch
                         [ getSharedBooks username user.token
-
-                        -- , getSharedBlurb username user.token
                         ]
                     , NoUpdate
                     )
@@ -658,7 +656,7 @@ publicUserTitle model =
 displayPublicUser : SharedState -> Model -> User.Types.PublicUser -> Element Msg
 displayPublicUser sharedState model publicUser =
     row [ spacing 8 ]
-        [ el [ Font.size 13, width (px 150) ] (getShareBooksButton publicUser.username)
+        [ el [ Font.size 13, width (px 150) ] (getShareBooksButton model publicUser.username)
         , el [ Font.size 13, width (px 50) ] (followUserButton sharedState model publicUser.username)
         ]
 
@@ -684,8 +682,19 @@ followUserButton sharedState model publicUsername =
         }
 
 
-getShareBooksButton publicUser =
-    Input.button (Style.button ++ [ width (px 145) ])
-        { onPress = Just (GetSharedBooks publicUser)
-        , label = Element.text publicUser
+getShareBooksButton : Model -> String -> Element Msg
+getShareBooksButton model publicUserName =
+    Input.button (Style.activeButton (nameOfCurrentPublicUser model.currentPublicUser == publicUserName) ++ [ width (px 145) ])
+        { onPress = Just (GetSharedBooks publicUserName)
+        , label = Element.text publicUserName
         }
+
+
+nameOfCurrentPublicUser : Maybe PublicUser -> String
+nameOfCurrentPublicUser publicUser_ =
+    case publicUser_ of
+        Nothing ->
+            ""
+
+        Just user ->
+            user.username
