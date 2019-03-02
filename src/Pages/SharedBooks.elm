@@ -37,6 +37,7 @@ import User.Types exposing (PublicUser, User)
 type alias Model =
     { bookList : List Book
     , publicUserList : List PublicUser
+    , currentPublicUser : Maybe User
     , totalPagesRead : Int
     , pagesRead : Int
     , notes : String
@@ -50,6 +51,7 @@ init : Model
 init =
     { bookList = []
     , publicUserList = []
+    , currentPublicUser = Nothing
     , totalPagesRead = 0
     , pagesRead = 0
     , notes = ""
@@ -261,6 +263,7 @@ view sharedState model =
         ]
 
 
+bookListDisplay : SharedState -> Model -> Element Msg
 bookListDisplay sharedState model =
     Element.row [ spacing 20 ]
         [ sharedUserDisplay sharedState model
@@ -269,6 +272,7 @@ bookListDisplay sharedState model =
         ]
 
 
+sharedUserDisplay : SharedState -> Model -> Element Msg
 sharedUserDisplay sharedState model =
     Element.column
         [ width (px 400)
@@ -278,9 +282,10 @@ sharedUserDisplay sharedState model =
         , Background.color Style.charcoal
         , Font.color Style.white
         ]
-        [ el [] (text "WORK IN PROGRESS") ]
+        [ userInfoView sharedState model ]
 
 
+bookListTable : SharedState -> Model -> Element Msg
 bookListTable sharedState model =
     Element.column
         [ width (px 500)
@@ -303,12 +308,7 @@ bookListTableHeader sharedState model =
         ]
 
 
-
---
--- MARKDOWN
---
-
-
+listBooks : SharedState -> Model -> Element Msg
 listBooks sharedState model =
     Element.table
         [ Element.centerX
@@ -383,10 +383,6 @@ totalsString sharedState model =
         ++ " — "
         ++ String.fromInt pagesReadPerDay
         ++ " pp/day"
-
-
-bookListDisplayWidth model =
-    px 780
 
 
 pageRatio book =
@@ -593,7 +589,7 @@ computeTotalPagesRead bookList =
 
 userInfoView : SharedState -> Model -> Element Msg
 userInfoView sharedState model =
-    Element.column [ width (px 250), moveUp 6, height (px 693), Background.color Style.grey, padding 15, spacing 10 ]
+    Element.column [ width (px 250), height (px 400), padding 15, spacing 10 ]
         [ Element.el [ Font.bold, Font.size 14 ] (Element.text (publicUserTitle model))
         , Element.column [ spacing 5 ] (List.map (\publicUser -> displayPublicUser sharedState model publicUser) (publicUsersMinusFollowers sharedState model))
         , displayFollowers sharedState model
@@ -662,15 +658,8 @@ publicUserTitle model =
 displayPublicUser : SharedState -> Model -> User.Types.PublicUser -> Element Msg
 displayPublicUser sharedState model publicUser =
     row [ spacing 8 ]
-        [ el [ Font.size 13 ] (getShareBooksButton publicUser.username)
-        , el [ Font.size 13 ] (followUserButton sharedState model publicUser.username)
-        ]
-
-
-displayPublicUserSimple : User.Types.PublicUser -> Element Msg
-displayPublicUserSimple publicUser =
-    Element.row [ spacing 8 ]
-        [ Element.el [ Font.size 13 ] (getShareBooksButton publicUser.username)
+        [ el [ Font.size 13, width (px 150) ] (getShareBooksButton publicUser.username)
+        , el [ Font.size 13, width (px 50) ] (followUserButton sharedState model publicUser.username)
         ]
 
 
@@ -696,7 +685,7 @@ followUserButton sharedState model publicUsername =
 
 
 getShareBooksButton publicUser =
-    Input.button Style.button
+    Input.button (Style.button ++ [ width (px 145) ])
         { onPress = Just (GetSharedBooks publicUser)
         , label = Element.text publicUser
         }

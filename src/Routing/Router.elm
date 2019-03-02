@@ -125,6 +125,9 @@ update sharedState msg model =
 
         NavigateTo route ->
             let
+                _ =
+                    Debug.log "NavigateTo" route
+
                 oldCurrentBookModel =
                     model.currentBookModel
 
