@@ -7,6 +7,7 @@ import Element.Background as Background
 import Element.Font as Font
 import Element.Input as Input
 import Html exposing (Html)
+import Pages.About as About
 import Pages.Books as Books
 import Pages.CurrentBook as CurrentBook exposing (AppState(..))
 import Pages.CurrentUser as CurrentUser
@@ -22,6 +23,7 @@ type alias Model =
     , sharedBookModel : SharedBooks.Model
     , currentBookModel : CurrentBook.Model
     , currentUserModel : CurrentUser.Model
+    , aboutModel : About.Model
     , route : Route
     }
 
@@ -32,6 +34,7 @@ type Msg
     | SharedBookMsg SharedBooks.Msg
     | CurrentBookMsg CurrentBook.Msg
     | CurrentUserMsg User.Types.Msg
+    | AboutMsg About.Msg
     | NavigateTo Route
 
 
@@ -49,11 +52,15 @@ initialModel url =
 
         currentUserModel =
             CurrentUser.initModel
+
+        aboutModel =
+            About.init
     in
     { bookModel = bookModel
     , currentBookModel = currentBookModel
     , sharedBookModel = sharedBookModel
     , currentUserModel = currentUserModel
+    , aboutModel = aboutModel
     , route = parseUrl url
     }
 
@@ -72,11 +79,15 @@ init url =
 
         currentUserModel =
             CurrentUser.initModel
+
+        aboutModel =
+            About.init
     in
     ( { bookModel = bookModel
       , sharedBookModel = sharedBookModel
       , currentBookModel = currentBookModel
       , currentUserModel = currentUserModel
+      , aboutModel = aboutModel
       , route = parseUrl url
       }
     , Cmd.map BookMsg Cmd.none
@@ -153,6 +164,9 @@ update sharedState msg model =
         CurrentUserMsg currentUserMsg ->
             updateCurrentUser sharedState model currentUserMsg
 
+        AboutMsg aboutMsg ->
+            updateAbout sharedState model aboutMsg
+
 
 updateBook : SharedState -> Model -> Books.Msg -> ( Model, Cmd Msg, SharedStateUpdate )
 updateBook sharedState model bookMsg =
@@ -202,6 +216,18 @@ updateCurrentUser sharedState model userMsg =
     )
 
 
+updateAbout : SharedState -> Model -> About.Msg -> ( Model, Cmd Msg, SharedStateUpdate )
+updateAbout sharedState model aboutMsg =
+    let
+        ( nextAboutModel, aboutCmd, sharedStateUpdate ) =
+            About.update sharedState aboutMsg model.aboutModel
+    in
+    ( { model | aboutModel = nextAboutModel }
+    , Cmd.map AboutMsg aboutCmd
+    , sharedStateUpdate
+    )
+
+
 view : (Msg -> msg) -> SharedState -> Model -> { body : List (Html.Html msg), title : String }
 view msgMapper sharedState model =
     let
@@ -218,6 +244,9 @@ view msgMapper sharedState model =
 
                 CurrentUserRoute ->
                     "Current User"
+
+                AboutRoute ->
+                    "About"
 
                 NotFoundRoute ->
                     "404"
@@ -254,6 +283,10 @@ view msgMapper sharedState model =
                                 { onPress = Just (NavigateTo SharedBooksRoute)
                                 , label = el [] (text "Shared Books")
                                 }
+                    , Input.button (Style.activeButton (model.route == AboutRoute))
+                        { onPress = Just (NavigateTo AboutRoute)
+                        , label = el [] (text "About")
+                        }
                     , Input.button (Style.activeButton (model.route == CurrentUserRoute))
                         { onPress = Just (NavigateTo CurrentUserRoute)
                         , label = el [] (text "User")
@@ -303,6 +336,10 @@ pageView sharedState model =
             CurrentUserRoute ->
                 CurrentUser.view sharedState model.currentUserModel
                     |> Element.map CurrentUserMsg
+
+            AboutRoute ->
+                About.view sharedState model.aboutModel
+                    |> Element.map AboutMsg
 
             NotFoundRoute ->
                 el [] (text "404 :(")

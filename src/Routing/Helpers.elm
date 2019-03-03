@@ -9,6 +9,7 @@ type Route
     | SharedBooksRoute
     | CurrentBookRoute
     | CurrentUserRoute
+    | AboutRoute
     | NotFoundRoute
 
 
@@ -27,6 +28,9 @@ reverseRoute route =
         CurrentBookRoute ->
             "#/currentbook"
 
+        AboutRoute ->
+            "#/about"
+
         _ ->
             "#/"
 
@@ -37,6 +41,7 @@ routeParser =
         , Url.Parser.map BooksRoute (Url.Parser.s "books")
         , Url.Parser.map CurrentBookRoute (Url.Parser.s "currentbook")
         , Url.Parser.map SharedBooksRoute (Url.Parser.s "sharedbooks")
+        , Url.Parser.map AboutRoute (Url.Parser.s "about")
         ]
 
 
