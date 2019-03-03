@@ -7,7 +7,7 @@ import Json.Decode as Decode exposing (Decoder)
 import Json.Decode.Pipeline exposing (required)
 import Json.Encode as Encode
 import User.Coders
-import User.Types exposing (Msg(..), PublicUser, User)
+import User.Types exposing (Msg(..), PublicUser, User, UserRecord)
 
 
 authenticate : String -> String -> Cmd Msg
@@ -77,6 +77,12 @@ preRegistrationEncoder username email password =
         ]
 
 
+userRecordDecoder : Decoder UserRecord
+userRecordDecoder =
+    Decode.succeed UserRecord
+        |> required "user" userDecoder
+
+
 userDecoder : Decoder User
 userDecoder =
     Decode.succeed User
@@ -91,6 +97,28 @@ userDecoder =
         |> required "followers" (Decode.list publicUserDecoder)
         |> required "admin" Decode.bool
         |> required "inserted_at" (Decode.map usDateStringFromElixirDateString Decode.string)
+
+
+userRecordDecoder2 : Decoder UserRecord
+userRecordDecoder2 =
+    Decode.succeed UserRecord
+        |> required "user" userDecoder2
+
+
+userDecoder2 : Decoder User
+userDecoder2 =
+    Decode.succeed User
+        |> required "username" Decode.string
+        |> required "id" Decode.int
+        |> required "firstname" Decode.string
+        |> required "email" Decode.string
+        |> required "token" Decode.string
+        |> required "blurb" Decode.string
+        |> required "public" Decode.bool
+        |> required "follow" (Decode.list publicUserDecoder)
+        |> required "followers" (Decode.list publicUserDecoder)
+        |> required "admin" Decode.bool
+        |> required "beginningDate" Decode.string
 
 
 publicUserDecoder : Decoder PublicUser

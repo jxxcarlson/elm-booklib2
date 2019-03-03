@@ -1,4 +1,4 @@
-module User.Types exposing (AnnotatedUser, Msg(..), PublicUser, State(..), User, testUser)
+module User.Types exposing (AnnotatedUser, Msg(..), PublicUser, State(..), User, UserRecord, testUser)
 
 import Http
 import Routing.Helpers exposing (Route)
@@ -17,6 +17,10 @@ type alias User =
     , admin : Bool
     , beginningDate : String
     }
+
+
+type alias UserRecord =
+    { user : User }
 
 
 testUser : User
