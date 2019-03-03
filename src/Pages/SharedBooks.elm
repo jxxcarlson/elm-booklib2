@@ -25,7 +25,7 @@ import Http
 import SharedState exposing (SharedState, SharedStateUpdate(..))
 import User.Coders
 import User.Session
-import User.Types exposing (PublicUser, User)
+import User.Types exposing (AnnotatedUser, PublicUser, User)
 
 
 
@@ -37,6 +37,7 @@ import User.Types exposing (PublicUser, User)
 type alias Model =
     { bookList : List Book
     , publicUserList : List PublicUser
+    , annotatedUserList : List AnnotatedUser
     , currentPublicUser : Maybe PublicUser
     , totalPagesRead : Int
     , pagesRead : Int
@@ -51,6 +52,7 @@ init : Model
 init =
     { bookList = []
     , publicUserList = []
+    , annotatedUserList = []
     , currentPublicUser = Nothing
     , totalPagesRead = 0
     , pagesRead = 0
@@ -86,6 +88,8 @@ type Msg
     | ComputePagesRead (Result Http.Error (List Book))
     | ReceivePublicUsers (Result Http.Error (List PublicUser))
     | ReceiveUpdateUser (Result Http.Error String)
+    | GetAnnotatedUserList
+    | ReceiveAnnotatedUserList (Result Http.Error (List AnnotatedUser))
     | RequestBookList Int String
     | SetCurrentBook Book
     | GetSharedBooks String
@@ -175,7 +179,6 @@ update sharedState msg model =
         RequestBookList userid token ->
             ( model, getBookList userid token, NoUpdate )
 
-        -- ###
         GetCurrentUserBookList ->
             case sharedState.currentUser of
                 Nothing ->
@@ -258,6 +261,20 @@ update sharedState msg model =
 
         ReceiveUpdateUser (Err _) ->
             ( { model | errorMessage = "Status error" }, Cmd.none, NoUpdate )
+
+        GetAnnotatedUserList ->
+            case sharedState.currentUser of
+                Nothing ->
+                    ( model, Cmd.none, NoUpdate )
+
+                Just user ->
+                    ( model, getAnnotatedUsers user.token, NoUpdate )
+
+        ReceiveAnnotatedUserList (Ok annotatedUserList) ->
+            ( { model | annotatedUserList = annotatedUserList }, Cmd.none, NoUpdate )
+
+        ReceiveAnnotatedUserList (Err err) ->
+            ( { model | errorMessage = "ERROR, Cant't get annotated user list" }, Cmd.none, NoUpdate )
 
 
 view : SharedState -> Model -> Element Msg
@@ -527,6 +544,19 @@ updateUserWithQS user queryString token =
         , url = Configuration.backend ++ "/api/users/" ++ String.fromInt user.id ++ "?" ++ queryString
         , body = Http.jsonBody (User.Coders.userRecordEncoder user)
         , expect = Http.expectJson ReceiveUpdateUser User.Coders.statusDecoder
+        , timeout = Nothing
+        , tracker = Nothing
+        }
+
+
+getAnnotatedUsers : String -> Cmd Msg
+getAnnotatedUsers token =
+    Http.request
+        { method = "Get"
+        , headers = []
+        , url = Configuration.backend ++ "/api/users?all=annotated"
+        , body = Http.jsonBody (User.Session.tokenEncoder token)
+        , expect = Http.expectJson ReceiveAnnotatedUserList User.Coders.annotatedUserListDecoder
         , timeout = Nothing
         , tracker = Nothing
         }

@@ -1,4 +1,4 @@
-module User.Types exposing (Msg(..), PublicUser, State(..), User)
+module User.Types exposing (AnnotatedUser, Msg(..), PublicUser, State(..), User)
 
 import Http
 import Routing.Helpers exposing (Route)
@@ -44,3 +44,18 @@ type State
 
 type alias PublicUser =
     { username : String }
+
+
+type alias AnnotatedUser =
+    { username : String
+    , id : Int
+    , firstname : String
+    , email : String
+    , token : String
+    , blurb : String
+    , public : Bool
+    , follow : List String
+    , followers : List String
+    , admin : Bool
+    , numberOfBooks : Int
+    }

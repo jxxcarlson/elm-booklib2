@@ -1,9 +1,16 @@
-module User.Coders exposing (publicUserDecoder, publicUserListDecoder, statusDecoder, userRecordEncoder)
+module User.Coders exposing
+    ( annotatedUserDecoder
+    , annotatedUserListDecoder
+    , publicUserDecoder
+    , publicUserListDecoder
+    , statusDecoder
+    , userRecordEncoder
+    )
 
 import Json.Decode as Decode exposing (Decoder)
 import Json.Decode.Pipeline exposing (required)
 import Json.Encode as Encode
-import User.Types exposing (PublicUser, User)
+import User.Types exposing (AnnotatedUser, PublicUser, User)
 
 
 publicUserDecoder : Decoder PublicUser
@@ -48,3 +55,24 @@ userRecordEncoder user =
 statusDecoder : Decoder String
 statusDecoder =
     Decode.field "message" Decode.string
+
+
+annotatedUserListDecoder : Decoder (List AnnotatedUser)
+annotatedUserListDecoder =
+    Decode.field "data" (Decode.list annotatedUserDecoder)
+
+
+annotatedUserDecoder : Decoder AnnotatedUser
+annotatedUserDecoder =
+    Decode.succeed AnnotatedUser
+        |> required "username" Decode.string
+        |> required "id" Decode.int
+        |> required "firstname" Decode.string
+        |> required "email" Decode.string
+        |> required "token" Decode.string
+        |> required "blurb" Decode.string
+        |> required "public" Decode.bool
+        |> required "follow" (Decode.list Decode.string)
+        |> required "followers" (Decode.list Decode.string)
+        |> required "admin" Decode.bool
+        |> required "numberOfBooks" Decode.int

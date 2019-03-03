@@ -14,6 +14,7 @@ module Common.Style exposing
     , listElementButtonStyleWithWidth2
     , mainColumn
     , mainColumn2
+    , makeGrey
     , myFocusStyle
     , navBar
     , noAutocapitalize
@@ -21,6 +22,7 @@ module Common.Style exposing
     , orange
     , preWrap
     , shadedColumn
+    , signinColumn
     , smallButton
     , tableHeading
     , titleButton
@@ -94,6 +96,10 @@ mainColumn2 w h =
 
 shadedColumn w h =
     [ paddingXY 24 24, spacing 24, Background.color lightBlue, width w, height h ]
+
+
+signinColumn w h =
+    [ paddingXY 24 24, spacing 24, Background.color (rgb255 252 240 209), width w, height h ]
 
 
 navBar w =

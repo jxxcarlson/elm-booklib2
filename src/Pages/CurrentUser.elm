@@ -10,6 +10,7 @@ import Browser.Navigation exposing (pushUrl)
 import Common.Style as Style
 import Common.Utility as Utility
 import Element exposing (..)
+import Element.Background as Background
 import Element.Font as Font
 import Element.Input as Input
 import Http exposing (Error(..))
@@ -125,14 +126,37 @@ update sharedState msg model =
 view : SharedState -> Model -> Element Msg
 view sharedState model =
     column (Style.mainColumn fill fill)
-        [ column (Style.shadedColumn (px 480) (px 300))
-            [ showIf (model.state /= SignedIn) (inputUsername model)
-            , showIf (model.state /= SignedIn) (inputEmail model)
-            , showIf (model.state /= SignedIn) (inputPassword model)
-            , row [ spacing 12 ] [ signInOrCancelButton model, registerButton model ]
-            , el [ Font.size 18 ] (text model.message)
+        [ row [ spacing 20 ]
+            [ welcomeColumn sharedState model
+            , signInColumn sharedState model
             ]
         , footer sharedState model
+        ]
+
+
+welcomeColumn : SharedState -> Model -> Element Msg
+welcomeColumn sharedState model =
+    column [ alignTop, spacing 10 ]
+        [ row [] [ el [ Font.bold ] (text "Welcome to Booklib.io") ]
+        , image []
+            { src = "https://www.hastac.org/sites/default/files/upload/images/post/books.jpg"
+            , description = "Library"
+            }
+        ]
+
+
+
+-- https://www.hastac.org/sites/default/files/upload/images/post/books.jpg
+
+
+signInColumn : SharedState -> Model -> Element Msg
+signInColumn sharedState model =
+    column (Style.signinColumn (px 480) fill)
+        [ showIf (model.state /= SignedIn) (inputUsername model)
+        , showIf (model.state /= SignedIn) (inputEmail model)
+        , showIf (model.state /= SignedIn) (inputPassword model)
+        , row [ moveRight 125, spacing 12 ] [ signInOrCancelButton model, registerButton model ]
+        , el [ Font.size 18 ] (text model.message)
         ]
 
 
@@ -154,7 +178,7 @@ showIf flag element =
 
 
 inputEmail model =
-    Input.text [ width (px 300) ]
+    Input.text inputStyle
         { onChange = AcceptEmail
         , text = model.email
         , placeholder = Nothing
@@ -162,10 +186,14 @@ inputEmail model =
         }
 
 
+inputStyle =
+    [ width (px 300), Background.color (Style.makeGrey 0.3), Font.color Style.white ]
+
+
 inputUsername model =
     case model.state of
         Registering ->
-            Input.text [ width (px 300) ]
+            Input.text inputStyle
                 { onChange = AcceptUsername
                 , text = model.username
                 , placeholder = Nothing
@@ -177,7 +205,7 @@ inputUsername model =
 
 
 inputPassword model =
-    Input.currentPassword [ width (px 300) ]
+    Input.currentPassword inputStyle
         { onChange = AcceptPassword
         , text = model.password
         , placeholder = Nothing
