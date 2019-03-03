@@ -234,10 +234,15 @@ view msgMapper sharedState model =
                         { onPress = Just (NavigateTo BooksRoute)
                         , label = el [] (text "Reading List")
                         }
-                    , Input.button (Style.activeButton (model.route == CurrentBookRoute))
-                        { onPress = Just (NavigateTo CurrentBookRoute)
-                        , label = el [] (text "The Book")
-                        }
+                    , case matchBookAndUserIds sharedState of
+                        False ->
+                            Element.none
+
+                        True ->
+                            Input.button (Style.activeButton (model.route == CurrentBookRoute))
+                                { onPress = Just (NavigateTo CurrentBookRoute)
+                                , label = el [] (text "The Book")
+                                }
                     , Input.button (Style.activeButton (model.route == SharedBooksRoute))
                         { onPress = Just (NavigateTo SharedBooksRoute)
                         , label = el [] (text "Shared Books")
@@ -253,6 +258,23 @@ view msgMapper sharedState model =
     { title = "BookLib"
     , body = body_ |> Element.layoutWith { options = [ Style.myFocusStyle ] } [] |> Html.map msgMapper |> (\x -> [ x ])
     }
+
+
+matchBookAndUserIds : SharedState -> Bool
+matchBookAndUserIds sharedState =
+    let
+        uid =
+            Maybe.map .id sharedState.currentUser
+
+        bookUid =
+            Maybe.map .userId sharedState.currentBook
+    in
+    case ( uid, bookUid ) of
+        ( Just id1, Just id2 ) ->
+            id1 == id2
+
+        ( _, _ ) ->
+            False
 
 
 pageView : SharedState -> Model -> Element Msg

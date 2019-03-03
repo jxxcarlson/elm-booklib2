@@ -3,6 +3,7 @@ module Book.Types exposing (Book, blankBook)
 
 type alias Book =
     { id : Int
+    , userId : Int
     , title : String
     , subtitle : String
     , author : String
@@ -19,6 +20,7 @@ type alias Book =
 
 blankBook =
     { id = 0
+    , userId = 0
     , title = "New book"
     , subtitle = ""
     , author = ""

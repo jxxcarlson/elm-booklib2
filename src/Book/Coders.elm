@@ -17,6 +17,7 @@ bookEncoder : Book -> Encode.Value
 bookEncoder book =
     Encode.object
         [ ( "id", Encode.int book.id )
+        , ( "user_id", Encode.int book.userId )
         , ( "title", Encode.string book.title )
         , ( "subtitle", Encode.string book.subtitle )
         , ( "author", Encode.string book.author )
@@ -60,6 +61,7 @@ bookDecoder : Decode.Decoder Book
 bookDecoder =
     Decode.succeed Book
         |> required "id" Decode.int
+        |> required "user_id" Decode.int
         |> required "title" Decode.string
         |> required "subtitle" Decode.string
         |> required "author" Decode.string

@@ -158,12 +158,7 @@ update sharedState msg model =
                 , finishDateString = finishDateString
               }
             , Cmd.none
-            , case sharedState.currentBook of
-                Nothing ->
-                    SharedState.UpdateCurrentBook currentBook
-
-                Just _ ->
-                    NoUpdate
+            , SharedState.UpdateCurrentBook currentBook
             )
 
         ReceiveBookList (Err err) ->
