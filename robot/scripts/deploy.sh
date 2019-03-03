@@ -22,20 +22,13 @@ echo
 echo "${magenta}Compile time: " $runtime " seconds${reset}"
 
 echo
-echo "${color}Copying Main.js to ./dist-local${reset}"
-cp Main.js ./dist-local/
-ls -lh ./dist-local/Main.js
-
-
-echo
-echo "${color}Minifyin Main.js and copying to dist-remote${reset}"
+echo "${color}Uglifying ,,,${reset}"
 uglifyjs Main.js -mc 'pure_funcs="F2,F3,F4,F5,F6,F7,F8,F9"' -o Main.min.js
-cp Main.min.js ./dist-remote/
 
 echo
 echo "${color}Uploading to cloud ...${reset}"
-scp -r ./dist-remote/index.html  root@206.189.184.194:/var/www/html/
-scp -r ./dist-remote/Main.min.js root@206.189.184.194:/var/www/html/
+scp -r ./index-remote.html  root@206.189.184.194:/var/www/html/index.html
+scp -r ./Main.min.js root@206.189.184.194:/var/www/html/
 
 
 echo

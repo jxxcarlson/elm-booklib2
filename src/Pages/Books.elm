@@ -368,7 +368,7 @@ totalsString sharedState model =
     in
     String.fromInt model.totalPagesRead
         ++ " pages since "
-        ++ model.startDateString
+        ++ startDate
         ++ " — "
         ++ String.fromInt pagesReadPerDay
         ++ " pp/day"

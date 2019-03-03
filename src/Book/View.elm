@@ -107,9 +107,6 @@ blurbInput model =
 
 
 
--- "Total pages read since " ++ model.beginningDate ++ ": " ++ (String.fromInt model.totalPagesRead)
-
-
 newBookButton_ : Model -> Element BookMsg
 newBookButton_ model =
     Input.button Widget.smallButtonStyle

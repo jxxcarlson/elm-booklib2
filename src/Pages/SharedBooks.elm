@@ -409,27 +409,8 @@ pageInfo book =
 
 totalsString : SharedState -> Model -> String
 totalsString sharedState model =
-    let
-        startDate =
-            case sharedState.currentUser of
-                Nothing ->
-                    "6/1/2018"
-
-                Just user ->
-                    user.beginningDate
-
-        daysElapsed =
-            Days.fromUSDate startDate (Utility.toUtcDateString <| Just sharedState.currentTime)
-
-        pagesReadPerDay =
-            Basics.round (Basics.toFloat model.totalPagesRead / Basics.toFloat daysElapsed)
-    in
     String.fromInt model.totalPagesRead
-        ++ " pages since "
-        ++ model.startDateString
-        ++ " — "
-        ++ String.fromInt pagesReadPerDay
-        ++ " pp/day"
+        ++ " pages"
 
 
 pageRatio book =
