@@ -138,6 +138,7 @@ welcomeColumn : SharedState -> Model -> Element Msg
 welcomeColumn sharedState model =
     column [ alignTop, spacing 10 ]
         [ row [] [ el [ Font.bold ] (text "Welcome to Booklib.io") ]
+        , row [] [ el [] (text "Create and share your annotated book list") ]
         , image []
             { src = "https://www.hastac.org/sites/default/files/upload/images/post/books.jpg"
             , description = "Library"

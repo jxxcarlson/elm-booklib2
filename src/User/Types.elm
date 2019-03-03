@@ -12,8 +12,8 @@ type alias User =
     , token : String
     , blurb : String
     , public : Bool
-    , follow : List String
-    , followers : List String
+    , follow : List PublicUser
+    , followers : List PublicUser
     , admin : Bool
     , beginningDate : String
     }

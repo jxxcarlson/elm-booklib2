@@ -6,7 +6,7 @@ import Http
 import Json.Decode as Decode exposing (Decoder)
 import Json.Decode.Pipeline exposing (required)
 import Json.Encode as Encode
-import User.Types exposing (Msg(..), User)
+import User.Types exposing (Msg(..), PublicUser, User)
 
 
 authenticate : String -> String -> Cmd Msg
@@ -73,10 +73,16 @@ userDecoder =
         |> required "token" Decode.string
         |> required "blurb" Decode.string
         |> required "public" Decode.bool
-        |> required "follow" (Decode.list Decode.string)
-        |> required "followers" (Decode.list Decode.string)
+        |> required "follow" (Decode.list publicUserDecoder)
+        |> required "followers" (Decode.list publicUserDecoder)
         |> required "admin" Decode.bool
         |> required "inserted_at" (Decode.map usDateStringFromElixirDateString Decode.string)
+
+
+publicUserDecoder : Decoder PublicUser
+publicUserDecoder =
+    Decode.succeed PublicUser
+        |> required "username" Decode.string
 
 
 userEncoder : User -> Encode.Value
@@ -96,9 +102,15 @@ userEncoder user =
         ]
 
 
-followEncoder : List String -> Encode.Value
-followEncoder stringList =
-    Encode.list Encode.string stringList
+followEncoder : List PublicUser -> Encode.Value
+followEncoder publicUserList =
+    Encode.list publicUserEncoder publicUserList
+
+
+publicUserEncoder : PublicUser -> Encode.Value
+publicUserEncoder publicUser =
+    Encode.object
+        [ ( "username", Encode.string publicUser.username ) ]
 
 
 

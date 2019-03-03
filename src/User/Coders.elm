@@ -41,9 +41,15 @@ userEncoder user =
         ]
 
 
-followEncoder : List String -> Encode.Value
-followEncoder stringList =
-    Encode.list Encode.string stringList
+followEncoder : List PublicUser -> Encode.Value
+followEncoder publicUserList =
+    Encode.list encodePublicUser publicUserList
+
+
+encodePublicUser : PublicUser -> Encode.Value
+encodePublicUser publicUser =
+    Encode.object
+        [ ( "username", Encode.string publicUser.username ) ]
 
 
 userRecordEncoder : User -> Encode.Value

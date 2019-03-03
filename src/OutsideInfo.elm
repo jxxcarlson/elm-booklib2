@@ -5,10 +5,10 @@ port module OutsideInfo exposing
     , sendInfoOutside
     )
 
-import Json.Decode as D
+import Json.Decode as Decode
 import Json.Decode.Pipeline exposing (required)
 import Json.Encode
-import User.Types exposing (User)
+import User.Types exposing (PublicUser, User)
 
 
 port infoForOutside : GenericOutsideData -> Cmd msg
@@ -50,7 +50,7 @@ getInfoFromOutside tagger onError =
         (\outsideInfo ->
             case outsideInfo.tag of
                 "ReconnectUser" ->
-                    case D.decodeValue userDecoderForOutside outsideInfo.data of
+                    case Decode.decodeValue userDecoderForOutside outsideInfo.data of
                         Ok localStorageRecord ->
                             tagger <| LocalStorageInfo localStorageRecord
 
@@ -62,20 +62,26 @@ getInfoFromOutside tagger onError =
         )
 
 
-userDecoderForOutside : D.Decoder User
+userDecoderForOutside : Decode.Decoder User
 userDecoderForOutside =
-    D.succeed User
-        |> required "username" D.string
-        |> required "id" (D.map stringToInt D.string)
-        |> required "firstname" D.string
-        |> required "email" D.string
-        |> required "token" D.string
-        |> required "blurb" D.string
-        |> required "public" (D.map stringToBool D.string)
-        |> required "follow" (D.map stringToList D.string)
-        |> required "followers" (D.map stringToList D.string)
-        |> required "admin" (D.map stringToBool D.string)
-        |> required "beginningDate" D.string
+    Decode.succeed User
+        |> required "username" Decode.string
+        |> required "id" (Decode.map stringToInt Decode.string)
+        |> required "firstname" Decode.string
+        |> required "email" Decode.string
+        |> required "token" Decode.string
+        |> required "blurb" Decode.string
+        |> required "public" (Decode.map stringToBool Decode.string)
+        |> required "follow" (Decode.list publicUserDecoder)
+        |> required "followers" (Decode.list publicUserDecoder)
+        |> required "admin" (Decode.map stringToBool Decode.string)
+        |> required "beginningDate" Decode.string
+
+
+publicUserDecoder : Decode.Decoder PublicUser
+publicUserDecoder =
+    Decode.succeed PublicUser
+        |> required "username" Decode.string
 
 
 stringToBool : String -> Bool

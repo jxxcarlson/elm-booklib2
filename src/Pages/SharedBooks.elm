@@ -240,14 +240,14 @@ update sharedState msg model =
                         Just user ->
                             let
                                 queryString =
-                                    if List.member newFollowedUserName user.follow then
+                                    if List.member { username = newFollowedUserName } user.follow then
                                         "unfollow_user=" ++ newFollowedUserName
 
                                     else
                                         "follow_user=" ++ newFollowedUserName
 
                                 updatedUser =
-                                    { user | follow = Utility.toggleList newFollowedUserName user.follow }
+                                    { user | follow = Utility.toggleList { username = newFollowedUserName } user.follow }
                             in
                             ( Just updatedUser, updateUserWithQS user queryString updatedUser.token )
             in
@@ -326,7 +326,10 @@ sharedUserDisplay sharedState model =
         , Background.color Style.charcoal
         , Font.color Style.white
         ]
-        [ userInfoView sharedState model ]
+        [ userInfoView sharedState model
+        , followersView sharedState model
+        , followView sharedState model
+        ]
 
 
 bookListTable : SharedState -> Model -> Element Msg
@@ -646,13 +649,29 @@ computeTotalPagesRead bookList =
 
 userInfoView : SharedState -> Model -> Element Msg
 userInfoView sharedState model =
-    Element.column [ width (px 250), height (px 400), padding 15, spacing 10 ]
+    Element.column [ width (px 250), height (px 200), padding 15, spacing 10, scrollbarY ]
         [ Element.el [ Font.bold, Font.size 14 ] (Element.text (publicUserTitle model))
         , Element.column [ spacing 5 ] (List.map (\publicUser -> displayPublicUser sharedState model publicUser) (publicUsersMinusFollowers sharedState model))
-        , displayFollowers sharedState model
         ]
 
 
+followersView : SharedState -> Model -> Element Msg
+followersView sharedState model =
+    Element.column [ width (px 250), height (px 300), scrollbarY, padding 15, spacing 10 ]
+        [ Element.el [ Font.bold, Font.size 14 ] (Element.text "Followers")
+        , Element.column [ spacing 5 ] (List.map (\publicUser -> displayPublicUser sharedState model publicUser) (followerList sharedState))
+        ]
+
+
+followView : SharedState -> Model -> Element Msg
+followView sharedState model =
+    Element.column [ width (px 250), height (px 300), scrollbarY, padding 15, spacing 10 ]
+        [ Element.el [ Font.bold, Font.size 14 ] (Element.text "Follow")
+        , Element.column [ spacing 5 ] (List.map (\publicUser -> displayPublicUser sharedState model publicUser) (followList sharedState))
+        ]
+
+
+publicUsersMinusFollowers : SharedState -> Model -> List PublicUser
 publicUsersMinusFollowers sharedUserState model =
     case sharedUserState.currentUser of
         Nothing ->
@@ -660,40 +679,27 @@ publicUsersMinusFollowers sharedUserState model =
 
         Just user ->
             model.publicUserList
-                |> List.filter (\running_user -> not (List.member running_user.username user.followers))
+                |> List.filter (\running_user -> not (List.member running_user user.followers))
 
 
-displayFollowers : SharedState -> Model -> Element Msg
-displayFollowers sharedState model =
-    let
-        theFollowers =
-            followerList sharedState
-    in
-    if theFollowers == [] then
-        Element.none
-
-    else
-        column []
-            [ el [ Font.bold, Font.size 14 ] (text "Followers")
-
-            --            , column [ spacing 5 ]
-            --              (List.map (\username ->(displayPublicUser sharedState model username) (followerList2 sharedState))
-            ]
-
-
-followerList2 sharedState =
-    sharedState
-        |> followerList
-        |> List.map (\name -> { user = name })
-
-
+followerList : SharedState -> List PublicUser
 followerList sharedState =
     case sharedState.currentUser of
         Nothing ->
             []
 
         Just user ->
-            user.followers |> fixBozoList
+            user.followers
+
+
+followList : SharedState -> List PublicUser
+followList sharedState =
+    case sharedState.currentUser of
+        Nothing ->
+            []
+
+        Just user ->
+            user.follow
 
 
 fixBozoList list =
@@ -729,7 +735,7 @@ followUserButton sharedState model publicUsername =
                     ( "Follow", False )
 
                 Just user ->
-                    if List.member publicUsername user.follow then
+                    if List.member { username = publicUsername } user.follow then
                         ( "Following", True )
 
                     else

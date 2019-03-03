@@ -344,17 +344,9 @@ update sharedState msg model =
             createNewBook sharedState model
 
         BookIsCreated (Ok str) ->
-            let
-                _ =
-                    Debug.log "BOOK CREATED" str
-            in
             ( { model | message = str }, pushUrl sharedState.navKey "#books", NoUpdate )
 
         BookIsCreated (Err err) ->
-            let
-                _ =
-                    Debug.log "BOOK CREATED -ERR" err
-            in
             ( model, pushUrl sharedState.navKey "#books", NoUpdate )
 
         ToggleBlurbAndNotes ->
