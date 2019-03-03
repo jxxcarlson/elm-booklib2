@@ -261,8 +261,30 @@ bookListDisplay sharedState model =
     Element.row [ spacing 20 ]
         [ sharedUserDisplay sharedState model
         , bookListTable sharedState model
-        , column [ Border.width 1, moveRight 12 ] [ Common.Book.notesViewedAsMarkdown "400px" "579px" sharedState.currentBook ]
+        , case matchBookAndUserIds sharedState of
+            False ->
+                Element.none
+
+            True ->
+                column [ Border.width 1, moveRight 12 ] [ Common.Book.notesViewedAsMarkdown "400px" "579px" sharedState.currentBook ]
         ]
+
+
+matchBookAndUserIds : SharedState -> Bool
+matchBookAndUserIds sharedState =
+    let
+        uid =
+            Maybe.map .id sharedState.currentUser
+
+        bookUid =
+            Maybe.map .userId sharedState.currentBook
+    in
+    case ( uid, bookUid ) of
+        ( Just id1, Just id2 ) ->
+            id1 /= id2
+
+        ( _, _ ) ->
+            False
 
 
 sharedUserDisplay : SharedState -> Model -> Element Msg

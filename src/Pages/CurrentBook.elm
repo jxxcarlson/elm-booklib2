@@ -566,7 +566,10 @@ mainRow sharedState model =
                     ]
 
             EditingNote ->
-                notesInput (px 400) (px 509) sharedState model
+                row [ spacing 12 ]
+                    [ notesInput (px 400) (px 509) sharedState model
+                    , column [ Border.width 1 ] [ Common.Book.notesViewedAsMarkdown "400px" "509px" sharedState.currentBook ]
+                    ]
 
             EditingBook ->
                 editBookPanel sharedState
@@ -655,7 +658,7 @@ textInputStyle w h =
     , scrollbarY
     , clipX
     , Font.size 13
-    , paddingXY 0 20
+    , paddingXY 8 20
     , Background.color Style.lightGrey
     , Border.width 2
     ]
