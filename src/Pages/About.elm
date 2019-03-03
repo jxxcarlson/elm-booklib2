@@ -66,4 +66,11 @@ textColumn sharedState model =
             [ text """We will be adding a few new features as things progress, but our
             overarching goal is to keep things simple, useful, and enjoyable.
              Contact me at jxxcarlson@gmail.com with your ideas.""" ]
+        , el [ Font.bold ] (text "Markdown")
+        , paragraph
+            []
+            [ text """If you know about markdown, you can use it to write your notes.
+                      If you don't, plain old text works just as well."""
+            ]
+        , newTabLink [ Font.color Style.blue ] { url = "https://www.markdownguide.org/cheat-sheet/", label = el [] (text "Using Markdown") }
         ]
