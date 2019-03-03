@@ -364,13 +364,13 @@ totalsString sharedState model =
             Days.fromUSDate startDate (Utility.toUtcDateString <| Just sharedState.currentTime)
 
         pagesReadPerDay =
-            Basics.round (Basics.toFloat model.totalPagesRead / Basics.toFloat daysElapsed)
+            Utility.roundTo 1 (Basics.toFloat model.totalPagesRead / Basics.toFloat daysElapsed)
     in
     String.fromInt model.totalPagesRead
         ++ " pages since "
         ++ startDate
         ++ " — "
-        ++ String.fromInt pagesReadPerDay
+        ++ String.fromFloat pagesReadPerDay
         ++ " pp/day"
 
 

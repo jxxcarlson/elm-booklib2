@@ -1,4 +1,4 @@
-module User.Types exposing (AnnotatedUser, Msg(..), PublicUser, State(..), User)
+module User.Types exposing (AnnotatedUser, Msg(..), PublicUser, State(..), User, testUser)
 
 import Http
 import Routing.Helpers exposing (Route)
@@ -19,9 +19,26 @@ type alias User =
     }
 
 
+testUser : User
+testUser =
+    { username = "fred007"
+    , id = 1001
+    , firstname = "Fred"
+    , email = "fred@foo.io"
+    , token = "6666555dfdfdf"
+    , blurb = "Howdy!"
+    , public = False
+    , follow = [ { username = "Abe" } ]
+    , followers = [ { username = "Bo" }, { username = "Sally" } ]
+    , admin = False
+    , beginningDate = "1/1/1800"
+    }
+
+
 type Msg
     = ProcessAuthentication (Result Http.Error User)
     | AcceptRegistration (Result Http.Error User)
+    | ReceiveUpdateUser (Result Http.Error String)
     | NavigateTo Route
     | AcceptUsername String
     | AcceptEmail String
@@ -33,6 +50,7 @@ type Msg
     | CancelSignin
     | SubmitRegistration
     | SetState State
+    | ToggleUserPublic Bool
 
 
 type State

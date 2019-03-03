@@ -3,6 +3,7 @@ port module OutsideInfo exposing
     , InfoForOutside(..)
     , getInfoFromOutside
     , sendInfoOutside
+    , userDecoderForOutside
     , userEncoder
     )
 
@@ -79,19 +80,23 @@ userDecoderForOutside =
         |> required "beginningDate" Decode.string
 
 
+
+-- |> required "admin" (Decode.map stringToBool Decode.string)
+
+
 userEncoder : User -> Encode.Value
 userEncoder user =
     Encode.object
         [ ( "username", Encode.string user.username )
-        , ( "id", Encode.int user.id )
+        , ( "id", Encode.string (String.fromInt user.id) )
         , ( "firstname", Encode.string user.firstname )
         , ( "email", Encode.string user.email )
         , ( "token", Encode.string user.token )
         , ( "blurb", Encode.string user.blurb )
-        , ( "public", Encode.bool user.public )
+        , ( "public", Encode.string (boolToString user.public) )
         , ( "follow", Encode.string (publicUserListToString user.follow) )
         , ( "followers", Encode.string (publicUserListToString user.followers) )
-        , ( "admin", Encode.bool user.admin )
+        , ( "admin", Encode.string (boolToString user.admin) )
         , ( "beginningDate", Encode.string user.beginningDate )
         ]
 
@@ -119,11 +124,21 @@ publicUserDecoder =
 
 stringToBool : String -> Bool
 stringToBool str =
-    if str == "true" then
+    if str == "True" then
         True
 
     else
         False
+
+
+boolToString : Bool -> String
+boolToString b =
+    case b of
+        True ->
+            "True"
+
+        False ->
+            "False"
 
 
 stringToInt : String -> Int

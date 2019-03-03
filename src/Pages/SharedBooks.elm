@@ -249,7 +249,7 @@ update sharedState msg model =
                                 updatedUser =
                                     { user | follow = Utility.toggleList { username = newFollowedUserName } user.follow }
                             in
-                            ( Just updatedUser, updateUserWithQS user queryString updatedUser.token )
+                            ( Just updatedUser, updateUserWithQS updatedUser queryString updatedUser.token )
             in
             ( model, cmd, SharedState.UpdateCurrentUser currentUser )
 
@@ -326,9 +326,9 @@ sharedUserDisplay sharedState model =
         , Background.color Style.charcoal
         , Font.color Style.white
         ]
-        [ userInfoView sharedState model
+        [ followingView sharedState model
+        , userInfoView sharedState model
         , followersView sharedState model
-        , followView sharedState model
         ]
 
 
@@ -630,9 +630,13 @@ computeTotalPagesRead bookList =
 
 userInfoView : SharedState -> Model -> Element Msg
 userInfoView sharedState model =
+    let
+        pu =
+            publicUsersMinusFollowing sharedState model
+    in
     Element.column [ width (px 250), height (px 200), padding 15, spacing 10, scrollbarY ]
-        [ Element.el [ Font.bold, Font.size 14 ] (Element.text (publicUserTitle model))
-        , Element.column [ spacing 5 ] (List.map (\publicUser -> displayPublicUser sharedState model publicUser) (publicUsersMinusFollowers sharedState model))
+        [ Element.el [ Font.bold, Font.size 14 ] (Element.text (publicUserTitle pu))
+        , Element.column [ spacing 5 ] (List.map (\publicUser -> displayPublicUser sharedState model publicUser) pu)
         ]
 
 
@@ -644,23 +648,23 @@ followersView sharedState model =
         ]
 
 
-followView : SharedState -> Model -> Element Msg
-followView sharedState model =
+followingView : SharedState -> Model -> Element Msg
+followingView sharedState model =
     Element.column [ width (px 250), height (px 300), scrollbarY, padding 15, spacing 10 ]
-        [ Element.el [ Font.bold, Font.size 14 ] (Element.text "Follow")
-        , Element.column [ spacing 5 ] (List.map (\publicUser -> displayPublicUser sharedState model publicUser) (followList sharedState))
+        [ Element.el [ Font.bold, Font.size 14 ] (Element.text "Following")
+        , Element.column [ spacing 5 ] (List.map (\publicUser -> displayPublicUser sharedState model publicUser) (followingList sharedState))
         ]
 
 
-publicUsersMinusFollowers : SharedState -> Model -> List PublicUser
-publicUsersMinusFollowers sharedUserState model =
+publicUsersMinusFollowing : SharedState -> Model -> List PublicUser
+publicUsersMinusFollowing sharedUserState model =
     case sharedUserState.currentUser of
         Nothing ->
             []
 
         Just user ->
             model.publicUserList
-                |> List.filter (\running_user -> not (List.member running_user user.followers))
+                |> List.filter (\running_user -> not (List.member running_user user.follow))
 
 
 followerList : SharedState -> List PublicUser
@@ -671,38 +675,33 @@ followerList sharedState =
 
         Just user ->
             user.followers
+                |> List.filter (\u -> u.username /= "")
 
 
-followList : SharedState -> List PublicUser
-followList sharedState =
+followingList : SharedState -> List PublicUser
+followingList sharedState =
     case sharedState.currentUser of
         Nothing ->
             []
 
         Just user ->
             user.follow
+                |> List.filter (\u -> u.username /= "")
 
 
-fixBozoList list =
-    if list == [ "" ] then
-        []
-
-    else
-        list
-
-
-publicUserTitle model =
+publicUserTitle : List PublicUser -> String
+publicUserTitle lpu =
     let
         n =
-            List.length model.publicUserList |> String.fromInt
+            List.length lpu |> String.fromInt
     in
-    "Shared book lists: " ++ n
+    "Other shared book lists: " ++ n
 
 
 displayPublicUser : SharedState -> Model -> User.Types.PublicUser -> Element Msg
 displayPublicUser sharedState model publicUser =
     row [ spacing 8 ]
-        [ el [ Font.size 13, width (px 150) ] (getShareBooksButton model publicUser.username)
+        [ el [ Font.size 13, width (px 150) ] (getShareBooksButton model publicUser)
         , el [ Font.size 13, width (px 50) ] (followUserButton sharedState model publicUser.username)
         ]
 
@@ -728,19 +727,9 @@ followUserButton sharedState model publicUsername =
         }
 
 
-getShareBooksButton : Model -> String -> Element Msg
-getShareBooksButton model publicUserName =
-    Input.button (Style.activeButton (nameOfCurrentPublicUser model.currentPublicUser == publicUserName) ++ [ width (px 145) ])
-        { onPress = Just (GetSharedBooks publicUserName)
-        , label = Element.text publicUserName
+getShareBooksButton : Model -> PublicUser -> Element Msg
+getShareBooksButton model publicUser =
+    Input.button (Style.activeButton (model.currentPublicUser == Just publicUser) ++ [ width (px 145) ])
+        { onPress = Just (GetSharedBooks publicUser.username)
+        , label = Element.text publicUser.username
         }
-
-
-nameOfCurrentPublicUser : Maybe PublicUser -> String
-nameOfCurrentPublicUser publicUser_ =
-    case publicUser_ of
-        Nothing ->
-            ""
-
-        Just user ->
-            user.username

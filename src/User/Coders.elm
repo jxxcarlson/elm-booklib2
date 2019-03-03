@@ -4,6 +4,7 @@ module User.Coders exposing
     , publicUserDecoder
     , publicUserListDecoder
     , statusDecoder
+    , userEncoder
     , userRecordEncoder
     )
 

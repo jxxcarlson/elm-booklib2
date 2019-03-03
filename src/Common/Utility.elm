@@ -1,5 +1,6 @@
 module Common.Utility exposing
     ( replaceIf
+    , roundTo
     , softBreakAlt
     , toUtcDateString
     , toUtcString
@@ -189,3 +190,12 @@ softBreakRegexp : Int -> Regex.Regex
 softBreakRegexp width =
     Maybe.withDefault Regex.never <|
         Regex.fromString (".{1," ++ String.fromInt width ++ "}(\\s+|$)|\\S+?(\\s+|$)")
+
+
+roundTo : Int -> Float -> Float
+roundTo k x =
+    let
+        kk =
+            toFloat k
+    in
+    x * 10.0 ^ kk |> round |> toFloat |> (\y -> y / 10.0 ^ kk)

@@ -1,4 +1,4 @@
-module User.Session exposing (authenticate, registerUser, tokenEncoder, userEncoder)
+module User.Session exposing (authenticate, registerUser, tokenEncoder, updateUser, userEncoder)
 
 import Common.Days as Days
 import Configuration
@@ -6,6 +6,7 @@ import Http
 import Json.Decode as Decode exposing (Decoder)
 import Json.Decode.Pipeline exposing (required)
 import Json.Encode as Encode
+import User.Coders
 import User.Types exposing (Msg(..), PublicUser, User)
 
 
@@ -24,6 +25,19 @@ registerUser username email password =
         { url = Configuration.backend ++ "/api/users/"
         , body = Http.jsonBody (registrationEncoder username email password)
         , expect = Http.expectJson AcceptRegistration userDecoder
+        }
+
+
+updateUser : User -> String -> Cmd Msg
+updateUser user token =
+    Http.request
+        { method = "Put"
+        , headers = [ Http.header "Authorization" ("Bearer " ++ token) ]
+        , url = Configuration.backend ++ "/api/users/" ++ String.fromInt user.id
+        , body = Http.jsonBody (User.Coders.userRecordEncoder user)
+        , expect = Http.expectJson ReceiveUpdateUser User.Coders.statusDecoder
+        , timeout = Nothing
+        , tracker = Nothing
         }
 
 

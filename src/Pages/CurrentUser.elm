@@ -116,11 +116,32 @@ update sharedState msg model =
         AcceptRegistration (Err err) ->
             ( { model | message = httpErrorExplanation err, state = SigningIn }, Cmd.none, UpdateCurrentUser Nothing )
 
+        ReceiveUpdateUser (Ok user) ->
+            ( { model | message = "Your profile has been updated" }, Cmd.none, NoUpdate )
+
+        ReceiveUpdateUser (Err err) ->
+            ( { model | message = "Error updating user" }, Cmd.none, NoUpdate )
+
         NavigateTo route ->
             ( model, pushUrl sharedState.navKey (reverseRoute route), NoUpdate )
 
         SetState state ->
             ( { model | state = state }, Cmd.none, NoUpdate )
+
+        ToggleUserPublic flag ->
+            case sharedState.currentUser of
+                Nothing ->
+                    ( model, Cmd.none, NoUpdate )
+
+                Just user ->
+                    let
+                        nextUser =
+                            { user | public = flag }
+
+                        cmd =
+                            Session.updateUser nextUser nextUser.token
+                    in
+                    ( model, cmd, SharedState.UpdateCurrentUser (Just nextUser) )
 
 
 view : SharedState -> Model -> Element Msg
@@ -158,6 +179,7 @@ signInColumn sharedState model =
         , showIf (model.state /= SignedIn) (inputPassword model)
         , row [ moveRight 125, spacing 12 ] [ signInOrCancelButton model, registerButton model ]
         , el [ Font.size 18 ] (text model.message)
+        , showIf (model.state == SignedIn) (publicCheckbox sharedState)
         ]
 
 
@@ -185,6 +207,32 @@ inputEmail model =
         , placeholder = Nothing
         , label = Input.labelLeft [ moveDown 12, Font.bold, width (px 120) ] (text "Email")
         }
+
+
+publicCheckbox : SharedState -> Element Msg
+publicCheckbox sharedState =
+    case sharedState.currentUser of
+        Nothing ->
+            Element.none
+
+        Just user ->
+            Input.checkbox
+                []
+                { onChange = ToggleUserPublic
+                , icon = icon
+                , checked = user.public
+                , label = Input.labelLeft [ Font.size 16, moveDown 1 ] (text "Share your reading list?")
+                }
+
+
+icon : Bool -> Element msg
+icon status =
+    case status of
+        True ->
+            el [ Font.size 18, Font.bold, Font.color Style.blue, moveDown 1 ] (text "Yes")
+
+        False ->
+            el [ Font.size 18, Font.bold, Font.color Style.darkRed, moveDown 1 ] (text "No")
 
 
 inputStyle =
