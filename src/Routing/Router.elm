@@ -230,10 +230,15 @@ view msgMapper sharedState model =
                 [ row
                     (Style.navBar fill)
                     [ el [ Font.bold, Font.color Style.white ] (text "BookLib")
-                    , Input.button (Style.activeButton (model.route == BooksRoute))
-                        { onPress = Just (NavigateTo BooksRoute)
-                        , label = el [] (text "Reading List")
-                        }
+                    , case sharedState.currentUser of
+                        Nothing ->
+                            Element.none
+
+                        Just _ ->
+                            Input.button (Style.activeButton (model.route == BooksRoute))
+                                { onPress = Just (NavigateTo BooksRoute)
+                                , label = el [] (text "Reading List")
+                                }
                     , case matchBookAndUserIds sharedState of
                         False ->
                             Element.none
@@ -243,10 +248,15 @@ view msgMapper sharedState model =
                                 { onPress = Just (NavigateTo CurrentBookRoute)
                                 , label = el [] (text "The Book")
                                 }
-                    , Input.button (Style.activeButton (model.route == SharedBooksRoute))
-                        { onPress = Just (NavigateTo SharedBooksRoute)
-                        , label = el [] (text "Shared Books")
-                        }
+                    , case sharedState.currentUser of
+                        Nothing ->
+                            Element.none
+
+                        Just _ ->
+                            Input.button (Style.activeButton (model.route == SharedBooksRoute))
+                                { onPress = Just (NavigateTo SharedBooksRoute)
+                                , label = el [] (text "Shared Books")
+                                }
                     , Input.button (Style.activeButton (model.route == CurrentUserRoute))
                         { onPress = Just (NavigateTo CurrentUserRoute)
                         , label = el [] (text "User")

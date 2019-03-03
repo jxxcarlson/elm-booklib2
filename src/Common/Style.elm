@@ -164,22 +164,22 @@ activeButtonRedStyle =
 
 
 listElementButtonStyleWithWidth2 width_ selected_ =
-    if selected_ == False then
-        [ width (px width_)
-        , Background.color charcoal
-        , Font.color white
-        , Font.size 12
-        , Element.paddingXY 6 4
-        , alignRight
-        ]
-            ++ basicButtonsStyle
-
-    else
-        [ width (px width_), Background.color blue, Font.color white, Font.size 12, Element.paddingXY 6 4, alignRight ]
-            ++ basicButtonsStyle
+    -- if selected_ == False then
+    [ width (px width_)
+    , Background.color charcoal
+    , Font.color white
+    , Font.size 12
+    , Element.paddingXY 8 4
+    , alignRight
+    ]
+        ++ basicButtonsStyle
 
 
 
+--
+--    else
+--        [ width (px width_),  Font.color white, Font.size 12, Element.paddingXY 6 4, alignRight ]
+--            ++ basicButtonsStyle
 --
 -- COLORS
 --

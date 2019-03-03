@@ -209,7 +209,19 @@ update sharedState msg model =
                     , NoUpdate
                     )
 
-        ReceivePublicUsers (Ok publicUserList) ->
+        ReceivePublicUsers (Ok publicUserList_) ->
+            let
+                currentUsername =
+                    case sharedState.currentUser of
+                        Nothing ->
+                            "-"
+
+                        Just user ->
+                            user.username
+
+                publicUserList =
+                    List.filter (\pu -> pu.username /= currentUsername) publicUserList_
+            in
             ( { model | publicUserList = publicUserList }, Cmd.none, NoUpdate )
 
         ReceivePublicUsers (Err _) ->
