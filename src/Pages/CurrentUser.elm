@@ -93,7 +93,7 @@ update sharedState msg model =
               }
             , Cmd.batch
                 [ pushUrl sharedState.navKey "#books"
-                , OutsideInfo.sendInfoOutside (UserData (Session.userEncoder user))
+                , OutsideInfo.sendInfoOutside (UserData (OutsideInfo.userEncoder user))
                 ]
             , UpdateCurrentUser (Just user)
             )

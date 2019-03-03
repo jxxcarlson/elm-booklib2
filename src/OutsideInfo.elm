@@ -3,11 +3,12 @@ port module OutsideInfo exposing
     , InfoForOutside(..)
     , getInfoFromOutside
     , sendInfoOutside
+    , userEncoder
     )
 
 import Json.Decode as Decode
 import Json.Decode.Pipeline exposing (required)
-import Json.Encode
+import Json.Encode as Encode
 import User.Types exposing (PublicUser, User)
 
 
@@ -18,13 +19,13 @@ port infoForElm : (GenericOutsideData -> msg) -> Sub msg
 
 
 type InfoForOutside
-    = UserData Json.Encode.Value
-    | AskToReconnectUser Json.Encode.Value
-    | DisconnectUser Json.Encode.Value
+    = UserData Encode.Value
+    | AskToReconnectUser Encode.Value
+    | DisconnectUser Encode.Value
 
 
 type alias GenericOutsideData =
-    { tag : String, data : Json.Encode.Value }
+    { tag : String, data : Encode.Value }
 
 
 type InfoForElm
@@ -72,10 +73,42 @@ userDecoderForOutside =
         |> required "token" Decode.string
         |> required "blurb" Decode.string
         |> required "public" (Decode.map stringToBool Decode.string)
-        |> required "follow" (Decode.list publicUserDecoder)
-        |> required "followers" (Decode.list publicUserDecoder)
+        |> required "follow" (Decode.string |> Decode.map stringToPublicUserList)
+        |> required "followers" (Decode.string |> Decode.map stringToPublicUserList)
         |> required "admin" (Decode.map stringToBool Decode.string)
         |> required "beginningDate" Decode.string
+
+
+userEncoder : User -> Encode.Value
+userEncoder user =
+    Encode.object
+        [ ( "username", Encode.string user.username )
+        , ( "id", Encode.int user.id )
+        , ( "firstname", Encode.string user.firstname )
+        , ( "email", Encode.string user.email )
+        , ( "token", Encode.string user.token )
+        , ( "blurb", Encode.string user.blurb )
+        , ( "public", Encode.bool user.public )
+        , ( "follow", Encode.string (publicUserListToString user.follow) )
+        , ( "followers", Encode.string (publicUserListToString user.followers) )
+        , ( "admin", Encode.bool user.admin )
+        , ( "beginningDate", Encode.string user.beginningDate )
+        ]
+
+
+publicUserListToString : List PublicUser -> String
+publicUserListToString publicUserList =
+    publicUserList
+        |> List.map .username
+        |> String.join ","
+
+
+stringToPublicUserList : String -> List PublicUser
+stringToPublicUserList str =
+    str
+        |> String.split ","
+        |> List.map String.trim
+        |> List.map (\name -> { username = name })
 
 
 publicUserDecoder : Decode.Decoder PublicUser
