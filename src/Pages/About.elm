@@ -199,8 +199,8 @@ read below the Toucan!.
 
 ![Toucan](https://upload.wikimedia.org/wikipedia/commons/thumb/4/43/Ramphastos_sulfuratus_-Belize_Zoo-6a-2c.jpg/440px-Ramphastos_sulfuratus_-Belize_Zoo-6a-2c.jpg)
 
-The [Wikipedia artlce](https://en.wikipedia.org/wiki/Keel-billed_toucan) gives some basic
-information on the keel-billed toucan.
+[Wikipedia artlce on Toucans](https://en.wikipedia.org/wiki/Keel-billed_toucan)
+
 
 
 ## Distribution and Habitat

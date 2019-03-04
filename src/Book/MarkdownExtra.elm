@@ -8,8 +8,8 @@ import Markdown.Config exposing (Options, defaultOptions)
 import Markdown.Inline as Inline exposing (Inline(..))
 
 
-view : String -> Html msg
-view markdownString =
+view2 : String -> Html msg
+view2 markdownString =
     markdownString
         |> Block.parse Nothing
         |> List.map customHtmlBlock
@@ -17,8 +17,8 @@ view markdownString =
         |> div []
 
 
-view0 : String -> Html msg
-view0 markdownString =
+view : String -> Html msg
+view markdownString =
     markdownString
         |> Utility.softBreakAlt 70
         |> String.join "\n"
