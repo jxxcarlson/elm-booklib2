@@ -52,15 +52,15 @@ textColumn sharedState model =
         , paragraph []
             [ text
                 """Booklib.io is devoted to the idea that reading books is a good thing ... 
-            and even better if we share our reading with others.  You will enjoy looking
-            back at your notes some years hence, and you will be suprised at how much you have read.
+            and is even better if we share our reading with others.  You will enjoy looking
+            back at your book list and notes some years hence, and you will be surprised at how much you have read.
             """
             ]
         , paragraph
             []
             [ text """Consider joining BookLib, sharing your reading list with others,
             and writing up a few notes on what you read.  Notes don't have to be long to be
-            meaningful. A paragraph or two can bring back many memories.""" ]
+            meaningful — just a paragraph or two can do.""" ]
         , paragraph
             []
             [ text """We will be adding a few new features as things progress, but our
