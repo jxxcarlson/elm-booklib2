@@ -10,6 +10,7 @@ module Pages.Books exposing
 
 import Book.Coders
 import Book.Types exposing (Book)
+import Browser.Navigation exposing (pushUrl)
 import Common.Book
 import Common.Days as Days
 import Common.Indicator as Indicator
@@ -184,13 +185,18 @@ update sharedState msg model =
                     )
 
         SetCurrentBook book ->
-            ( { model
-                | startDateString = book.startDateString
-                , finishDateString = book.finishDateString
-              }
-            , Cmd.none
-            , SharedState.UpdateCurrentBook (Just book)
-            )
+            case Just book.id == Maybe.map .id sharedState.currentBook of
+                True ->
+                    ( model, pushUrl sharedState.navKey "#currentbook", NoUpdate )
+
+                False ->
+                    ( { model
+                        | startDateString = book.startDateString
+                        , finishDateString = book.finishDateString
+                      }
+                    , Cmd.none
+                    , SharedState.UpdateCurrentBook (Just book)
+                    )
 
         GetSharedBooks username ->
             case sharedState.currentUser of
