@@ -37,6 +37,7 @@ type alias Model =
     , appState : AppState
     , message : String
     , deleteBookState : DeleteBookState
+    , previousBook : Maybe Book
     }
 
 
@@ -69,6 +70,7 @@ init =
     , appState = ReadingBook
     , message = ""
     , deleteBookState = Ready
+    , previousBook = Nothing
     }
 
 
@@ -89,7 +91,9 @@ type Msg
       --
     | NewBook
     | CreateBook
+    | CancelCreateBook
     | EditBook
+    | CancelEditBook
     | DeleteBook
     | UpdateBook
     | BookIsCreated (Result Http.Error String)
@@ -100,7 +104,8 @@ type Msg
       --
     | ToggleBlurbAndNotes
     | ToggleMarkdown
-    | SetModeToReading
+    | UpdateNotes
+    | DoneEditingNotes
     | SetModeToEditingBook
     | SetModeToEditingNote
     | SetModeToCreating
@@ -335,13 +340,19 @@ update sharedState msg model =
             ( model, Cmd.none, UpdateCurrentUser nextCurrentUser )
 
         NewBook ->
-            ( { model | appState = CreatingBook }
+            ( { model | appState = CreatingBook, previousBook = sharedState.currentBook }
             , Cmd.none
             , SharedState.UpdateCurrentBook (Just Book.Types.blankBook)
             )
 
         CreateBook ->
             createNewBook sharedState model
+
+        CancelCreateBook ->
+            ( { model | appState = ReadingBook, previousBook = Nothing }
+            , Cmd.none
+            , SharedState.UpdateCurrentBook model.previousBook
+            )
 
         BookIsCreated (Ok str) ->
             ( { model | message = str }, pushUrl sharedState.navKey "#books", NoUpdate )
@@ -384,6 +395,9 @@ update sharedState msg model =
 
                 ( _, _ ) ->
                     ( { model | deleteBookState = Ready }, Cmd.none, NoUpdate )
+
+        CancelEditBook ->
+            ( { model | appState = ReadingBook }, Cmd.none, NoUpdate )
 
         EditBook ->
             let
@@ -462,8 +476,22 @@ update sharedState msg model =
                 ( _, _ ) ->
                     ( model, Cmd.none, NoUpdate )
 
-        SetModeToReading ->
-            ( { model | appState = ReadingBook }, Cmd.none, SharedState.NoUpdate )
+        UpdateNotes ->
+            case ( sharedState.currentBook, sharedState.currentUser ) of
+                ( Nothing, Nothing ) ->
+                    ( model, Cmd.none, NoUpdate )
+
+                ( Just book, Just user ) ->
+                    ( model
+                    , updateBook book user.token
+                    , SharedState.UpdateCurrentBook <| Just book
+                    )
+
+                _ ->
+                    ( model, Cmd.none, NoUpdate )
+
+        DoneEditingNotes ->
+            ( { model | appState = ReadingBook }, Cmd.none, NoUpdate )
 
         SetModeToEditingBook ->
             ( { model | appState = EditingBook }, Cmd.none, SharedState.NoUpdate )
@@ -550,25 +578,38 @@ mainRow sharedState model =
         (Style.mainColumn2 fill fill
             ++ [ spacing 20 ]
         )
-        [ currentBookPanel sharedState model
-        , case model.appState of
-            ReadingBook ->
-                column [ Border.width 1 ]
-                    [ Common.Book.notesViewedAsMarkdown "400px" "509px" sharedState.currentBook
-                    ]
-
-            EditingNote ->
-                row [ spacing 12 ]
-                    [ notesInput (px 400) (px 509) sharedState model
-                    , column [ Border.width 1 ] [ Common.Book.notesViewedAsMarkdown "400px" "509px" sharedState.currentBook ]
-                    ]
-
-            EditingBook ->
-                editBookPanel sharedState
-
-            CreatingBook ->
-                newBookPanel sharedState model
+        [ mainPanel sharedState model
+        , sidePanel sharedState model
         ]
+
+
+mainPanel sharedState model =
+    case model.appState of
+        CreatingBook ->
+            newBookPanel sharedState model
+
+        _ ->
+            currentBookPanel sharedState model
+
+
+sidePanel sharedState model =
+    case model.appState of
+        ReadingBook ->
+            column [ Border.width 1 ]
+                [ Common.Book.notesViewedAsMarkdown "400px" "509px" sharedState.currentBook
+                ]
+
+        EditingNote ->
+            row [ spacing 12 ]
+                [ notesInput (px 400) (px 509) sharedState model
+                , column [ Border.width 1 ] [ Common.Book.notesViewedAsMarkdown "400px" "509px" sharedState.currentBook ]
+                ]
+
+        EditingBook ->
+            editBookPanel sharedState model
+
+        CreatingBook ->
+            Element.none
 
 
 grey p =
@@ -582,43 +623,62 @@ currentBookPanel sharedState model =
             el [] (text "No book selected")
 
         Just book ->
-            column [ Background.color <| grey 0.9, padding 30, width (px 360), height (px 310), spacing 12, alignTop, Border.width 1 ]
-                [ column [ spacing 8 ]
-                    [ el strongFieldStyle (text <| book.title)
-                    , el fieldStyle (text <| book.subtitle)
-                    , el fieldStyle (text <| book.category)
-                    , el [ clipX ] (text <| "by " ++ book.author)
-                    ]
-                , column [ paddingXY 0 30, width (px 300) ]
-                    [ Indicator.indicator 300 15 "orange" (pageRatio book)
-                    , el [ moveDown 4, Font.size 16, Font.color Style.darkBlue, Font.bold, paddingXY 0 10 ] (text <| pageInfo book)
-                    , row [ spacing 5, moveUp 10, Font.color Style.darkBlue ]
-                        [ el [ Font.size 15, moveDown 10 ] (text <| startMessage book)
-                        , el [ Font.size 15, moveDown 10 ] (text "—")
-                        , el [ Font.size 15, moveDown 10 ] (text <| finishMessage book)
-                        ]
-                    , readingRateDisplay sharedState book
-                    ]
-                , column [ moveDown 30, moveLeft 30, paddingXY 20 20, Background.color <| grey 0.9, Border.width 1, width (px 360), height (px 200) ]
-                    [ row [ spacing 15 ]
-                        [ pagesInput sharedState model
-                        , publicCheckbox book
-                        ]
-                    , row [ paddingXY 0 10 ] [ updateBookButton ]
-                    , column
-                        [ paddingXY 0 8, spacing 10 ]
-                        [ row [ alignBottom, spacing 20 ]
-                            [ readBookButton model
-                            , editBookButton model
-                            , editNoteButton model
-                            ]
-                        , row [ spacing 10 ]
-                            [ deleteBookButton model
-                            , newBookButton model
-                            ]
-                        ]
-                    ]
+            column [ Background.color <| grey 0.9, padding 30, width (px 360), height (px 530), spacing 36, alignTop, Border.width 1 ]
+                [ bookAndAuthorInfo book
+                , progressInfo sharedState book
+                , changeParameters sharedState model book
                 ]
+
+
+editControls model =
+    row [ paddingXY 20 5, spacing 12, Background.color <| grey 0.4, width (px 350), height (px 40) ]
+        [ updateNotesButton model
+        , doneEditingNotesButton model
+        ]
+
+
+updateNotesButton model =
+    Input.button Style.button
+        { onPress = Just UpdateNotes
+        , label = Element.text "Update"
+        }
+
+
+doneEditingNotesButton model =
+    Input.button Style.button
+        { onPress = Just DoneEditingNotes
+        , label = Element.text "Done"
+        }
+
+
+bookAndAuthorInfo book =
+    column [ spacing 8 ]
+        [ el strongFieldStyle (text <| book.title)
+        , el fieldStyle (text <| book.subtitle)
+        , el fieldStyle (text <| book.category)
+        , el [ clipX ] (text <| "by " ++ book.author)
+        ]
+
+
+progressInfo sharedState book =
+    column [ paddingXY 0 30, width (px 300) ]
+        [ Indicator.indicator 300 15 "orange" (pageRatio book)
+        , el [ moveDown 4, Font.size 16, Font.color Style.darkBlue, Font.bold, paddingXY 0 10 ] (text <| pageInfo book)
+        , row [ spacing 5, moveUp 10, Font.color Style.darkBlue ]
+            [ el [ Font.size 15, moveDown 10 ] (text <| startMessage book)
+            , el [ Font.size 15, moveDown 10 ] (text "—")
+            , el [ Font.size 15, moveDown 10 ] (text <| finishMessage book)
+            ]
+        , readingRateDisplay sharedState book
+        ]
+
+
+changeParameters sharedState model book =
+    column [ spacing 8 ]
+        [ pagesInput sharedState model
+        , publicCheckbox book
+        , row [ paddingXY 0 4 ] [ updateBookButton ]
+        ]
 
 
 notesInput h w sharedState model =
@@ -631,16 +691,19 @@ notesInput h w sharedState model =
                 Just book ->
                     book.notes
     in
-    Keyed.el []
-        ( String.fromInt model.counter
-        , Input.multiline (textInputStyle (px 350) (px 530))
-            { onChange = InputNotes
-            , text = notes
-            , placeholder = Nothing
-            , label = Input.labelAbove [ Font.size 0, Font.bold ] (text "")
-            , spellcheck = False
-            }
-        )
+    column []
+        [ Keyed.el []
+            ( String.fromInt model.counter
+            , Input.multiline (textInputStyle (px 350) (px 485))
+                { onChange = InputNotes
+                , text = notes
+                , placeholder = Nothing
+                , label = Input.labelAbove [ Font.size 0, Font.bold ] (text "")
+                , spellcheck = False
+                }
+            )
+        , editControls model
+        ]
 
 
 textInputStyle w h =
@@ -757,7 +820,7 @@ readingRate shareState book =
 
 updateBookButton : Element Msg
 updateBookButton =
-    Input.button (Style.button ++ [ width (px 310) ])
+    Input.button Style.button
         { onPress = Just UpdateBook
         , label = el [ centerX ] (Element.text "Update")
         }
@@ -797,24 +860,38 @@ createBookButton model =
         }
 
 
+cancelCreateBookButton model =
+    Input.button Style.button
+        { onPress = Just CancelCreateBook
+        , label = Element.text "Cancel"
+        }
+
+
 editBookButton model =
     Input.button (Style.activeButton (model.appState == EditingBook))
         { onPress = Just SetModeToEditingBook
-        , label = Element.text "Edit Book"
+        , label = Element.text "Edit book"
         }
 
 
 editNoteButton model =
     Input.button (Style.activeButton (model.appState == EditingNote))
         { onPress = Just SetModeToEditingNote
-        , label = Element.text "Edit Notes"
+        , label = Element.text "Edit notes"
         }
 
 
-readBookButton model =
-    Input.button (Style.activeButton (model.appState == ReadingBook))
-        { onPress = Just SetModeToReading
-        , label = Element.text "Read"
+updateEditNotesButton model =
+    Input.button Style.button
+        { onPress = Just UpdateNotes
+        , label = Element.text "Update"
+        }
+
+
+cancelEditNoteButton model =
+    Input.button Style.button
+        { onPress = Just CancelEditBook
+        , label = Element.text "Cancel"
         }
 
 
@@ -857,7 +934,10 @@ bookTitle book_ =
 footer : SharedState -> Model -> Element Msg
 footer sharedState model =
     row Style.footer
-        [ el Style.footerItem (text <| "UTC: " ++ Utility.toUtcString (Just sharedState.currentTime))
+        [ deleteBookButton model
+        , newBookButton model
+        , editBookButton model
+        , editNoteButton model
         , el Style.footerItem (text <| userStatus sharedState.currentUser)
         , wordCountOfCurrentNotes sharedState
         ]
@@ -894,8 +974,8 @@ userStatus user_ =
 --
 
 
-editBookPanel : SharedState -> Element Msg
-editBookPanel sharedState =
+editBookPanel : SharedState -> Model -> Element Msg
+editBookPanel sharedState model =
     Element.column [ paddingXY 10 10, spacing 10, height (px 531), Border.width 1 ]
         [ Element.el [ Font.bold ] (text <| "Edit book")
         , inputTitle sharedState
@@ -905,20 +985,21 @@ editBookPanel sharedState =
         , inputPages sharedState
         , inputStartDate sharedState
         , inputDateFinished sharedState
+        , row [ spacing 12 ] [ updateEditNotesButton model, cancelEditNoteButton model ]
         ]
 
 
 newBookPanel : SharedState -> Model -> Element Msg
 newBookPanel sharedState model =
     Element.column [ paddingXY 10 10, spacing 10, height (px 531), Border.width 1 ]
-        [ Element.el [ Font.bold ] (text <| "New book")
+        [ Element.el [ Font.bold ] (text <| "New")
         , inputTitle sharedState
         , inputSubtitle sharedState
         , inputCategory sharedState
         , inputAuthor sharedState
         , inputPages sharedState
         , inputStartDate sharedState
-        , row [ moveDown 18 ] [ createBookButton model ]
+        , row [ moveDown 18, spacing 12 ] [ createBookButton model, cancelCreateBookButton model ]
         ]
 
 

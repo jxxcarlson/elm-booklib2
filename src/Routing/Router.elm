@@ -110,6 +110,9 @@ update sharedState msg model =
                         SharedBooksRoute ->
                             SharedBooks.getPublicUsers sharedState |> Cmd.map SharedBookMsg
 
+                        CurrentBookRoute ->
+                            Cmd.none
+
                         _ ->
                             Cmd.none
 
@@ -128,8 +131,19 @@ update sharedState msg model =
 
                         _ ->
                             oldUserModel
+
+                oldCurrentBookModel =
+                    model.currentBookModel
+
+                newCurrentBookModel =
+                    case route of
+                        CurrentBookRoute ->
+                            { oldCurrentBookModel | appState = ReadingBook }
+
+                        _ ->
+                            oldCurrentBookModel
             in
-            ( { model | route = route, currentUserModel = newUserModel }
+            ( { model | route = route, currentUserModel = newUserModel, currentBookModel = newCurrentBookModel }
             , cmd
             , NoUpdate
             )
@@ -263,7 +277,7 @@ view msgMapper sharedState model =
                         Just _ ->
                             Input.button (Style.activeButton (model.route == BooksRoute))
                                 { onPress = Just (NavigateTo BooksRoute)
-                                , label = el [] (text "Reading List")
+                                , label = el [] (text "My Books")
                                 }
                     , case matchBookAndUserIds sharedState of
                         False ->
@@ -272,7 +286,7 @@ view msgMapper sharedState model =
                         True ->
                             Input.button (Style.activeButton (model.route == CurrentBookRoute))
                                 { onPress = Just (NavigateTo CurrentBookRoute)
-                                , label = el [] (text "The Book")
+                                , label = el [] (text "Current Book")
                                 }
                     , case sharedState.currentUser of
                         Nothing ->
