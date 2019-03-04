@@ -1,21 +1,30 @@
 module Book.MarkdownExtra exposing (view)
 
+import Common.Utility as Utility
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Markdown.Block as Block exposing (Block(..))
-import Markdown.Inline as Inline exposing (Inline(..))
 import Markdown.Config exposing (Options, defaultOptions)
-import Common.Utility as Utility
+import Markdown.Inline as Inline exposing (Inline(..))
 
 
 view : String -> Html msg
 view markdownString =
     markdownString
+        |> Block.parse Nothing
+        |> List.map customHtmlBlock
+        |> List.concat
+        |> div []
+
+
+view0 : String -> Html msg
+view0 markdownString =
+    markdownString
         |> Utility.softBreakAlt 70
-        |> String.join ("\n")
-        |> Block.parse (Nothing)
+        |> String.join "\n"
+        |> Block.parse Nothing
         -- See answer 2 why
-        |> List.map (customHtmlBlock)
+        |> List.map customHtmlBlock
         |> List.concat
         |> div []
 
@@ -24,10 +33,10 @@ view1 : String -> Html msg
 view1 markdownString =
     markdownString
         |> Utility.softBreakAlt 55
-        |> String.join ("\n")
+        |> String.join "\n"
         |> Block.parse (Just customOptions)
         -- See answer 2 why
-        |> List.map (customHtmlBlock)
+        |> List.map customHtmlBlock
         |> List.concat
         |> div []
 
@@ -50,6 +59,7 @@ customHtmlInline inline =
                     , title (Maybe.withDefault "" maybeTitle)
                     ]
                     (List.map customHtmlInline inlines)
+
             else
                 a
                     [ href url

@@ -1,8 +1,10 @@
-module Common.Book exposing (notesViewedAsMarkdown)
+module Common.Book exposing (notesViewedAsMarkdown, textViewedAsMarkdown, verbatimTextView)
 
 import Book.MarkdownExtra as MarkdownExtra
 import Book.Types exposing (Book)
-import Element exposing (..)
+import Common.Style as Style
+import Element exposing (Element, column, el, height, px, width)
+import Element.Font as Font
 import Html exposing (..)
 import Html.Attributes as HA
 
@@ -15,6 +17,16 @@ notesViewedAsMarkdown w h currentBook =
 
         Just book ->
             Element.html <| Html.div (markdownStyle w h) <| [ MarkdownExtra.view book.notes ]
+
+
+textViewedAsMarkdown : String -> String -> String -> Element msg
+textViewedAsMarkdown w h text_ =
+    Element.html <| Html.div (markdownStyle w h) <| [ MarkdownExtra.view text_ ]
+
+
+verbatimTextView : Int -> Int -> String -> Element msg
+verbatimTextView w h text_ =
+    column ([ width (px w), height (px h) ] ++ [ Font.size 12 ]) [ el [] (Element.text text_) ]
 
 
 markdownStyle w h =
