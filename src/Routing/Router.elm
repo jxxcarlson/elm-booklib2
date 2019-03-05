@@ -11,6 +11,7 @@ import Pages.About as About
 import Pages.Books as Books
 import Pages.CurrentBook as CurrentBook exposing (AppState(..))
 import Pages.CurrentUser as CurrentUser
+import Pages.Groups as Groups
 import Pages.SharedBooks as SharedBooks
 import Routing.Helpers exposing (Route(..), parseUrl, reverseRoute)
 import SharedState exposing (SharedState, SharedStateUpdate(..))
@@ -24,6 +25,7 @@ type alias Model =
     , currentBookModel : CurrentBook.Model
     , currentUserModel : CurrentUser.Model
     , aboutModel : About.Model
+    , groupsModel : Groups.Model
     , route : Route
     }
 
@@ -35,6 +37,7 @@ type Msg
     | CurrentBookMsg CurrentBook.Msg
     | CurrentUserMsg User.Types.Msg
     | AboutMsg About.Msg
+    | GroupsMsg Groups.Msg
     | NavigateTo Route
 
 
@@ -55,12 +58,16 @@ initialModel url =
 
         aboutModel =
             About.init
+
+        groupsModel =
+            Groups.init
     in
     { bookModel = bookModel
     , currentBookModel = currentBookModel
     , sharedBookModel = sharedBookModel
     , currentUserModel = currentUserModel
     , aboutModel = aboutModel
+    , groupsModel = groupsModel
     , route = parseUrl url
     }
 
@@ -82,12 +89,16 @@ init url =
 
         aboutModel =
             About.init
+
+        groupsModel =
+            Groups.init
     in
     ( { bookModel = bookModel
       , sharedBookModel = sharedBookModel
       , currentBookModel = currentBookModel
       , currentUserModel = currentUserModel
       , aboutModel = aboutModel
+      , groupsModel = groupsModel
       , route = parseUrl url
       }
     , Cmd.map BookMsg Cmd.none
@@ -181,6 +192,9 @@ update sharedState msg model =
         AboutMsg aboutMsg ->
             updateAbout sharedState model aboutMsg
 
+        GroupsMsg groupsMsg ->
+            updateGroups sharedState model groupsMsg
+
 
 updateBook : SharedState -> Model -> Books.Msg -> ( Model, Cmd Msg, SharedStateUpdate )
 updateBook sharedState model bookMsg =
@@ -242,6 +256,18 @@ updateAbout sharedState model aboutMsg =
     )
 
 
+updateGroups : SharedState -> Model -> Groups.Msg -> ( Model, Cmd Msg, SharedStateUpdate )
+updateGroups sharedState model groupsMsg =
+    let
+        ( nextGroupsModel, groupsCmd, sharedStateUpdate ) =
+            Groups.update sharedState groupsMsg model.groupsModel
+    in
+    ( { model | groupsModel = nextGroupsModel }
+    , Cmd.map GroupsMsg groupsCmd
+    , sharedStateUpdate
+    )
+
+
 view : (Msg -> msg) -> SharedState -> Model -> { body : List (Html.Html msg), title : String }
 view msgMapper sharedState model =
     let
@@ -261,6 +287,9 @@ view msgMapper sharedState model =
 
                 AboutRoute ->
                     "About"
+
+                GroupsRoute ->
+                    "Groups"
 
                 NotFoundRoute ->
                     "404"
@@ -304,6 +333,10 @@ view msgMapper sharedState model =
                     , Input.button (Style.activeButton (model.route == CurrentUserRoute))
                         { onPress = Just (NavigateTo CurrentUserRoute)
                         , label = el [] (text "User")
+                        }
+                    , Input.button (Style.activeButton (model.route == GroupsRoute))
+                        { onPress = Just (NavigateTo GroupsRoute)
+                        , label = el [] (text "Groups")
                         }
                     ]
                 , pageView sharedState model
@@ -354,6 +387,10 @@ pageView sharedState model =
             AboutRoute ->
                 About.view sharedState model.aboutModel
                     |> Element.map AboutMsg
+
+            GroupsRoute ->
+                Groups.view sharedState model.groupsModel
+                    |> Element.map GroupsMsg
 
             NotFoundRoute ->
                 el [] (text "404 :(")
