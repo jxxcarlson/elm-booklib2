@@ -78,6 +78,7 @@ userDecoderForOutside =
         |> required "followers" (Decode.string |> Decode.map stringToPublicUserList)
         |> required "admin" (Decode.map stringToBool Decode.string)
         |> required "beginningDate" Decode.string
+        |> required "tags" (Decode.list Decode.string)
 
 
 

@@ -97,6 +97,7 @@ userDecoder =
         |> required "followers" (Decode.list publicUserDecoder)
         |> required "admin" Decode.bool
         |> required "inserted_at" (Decode.map usDateStringFromElixirDateString Decode.string)
+        |> required "tags" (Decode.list Decode.string)
 
 
 userRecordDecoder2 : Decoder UserRecord
@@ -119,6 +120,7 @@ userDecoder2 =
         |> required "followers" (Decode.list publicUserDecoder)
         |> required "admin" Decode.bool
         |> required "beginningDate" Decode.string
+        |> required "tags" (Decode.list Decode.string)
 
 
 publicUserDecoder : Decoder PublicUser

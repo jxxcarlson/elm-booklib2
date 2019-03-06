@@ -16,6 +16,7 @@ type alias User =
     , followers : List PublicUser
     , admin : Bool
     , beginningDate : String
+    , tags : List String
     }
 
 
@@ -36,6 +37,7 @@ testUser =
     , followers = [ { username = "Bo" }, { username = "Sally" } ]
     , admin = False
     , beginningDate = "1/1/1800"
+    , tags = []
     }
 
 

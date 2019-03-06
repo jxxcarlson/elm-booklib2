@@ -180,7 +180,20 @@ signInColumn sharedState model =
         , row [ moveRight 125, spacing 12 ] [ signInOrCancelButton model, registerButton model ]
         , el [ Font.size 18 ] (text model.message)
         , showIf (model.state == SignedIn) (publicCheckbox sharedState)
+        , showIf (model.state == SignedIn) (el [] (text (tagsToString sharedState.currentUser)))
         ]
+
+
+tagsToString : Maybe User -> String
+tagsToString currentUser_ =
+    case currentUser_ of
+        Nothing ->
+            "No tags"
+
+        Just user ->
+            user.tags
+                |> String.join ", "
+                |> (\x -> "Tags: " ++ x)
 
 
 footer : SharedState -> Model -> Element Msg
