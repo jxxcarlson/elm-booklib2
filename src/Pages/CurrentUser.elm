@@ -210,9 +210,9 @@ signInColumn sharedState model =
 tagInput model =
     Input.text [ width (px 400), height (px 20), Font.size 14 ]
         { text = model.tagString
-        , placeholder = Just <| Input.placeholder [] (el [] (Element.text "history, ficton, science"))
+        , placeholder = Just <| Input.placeholder [ moveUp 6 ] (el [] (Element.text "history, ficton, science"))
         , onChange = InputTagString
-        , label = Input.labelLeft [ Font.size 14, moveDown 4 ] (text "Tags ")
+        , label = Input.labelLeft [ Font.size 14, moveDown 5 ] (text "Tags ")
         }
 
 
