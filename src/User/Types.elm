@@ -57,6 +57,8 @@ type Msg
     | SubmitRegistration
     | SetState State
     | ToggleUserPublic Bool
+    | InputTagString String
+    | UpdateUserTags
 
 
 type State

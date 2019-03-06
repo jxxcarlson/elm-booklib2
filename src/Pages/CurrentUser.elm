@@ -19,6 +19,7 @@ import Routing.Helpers exposing (Route(..), reverseRoute)
 import SharedState exposing (SharedState, SharedStateUpdate(..))
 import User.Session as Session
 import User.Types exposing (Msg(..), State(..), User)
+import User.Utility
 
 
 type alias Model =
@@ -26,6 +27,7 @@ type alias Model =
     , email : String
     , password : String
     , username : String
+    , tagString : String
     , state : State
     }
 
@@ -36,6 +38,7 @@ initModel =
     , username = ""
     , email = ""
     , password = ""
+    , tagString = ""
     , state = NotSignedIn
     }
 
@@ -143,12 +146,31 @@ update sharedState msg model =
                     in
                     ( model, cmd, SharedState.UpdateCurrentUser (Just nextUser) )
 
+        InputTagString str ->
+            ( { model | tagString = str }, Cmd.none, NoUpdate )
+
+        UpdateUserTags ->
+            let
+                ( nextCurrentUser, cmd ) =
+                    case sharedState.currentUser of
+                        Nothing ->
+                            ( Nothing, Cmd.none )
+
+                        Just user ->
+                            let
+                                nextUser_ =
+                                    { user | tags = String.split "," model.tagString |> List.map String.trim }
+                            in
+                            ( Just nextUser_, Session.updateUser nextUser_ nextUser_.token )
+            in
+            ( model, cmd, SharedState.UpdateCurrentUser nextCurrentUser )
+
 
 view : SharedState -> Model -> Element Msg
 view sharedState model =
     column (Style.mainColumn fill fill)
         [ row [ spacing 20 ]
-            [ welcomeColumn sharedState model
+            [ showIf (model.state /= SignedIn) (welcomeColumn sharedState model)
             , signInColumn sharedState model
             ]
         , footer sharedState model
@@ -178,22 +200,27 @@ signInColumn sharedState model =
         , showIf (model.state /= SignedIn) (inputEmail model)
         , showIf (model.state /= SignedIn) (inputPassword model)
         , row [ moveRight 125, spacing 12 ] [ signInOrCancelButton model, registerButton model ]
-        , el [ Font.size 18 ] (text model.message)
+        , showIf (model.state /= SignedIn) (el [ Font.size 18 ] (text model.message))
         , showIf (model.state == SignedIn) (publicCheckbox sharedState)
-        , showIf (model.state == SignedIn) (el [] (text (tagsToString sharedState.currentUser)))
+        , showIf (model.state == SignedIn) (tagInput model)
+        , showIf (model.state == SignedIn) tagUpdateButton
         ]
 
 
-tagsToString : Maybe User -> String
-tagsToString currentUser_ =
-    case currentUser_ of
-        Nothing ->
-            "No tags"
+tagInput model =
+    Input.text [ width (px 400), height (px 20), Font.size 14 ]
+        { text = model.tagString
+        , placeholder = Just <| Input.placeholder [] (el [] (Element.text "history, ficton, science"))
+        , onChange = InputTagString
+        , label = Input.labelLeft [ Font.size 14, moveDown 4 ] (text "Tags ")
+        }
 
-        Just user ->
-            user.tags
-                |> String.join ", "
-                |> (\x -> "Tags: " ++ x)
+
+tagUpdateButton =
+    Input.button Style.button
+        { onPress = Just UpdateUserTags
+        , label = el [ Font.size 14 ] (text "Update tags ")
+        }
 
 
 footer : SharedState -> Model -> Element Msg

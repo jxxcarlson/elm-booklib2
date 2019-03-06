@@ -17,6 +17,7 @@ import Routing.Helpers exposing (Route(..), parseUrl, reverseRoute)
 import SharedState exposing (SharedState, SharedStateUpdate(..))
 import Url exposing (Url)
 import User.Types exposing (State(..))
+import User.Utility
 
 
 type alias Model =
@@ -141,7 +142,7 @@ update sharedState msg model =
                                     { oldUserModel | state = NotSignedIn }
 
                                 Just _ ->
-                                    { oldUserModel | state = SignedIn }
+                                    { oldUserModel | state = SignedIn, tagString = User.Utility.tagsToString sharedState.currentUser }
 
                         _ ->
                             oldUserModel
@@ -398,3 +399,9 @@ pageView sharedState model =
             NotFoundRoute ->
                 el [] (text "404 :(")
         ]
+
+
+
+--
+-- HELPERS
+--
