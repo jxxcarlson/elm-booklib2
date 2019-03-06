@@ -330,17 +330,17 @@ view msgMapper sharedState model =
                                 { onPress = Just (NavigateTo SharedBooksRoute)
                                 , label = el [] (text "Shared Books")
                                 }
-                    , Input.button (Style.activeButton (model.route == AboutRoute))
-                        { onPress = Just (NavigateTo AboutRoute)
-                        , label = el [] (text "About")
+                    , Input.button (Style.activeButton (model.route == GroupsRoute))
+                        { onPress = Just (NavigateTo GroupsRoute)
+                        , label = el [] (text "Groups")
                         }
                     , Input.button (Style.activeButton (model.route == CurrentUserRoute))
                         { onPress = Just (NavigateTo CurrentUserRoute)
                         , label = el [] (text "User")
                         }
-                    , Input.button (Style.activeButton (model.route == GroupsRoute))
-                        { onPress = Just (NavigateTo GroupsRoute)
-                        , label = el [] (text "Groups")
+                    , Input.button (Style.activeButton (model.route == AboutRoute))
+                        { onPress = Just (NavigateTo AboutRoute)
+                        , label = el [] (text "About")
                         }
                     ]
                 , pageView sharedState model

@@ -199,7 +199,8 @@ signInColumn sharedState model =
         [ showIf (model.state /= SignedIn) (inputUsername model)
         , showIf (model.state /= SignedIn) (inputEmail model)
         , showIf (model.state /= SignedIn) (inputPassword model)
-        , row [ moveRight 125, spacing 12 ] [ signInOrCancelButton model, registerButton model ]
+        , showIf (model.state /= SignedIn) (row [ moveRight 125, spacing 12 ] [ signInOrCancelButton model, registerButton model ])
+        , showIf (model.state == SignedIn) (signInOrCancelButton model)
         , showIf (model.state /= SignedIn) (el [ Font.size 18 ] (text model.message))
         , showIf (model.state == SignedIn) (publicCheckbox sharedState)
         , showIf (model.state == SignedIn) (tagInput model)
