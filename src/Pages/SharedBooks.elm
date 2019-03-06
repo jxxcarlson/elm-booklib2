@@ -419,7 +419,7 @@ listBooks sharedState model =
 
 bookInfo : Model -> String
 bookInfo model =
-    "Book: " ++ (String.fromInt <| booksCompleted model.bookList) ++ "/" ++ (String.fromInt <| List.length model.bookList)
+    "Books: " ++ (String.fromInt <| booksCompleted model.bookList) ++ "/" ++ (String.fromInt <| List.length model.bookList)
 
 
 pageInfo book =
@@ -453,7 +453,7 @@ titleButton book maybeCurrentBook =
                 Just currentBook ->
                     currentBook.id == book.id
     in
-    Input.button (Style.titleButton highlighted)
+    Input.button (Style.titleButton highlighted ++ [ clipX ])
         { onPress = Just (SetCurrentBook book)
         , label = Element.text book.title
         }

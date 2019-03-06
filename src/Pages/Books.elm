@@ -305,7 +305,7 @@ listBooks sharedState model =
         ]
         { data = model.bookList
         , columns =
-            [ { header = Element.el Style.tableHeading (Element.text "Title")
+            [ { header = Element.el (Style.tableHeading ++ [ clipX ]) (Element.text "Title")
               , width = px 200
               , view =
                     \book ->
@@ -341,7 +341,7 @@ listBooks sharedState model =
 
 bookInfo : Model -> String
 bookInfo model =
-    "Book: " ++ (String.fromInt <| booksCompleted model.bookList) ++ "/" ++ (String.fromInt <| List.length model.bookList)
+    "Books: " ++ (String.fromInt <| booksCompleted model.bookList) ++ "/" ++ (String.fromInt <| List.length model.bookList)
 
 
 pageInfo book =
