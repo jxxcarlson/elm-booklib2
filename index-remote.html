@@ -57,7 +57,8 @@
            "follow": localStorage.getItem("follow"),
            "followers": localStorage.getItem("followers"),
            "admin": localStorage.getItem("admin"),
-           "beginningDate": localStorage.getItem("beginningDate")
+           "beginningDate": localStorage.getItem("beginningDate"),
+           "tags": localStorage.getItem("tags")
 
     		 }
     		    // console.log("jsonThing: " + JSON.stringify(jsonThing))
@@ -79,6 +80,7 @@
          localStorage.setItem("followers", userSettings.followers);
          localStorage.setItem("admin", userSettings.admin);
          localStorage.setItem("beginningDate", userSettings.beginningDate);
+         localStorage.setItem("tags", userSettings.tags);
        }
 
 

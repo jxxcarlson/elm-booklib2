@@ -78,7 +78,7 @@ userDecoderForOutside =
         |> required "followers" (Decode.string |> Decode.map stringToPublicUserList)
         |> required "admin" (Decode.map stringToBool Decode.string)
         |> required "beginningDate" Decode.string
-        |> required "tags" (Decode.list Decode.string)
+        |> required "tags" (Decode.string |> Decode.map (String.split ","))
 
 
 
@@ -99,6 +99,7 @@ userEncoder user =
         , ( "followers", Encode.string (publicUserListToString user.followers) )
         , ( "admin", Encode.string (boolToString user.admin) )
         , ( "beginningDate", Encode.string user.beginningDate )
+        , ( "tags", Encode.string (user.tags |> String.join ",") )
         ]
 
 
