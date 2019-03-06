@@ -636,7 +636,7 @@ userInfoView sharedState model =
     in
     Element.column [ width (px 250), height (px 200), padding 15, spacing 10, scrollbarY ]
         [ Element.el [ Font.bold, Font.size 14 ] (Element.text (publicUserTitle pu))
-        , Element.column [ spacing 5 ] (List.map (\publicUser -> displayPublicUser sharedState model publicUser) pu)
+        , Element.column [ spacing 4 ] (List.map (\publicUser -> displayPublicUser sharedState model publicUser) pu)
         ]
 
 
@@ -644,7 +644,7 @@ followersView : SharedState -> Model -> Element Msg
 followersView sharedState model =
     Element.column [ width (px 250), height (px 300), scrollbarY, padding 15, spacing 10 ]
         [ Element.el [ Font.bold, Font.size 14 ] (Element.text "Followers")
-        , Element.column [ spacing 5 ] (List.map (\publicUser -> displayPublicUser sharedState model publicUser) (followerList sharedState))
+        , Element.column [ spacing 4 ] (List.map (\publicUser -> displayPublicUser sharedState model publicUser) (followerList sharedState))
         ]
 
 
@@ -652,7 +652,7 @@ followingView : SharedState -> Model -> Element Msg
 followingView sharedState model =
     Element.column [ width (px 250), height (px 300), scrollbarY, padding 15, spacing 10 ]
         [ Element.el [ Font.bold, Font.size 14 ] (Element.text "Following")
-        , Element.column [ spacing 5 ] (List.map (\publicUser -> displayPublicUser sharedState model publicUser) (followingList sharedState))
+        , Element.column [ spacing 4 ] (List.map (\publicUser -> displayPublicUser sharedState model publicUser) (followingList sharedState))
         ]
 
 
@@ -723,13 +723,13 @@ followUserButton sharedState model publicUsername =
     in
     Input.button (Style.listElementButtonStyleWithWidth2 65 (Tuple.second indicator))
         { onPress = Just (FollowUser publicUsername)
-        , label = Element.text (Tuple.first indicator)
+        , label = el [ Font.size 12 ] (Element.text (Tuple.first indicator))
         }
 
 
 getShareBooksButton : Model -> PublicUser -> Element Msg
 getShareBooksButton model publicUser =
-    Input.button (Style.activeButton (model.currentPublicUser == Just publicUser) ++ [ width (px 145) ])
+    Input.button (Style.titleButton (model.currentPublicUser == Just publicUser) ++ [ width (px 145) ])
         { onPress = Just (GetSharedBooks publicUser.username)
-        , label = Element.text publicUser.username
+        , label = el [ Font.size 14 ] (Element.text publicUser.username)
         }

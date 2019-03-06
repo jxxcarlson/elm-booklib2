@@ -121,6 +121,9 @@ update sharedState msg model =
                         SharedBooksRoute ->
                             SharedBooks.getPublicUsers sharedState |> Cmd.map SharedBookMsg
 
+                        GroupsRoute ->
+                            Groups.getGroupList |> Cmd.map GroupsMsg
+
                         CurrentBookRoute ->
                             Cmd.none
 
