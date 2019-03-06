@@ -39,12 +39,21 @@ userEncoder user =
         , ( "followers", followEncoder user.followers )
         , ( "admin", Encode.bool user.admin )
         , ( "beginningDate", Encode.string user.beginningDate )
+        , ( "tags", Encode.list Encode.string user.tags )
         ]
+
+
+
+--followEncoder : List PublicUser -> Encode.Value
+--followEncoder publicUserList =
+--    Encode.list encodePublicUser publicUserList
+--
+--
 
 
 followEncoder : List PublicUser -> Encode.Value
 followEncoder publicUserList =
-    Encode.list encodePublicUser publicUserList
+    Encode.list Encode.string (List.map .username publicUserList)
 
 
 encodePublicUser : PublicUser -> Encode.Value
