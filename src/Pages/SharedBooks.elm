@@ -45,7 +45,13 @@ type alias Model =
     , finishDateString : String
     , errorMessage : String
     , startDateString : String
+    , appState : AppState
     }
+
+
+type AppState
+    = ShowFollowers
+    | ShowFollowing
 
 
 init : Model
@@ -60,6 +66,7 @@ init =
     , errorMessage = ""
     , finishDateString = ""
     , startDateString = ""
+    , appState = ShowFollowing
     }
 
 
@@ -98,6 +105,7 @@ type Msg
     | NoOp
       --
     | FollowUser String
+    | SetAppState AppState
 
 
 
@@ -276,6 +284,9 @@ update sharedState msg model =
         ReceiveAnnotatedUserList (Err err) ->
             ( { model | errorMessage = "ERROR, Cant't get annotated user list" }, Cmd.none, NoUpdate )
 
+        SetAppState appState ->
+            ( { model | appState = appState }, Cmd.none, NoUpdate )
+
 
 view : SharedState -> Model -> Element Msg
 view sharedState model =
@@ -319,17 +330,32 @@ matchBookAndUserIds sharedState =
 sharedUserDisplay : SharedState -> Model -> Element Msg
 sharedUserDisplay sharedState model =
     Element.column
-        [ width (px 400)
+        [ width (px 270)
         , height (px 600)
         , spacing 10
         , padding 10
         , Background.color Style.charcoal
         , Font.color Style.white
         ]
-        [ followingView sharedState model
+        [ followView sharedState model
         , userInfoView sharedState model
-        , followersView sharedState model
         ]
+
+
+followView sharedState model =
+    column [ spacing 12 ]
+        [ row [ spacing 12 ] [ followingButton model, followersButton model ]
+        , showFollowingOrFollower sharedState model
+        ]
+
+
+showFollowingOrFollower sharedState model =
+    case model.appState of
+        ShowFollowers ->
+            followersView sharedState model
+
+        ShowFollowing ->
+            followingView sharedState model
 
 
 bookListTable : SharedState -> Model -> Element Msg
@@ -634,25 +660,50 @@ userInfoView sharedState model =
         pu =
             publicUsersMinusFollowing sharedState model
     in
-    Element.column [ width (px 250), height (px 200), padding 15, spacing 10, scrollbarY ]
+    Element.column [ spacing 12 ]
         [ Element.el [ Font.bold, Font.size 14 ] (Element.text (publicUserTitle pu))
-        , Element.column [ spacing 4 ] (List.map (\publicUser -> displayPublicUser sharedState model publicUser) pu)
+        , Element.column [ width (px 250), height (px 320), padding 15, spacing 10, scrollbarY, Border.width 1 ]
+            [ Element.column [ spacing 4 ] (List.map (\publicUser -> displayPublicUser sharedState model publicUser) pu)
+            ]
         ]
 
 
 followersView : SharedState -> Model -> Element Msg
 followersView sharedState model =
-    Element.column [ width (px 250), height (px 300), scrollbarY, padding 15, spacing 10 ]
-        [ Element.el [ Font.bold, Font.size 14 ] (Element.text "Followers")
-        , Element.column [ spacing 4 ] (List.map (\publicUser -> displayPublicUser sharedState model publicUser) (followerList sharedState))
+    Element.column [ width (px 250), height (px 200), scrollbarY, padding 15, spacing 10, Border.width 1 ]
+        [ Element.column [ spacing 4 ] (List.map (\publicUser -> displayPublicUser sharedState model publicUser) (followerList sharedState))
         ]
+
+
+followersButton : Model -> Element Msg
+followersButton model =
+    Input.button []
+        { onPress = Just (SetAppState ShowFollowers)
+        , label = Element.el [ Font.bold, Font.size 14, Font.color (useColor (model.appState == ShowFollowers)) ] (text "Followers")
+        }
+
+
+followingButton : Model -> Element Msg
+followingButton model =
+    Input.button []
+        { onPress = Just (SetAppState ShowFollowing)
+        , label = Element.el [ Font.bold, Font.size 14, Font.color (useColor (model.appState == ShowFollowing)) ] (text "Following")
+        }
+
+
+useColor flag =
+    case flag of
+        True ->
+            Style.orange
+
+        False ->
+            Style.white
 
 
 followingView : SharedState -> Model -> Element Msg
 followingView sharedState model =
-    Element.column [ width (px 250), height (px 300), scrollbarY, padding 15, spacing 10 ]
-        [ Element.el [ Font.bold, Font.size 14 ] (Element.text "Following")
-        , Element.column [ spacing 4 ] (List.map (\publicUser -> displayPublicUser sharedState model publicUser) (followingList sharedState))
+    Element.column [ width (px 250), height (px 200), scrollbarY, padding 15, spacing 10, Border.width 1 ]
+        [ Element.column [ spacing 4 ] (List.map (\publicUser -> displayPublicUser sharedState model publicUser) (followingList sharedState))
         ]
 
 
