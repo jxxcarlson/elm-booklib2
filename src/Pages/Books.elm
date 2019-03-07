@@ -329,11 +329,17 @@ listBooks sharedState model =
                     \book ->
                         Element.el [] (Indicator.indicator 100 10 "orange" (pageRatio book))
               }
-            , { header = Element.el Style.tableHeading (Element.text "Progress")
-              , width = px 110
+            , { header = Element.el Style.tableHeading (el [ moveRight 16 ] (Element.text "Progress"))
+              , width = px 80
               , view =
                     \book ->
-                        Element.text (pageInfo book)
+                        el [] (el [ alignRight, paddingXY 8 0 ] (Element.text (pageInfo book)))
+              }
+            , { header = Element.el Style.tableHeading (el [ moveRight 9 ] (Element.text "%%"))
+              , width = px 40
+              , view =
+                    \book ->
+                        el [] (el [ alignRight, paddingXY 8 0 ] (Element.text (pageInfo2 book)))
               }
             ]
         }
@@ -345,14 +351,11 @@ bookInfo model =
 
 
 pageInfo book =
-    let
-        pp =
-            String.fromInt book.pagesRead ++ "/" ++ String.fromInt book.pages
+    String.fromInt book.pagesRead ++ "/" ++ String.fromInt book.pages
 
-        pc =
-            String.fromInt <| Basics.round <| 100 * Basics.toFloat book.pagesRead / Basics.toFloat book.pages
-    in
-    pp ++ " (" ++ pc ++ "%)"
+
+pageInfo2 book =
+    (String.fromInt <| Basics.round <| 100 * Basics.toFloat book.pagesRead / Basics.toFloat book.pages) ++ "%"
 
 
 totalsString : SharedState -> Model -> String
