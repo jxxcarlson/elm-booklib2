@@ -14,6 +14,7 @@ import Element.Background as Background
 import Element.Font as Font
 import Element.Input as Input
 import Http exposing (Error(..))
+import Json.Encode
 import OutsideInfo exposing (InfoForOutside(..))
 import Routing.Helpers exposing (Route(..), reverseRoute)
 import SharedState exposing (SharedState, SharedStateUpdate(..))
@@ -70,7 +71,7 @@ update sharedState msg model =
                 , password = ""
                 , state = NotSignedIn
               }
-            , Cmd.none
+            , OutsideInfo.sendInfoOutside (DisconnectUser Json.Encode.null)
             , InvalidateCurrentUser
             )
 
