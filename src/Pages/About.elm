@@ -151,7 +151,7 @@ textColumn sharedState model =
         , paragraph []
             [ text
                 """With Booklib.io, you can keep a running list of the books you are
-                reading and have read, along with page counts and your personal notes —
+                reading and have read, along with a progress bar, page counts and your personal notes —
                 press the "BookLib Screenshot" button below to see one user's list.
 
             """
@@ -159,7 +159,7 @@ textColumn sharedState model =
         , paragraph
             []
             [ text """By default, your list and notes are entirely private.  However, if you wish, you can share
-            selected books with the Booklib community.  Click on the "Shared books" tab to see
+            selected books with the Booklib community.  If you are signed in, click on the "Shared books" tab to see
             what other users have shared.""" ]
         , paragraph
             []
