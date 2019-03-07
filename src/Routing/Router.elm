@@ -303,33 +303,24 @@ view msgMapper sharedState model =
                 [ row
                     (Style.navBar fill)
                     [ el [ Font.bold, Font.color Style.white ] (text "BookLib")
-                    , case sharedState.currentUser of
-                        Nothing ->
-                            Element.none
-
-                        Just _ ->
-                            Input.button (Style.activeButton (model.route == BooksRoute))
-                                { onPress = Just (NavigateTo BooksRoute)
-                                , label = el [] (text "My Books")
-                                }
-                    , case matchBookAndUserIds sharedState of
-                        False ->
-                            Element.none
-
-                        True ->
-                            Input.button (Style.activeButton (model.route == CurrentBookRoute))
-                                { onPress = Just (NavigateTo CurrentBookRoute)
-                                , label = el [] (text "Current Book")
-                                }
-                    , case sharedState.currentUser of
-                        Nothing ->
-                            Element.none
-
-                        Just _ ->
-                            Input.button (Style.activeButton (model.route == SharedBooksRoute))
-                                { onPress = Just (NavigateTo SharedBooksRoute)
-                                , label = el [] (text "Shared Books")
-                                }
+                    , showIf (sharedState.currentUser /= Nothing)
+                        (Input.button (Style.activeButton (model.route == BooksRoute))
+                            { onPress = Just (NavigateTo BooksRoute)
+                            , label = el [] (text "My Books")
+                            }
+                        )
+                    , showIf (sharedState.currentUser /= Nothing)
+                        (Input.button (Style.activeButton (model.route == CurrentBookRoute))
+                            { onPress = Just (NavigateTo CurrentBookRoute)
+                            , label = el [] (text "Current Book")
+                            }
+                        )
+                    , showIf (sharedState.currentUser /= Nothing)
+                        (Input.button (Style.activeButton (model.route == SharedBooksRoute))
+                            { onPress = Just (NavigateTo SharedBooksRoute)
+                            , label = el [] (text "Shared Books")
+                            }
+                        )
                     , showIf (currentUserIsMe sharedState)
                         (Input.button (Style.activeButton (model.route == GroupsRoute))
                             { onPress = Just (NavigateTo GroupsRoute)
