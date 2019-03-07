@@ -330,10 +330,12 @@ view msgMapper sharedState model =
                                 { onPress = Just (NavigateTo SharedBooksRoute)
                                 , label = el [] (text "Shared Books")
                                 }
-                    , Input.button (Style.activeButton (model.route == GroupsRoute))
-                        { onPress = Just (NavigateTo GroupsRoute)
-                        , label = el [] (text "Groups")
-                        }
+                    , showIf (currentUserIsMe sharedState)
+                        (Input.button (Style.activeButton (model.route == GroupsRoute))
+                            { onPress = Just (NavigateTo GroupsRoute)
+                            , label = el [] (text "Groups")
+                            }
+                        )
                     , Input.button (Style.activeButton (model.route == CurrentUserRoute))
                         { onPress = Just (NavigateTo CurrentUserRoute)
                         , label = el [] (text "User")
@@ -405,3 +407,22 @@ pageView sharedState model =
 --
 -- HELPERS
 --
+
+
+showIf : Bool -> Element Msg -> Element Msg
+showIf flag element =
+    if flag then
+        element
+
+    else
+        Element.none
+
+
+currentUserIsMe : SharedState -> Bool
+currentUserIsMe sharedState =
+    case sharedState.currentUser of
+        Nothing ->
+            False
+
+        Just user ->
+            user.username == "jxxcarlson"
