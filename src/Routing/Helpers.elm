@@ -11,6 +11,7 @@ type Route
     | CurrentUserRoute
     | AboutRoute
     | GroupsRoute
+    | AdminRoute
     | NotFoundRoute
 
 
@@ -35,6 +36,9 @@ reverseRoute route =
         GroupsRoute ->
             "#/groups"
 
+        AdminRoute ->
+            "#/admin"
+
         _ ->
             "#/"
 
@@ -47,6 +51,7 @@ routeParser =
         , Url.Parser.map SharedBooksRoute (Url.Parser.s "sharedbooks")
         , Url.Parser.map AboutRoute (Url.Parser.s "about")
         , Url.Parser.map GroupsRoute (Url.Parser.s "groups")
+        , Url.Parser.map AdminRoute (Url.Parser.s "admin")
         ]
 
 

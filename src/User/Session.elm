@@ -1,4 +1,4 @@
-module User.Session exposing (authenticate, registerUser, tokenEncoder, updateUser, userEncoder)
+module User.Session exposing (authenticate, registerUser, tokenEncoder, updateUser, userEncoder, userListDecoder)
 
 import Common.Days as Days
 import Configuration
@@ -100,27 +100,25 @@ userDecoder =
         |> required "tags" (Decode.list Decode.string)
 
 
-userRecordDecoder2 : Decoder UserRecord
-userRecordDecoder2 =
-    Decode.succeed UserRecord
-        |> required "user" userDecoder2
+type alias User =
+    { username : String
+    , id : Int
+    , firstname : String
+    , email : String
+    , token : String
+    , blurb : String
+    , public : Bool
+    , follow : List PublicUser
+    , followers : List PublicUser
+    , admin : Bool
+    , beginningDate : String
+    , tags : List String
+    }
 
 
-userDecoder2 : Decoder User
-userDecoder2 =
-    Decode.succeed User
-        |> required "username" Decode.string
-        |> required "id" Decode.int
-        |> required "firstname" Decode.string
-        |> required "email" Decode.string
-        |> required "token" Decode.string
-        |> required "blurb" Decode.string
-        |> required "public" Decode.bool
-        |> required "follow" (Decode.list publicUserDecoder)
-        |> required "followers" (Decode.list publicUserDecoder)
-        |> required "admin" Decode.bool
-        |> required "beginningDate" Decode.string
-        |> required "tags" (Decode.list Decode.string)
+userListDecoder : Decoder (List User)
+userListDecoder =
+    Decode.field "data" (Decode.list userDecoder)
 
 
 publicUserDecoder : Decoder PublicUser

@@ -8,6 +8,7 @@ import Element.Font as Font
 import Element.Input as Input
 import Html exposing (Html)
 import Pages.About as About
+import Pages.Admin as Admin
 import Pages.Books as Books
 import Pages.CurrentBook as CurrentBook exposing (AppState(..))
 import Pages.CurrentUser as CurrentUser
@@ -27,6 +28,7 @@ type alias Model =
     , currentUserModel : CurrentUser.Model
     , aboutModel : About.Model
     , groupsModel : Groups.Model
+    , adminModel : Admin.Model
     , route : Route
     }
 
@@ -39,6 +41,7 @@ type Msg
     | CurrentUserMsg User.Types.Msg
     | AboutMsg About.Msg
     | GroupsMsg Groups.Msg
+    | AdminMsg Admin.Msg
     | NavigateTo Route
 
 
@@ -62,6 +65,9 @@ initialModel url =
 
         groupsModel =
             Groups.init
+
+        adminModel =
+            Admin.init
     in
     { bookModel = bookModel
     , currentBookModel = currentBookModel
@@ -69,6 +75,7 @@ initialModel url =
     , currentUserModel = currentUserModel
     , aboutModel = aboutModel
     , groupsModel = groupsModel
+    , adminModel = adminModel
     , route = parseUrl url
     }
 
@@ -93,6 +100,9 @@ init url =
 
         groupsModel =
             Groups.init
+
+        adminModel =
+            Admin.init
     in
     ( { bookModel = bookModel
       , sharedBookModel = sharedBookModel
@@ -100,6 +110,7 @@ init url =
       , currentUserModel = currentUserModel
       , aboutModel = aboutModel
       , groupsModel = groupsModel
+      , adminModel = adminModel
       , route = parseUrl url
       }
     , Cmd.map BookMsg Cmd.none
@@ -199,6 +210,9 @@ update sharedState msg model =
         GroupsMsg groupsMsg ->
             updateGroups sharedState model groupsMsg
 
+        AdminMsg adminMsg ->
+            updateAdmin sharedState model adminMsg
+
 
 updateBook : SharedState -> Model -> Books.Msg -> ( Model, Cmd Msg, SharedStateUpdate )
 updateBook sharedState model bookMsg =
@@ -272,6 +286,18 @@ updateGroups sharedState model groupsMsg =
     )
 
 
+updateAdmin : SharedState -> Model -> Admin.Msg -> ( Model, Cmd Msg, SharedStateUpdate )
+updateAdmin sharedState model adminMsg =
+    let
+        ( nextAdminModel, adminCmd, sharedStateUpdate ) =
+            Admin.update sharedState adminMsg model.adminModel
+    in
+    ( { model | adminModel = nextAdminModel }
+    , Cmd.map AdminMsg adminCmd
+    , sharedStateUpdate
+    )
+
+
 view : (Msg -> msg) -> SharedState -> Model -> { body : List (Html.Html msg), title : String }
 view msgMapper sharedState model =
     let
@@ -294,6 +320,9 @@ view msgMapper sharedState model =
 
                 GroupsRoute ->
                     "Groups"
+
+                AdminRoute ->
+                    "Admin"
 
                 NotFoundRoute ->
                     "404"
@@ -335,6 +364,12 @@ view msgMapper sharedState model =
                         { onPress = Just (NavigateTo AboutRoute)
                         , label = el [] (text "About")
                         }
+                    , showIf (currentUserIsMe sharedState)
+                        (Input.button (Style.activeButton (model.route == AdminRoute))
+                            { onPress = Just (NavigateTo AdminRoute)
+                            , label = el [] (text "Admin")
+                            }
+                        )
                     ]
                 , pageView sharedState model
                 ]
@@ -388,6 +423,10 @@ pageView sharedState model =
             GroupsRoute ->
                 Groups.view sharedState model.groupsModel
                     |> Element.map GroupsMsg
+
+            AdminRoute ->
+                Admin.view sharedState model.adminModel
+                    |> Element.map AdminMsg
 
             NotFoundRoute ->
                 el [] (text "404 :(")
