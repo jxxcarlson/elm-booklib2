@@ -88,19 +88,19 @@ userList model =
                         text (String.fromInt user.id)
               }
             , { header = Element.el Style.tableHeading (Element.text "Username")
-              , width = px 200
+              , width = px 170
               , view =
                     \user ->
                         text user.username
               }
             , { header = Element.el Style.tableHeading (Element.text "Email")
-              , width = px 200
+              , width = px 250
               , view =
                     \user ->
                         text user.email
               }
             , { header = Element.el Style.tableHeading (Element.text "Joined")
-              , width = px 150
+              , width = px 120
               , view =
                     \user ->
                         text user.beginningDate
