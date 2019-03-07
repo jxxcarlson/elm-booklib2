@@ -1,4 +1,4 @@
-module Pages.Admin exposing (Model, Msg(..), init, update, view)
+module Pages.Admin exposing (Model, Msg(..), dateStringToInt, init, update, view)
 
 import Book.Coders
 import Book.Types exposing (Book)
@@ -55,24 +55,71 @@ update sharedState msg model =
             ( { model | users = users_ }, Cmd.none, SharedState.NoUpdate )
 
         GotUsers (Err err) ->
-            let
-                _ =
-                    Debug.log "HTTP ERROR" err
-            in
             ( { model | message = "Error decoding user list" }, Cmd.none, SharedState.NoUpdate )
 
 
 view : SharedState -> Model -> Element Msg
 view sharedState model =
     column (Style.mainColumn fill fill ++ [ padding 40 ])
-        [ getUsersButton
-        , el [] (text <| String.fromInt <| List.length model.users)
+        [ row [ spacing 8 ] [ getUsersButton, el [ Font.size 14 ] (text <| String.fromInt <| List.length model.users) ]
         , userList model
         ]
 
 
+userList : Model -> Element Msg
 userList model =
-    column [ spacing 8 ] (List.map (\user -> el [] (text user.username)) model.users)
+    Element.table
+        [ Element.centerX
+        , Font.size 13
+        , Element.spacing 10
+        , scrollbarY
+        , height (px 400)
+        , Background.color Style.charcoal
+        , Font.color Style.white
+        , clipX
+        , padding 12
+        ]
+        { data = model.users |> List.sortBy (\user -> -(dateStringToInt user.beginningDate))
+        , columns =
+            [ { header = Element.el Style.tableHeading (Element.text "id")
+              , width = px 50
+              , view =
+                    \user ->
+                        text (String.fromInt user.id)
+              }
+            , { header = Element.el Style.tableHeading (Element.text "Username")
+              , width = px 200
+              , view =
+                    \user ->
+                        text user.username
+              }
+            , { header = Element.el Style.tableHeading (Element.text "Email")
+              , width = px 200
+              , view =
+                    \user ->
+                        text user.email
+              }
+            , { header = Element.el Style.tableHeading (Element.text "Joined")
+              , width = px 150
+              , view =
+                    \user ->
+                        text user.beginningDate
+              }
+            ]
+        }
+
+
+dateStringToInt : String -> Int
+dateStringToInt dateString =
+    let
+        intList =
+            dateString
+                |> String.split "/"
+                |> List.map String.toInt
+                |> List.map (Maybe.withDefault 0)
+    in
+    List.map2 (*) [ 40, 1, 500 ] intList
+        |> List.sum
 
 
 getUsersButton : Element Msg
