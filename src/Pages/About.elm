@@ -24,6 +24,7 @@ type alias Model =
 type AppState
     = Default
     | MarkDown
+    | Screenshot
 
 
 init : Model
@@ -36,6 +37,7 @@ type Msg
     = NoOp String
     | SetStateDefault
     | SetStateMarkdown
+    | SetStateScreenshot
 
 
 update : SharedState -> Msg -> Model -> ( Model, Cmd Msg, SharedStateUpdate )
@@ -50,6 +52,9 @@ update sharedState msg model =
         SetStateMarkdown ->
             ( { model | appState = MarkDown }, Cmd.none, NoUpdate )
 
+        SetStateScreenshot ->
+            ( { model | appState = Screenshot }, Cmd.none, NoUpdate )
+
 
 view : SharedState -> Model -> Element Msg
 view sharedState model =
@@ -59,6 +64,9 @@ view sharedState model =
 
         MarkDown ->
             markDownView sharedState model
+
+        Screenshot ->
+            screenShotView sharedState model
 
 
 mainView sharedState model =
@@ -78,6 +86,18 @@ markDownView sharedState model =
         , column [ spacing 12 ]
             [ Common.Book.textViewedAsMarkdown "400px" "500px" markDownExample
             ]
+        ]
+
+
+screenShotView sharedState model =
+    row [ spacing 12, paddingXY 0 8 ]
+        [ row [ padding 10, Border.width 1 ]
+            [ image []
+                { src = "http://noteimages.s3.amazonaws.com/app_images/booklib_screenshot2.png"
+                , description = "BookLib screenshot"
+                }
+            ]
+        , setStateDefaultButton
         ]
 
 
@@ -118,21 +138,29 @@ setStateMarkdownButton =
         }
 
 
+setStateScreenShotButton =
+    Input.button Style.button
+        { onPress = Just SetStateScreenshot
+        , label = Element.text "BookLib Screenshot"
+        }
+
+
 textColumn sharedState model =
     column (Style.mainColumn fill fill ++ [ width (px 600), padding 50, Font.size 14 ])
         [ el [ Font.bold, Font.size 18 ] (text "About Booklib.io")
         , paragraph []
             [ text
-                """Booklib.io is devoted to the idea that reading books is a good thing ... 
-            and is even better if we share our reading with others.  You will enjoy looking
-            back at your book list and notes some years hence, and you will be surprised at how much you have read.
+                """With Booklib.io, you can keep a running list of the books you are
+                reading and have read, along with page counts and your personal notes —
+                press the "BookLib Screenshot" button below to see one user's list.
+
             """
             ]
         , paragraph
             []
-            [ text """Consider joining BookLib, sharing your reading list with others,
-            and writing up a few notes on what you read.  Notes don't have to be long to be
-            meaningful — just a paragraph or two can do.""" ]
+            [ text """By default, your list and notes are entirely private.  However, if you wish, you can share
+            selected books with the Booklib community.  Click on the "Shared books" tab to see
+            what other users have shared.""" ]
         , paragraph
             []
             [ text """We will be adding a few new features as things progress, but our
@@ -144,7 +172,7 @@ textColumn sharedState model =
             [ text """If you know about markdown, you can use it to write your notes.
                       If you don't, plain old text works just as well."""
             ]
-        , setStateMarkdownButton
+        , row [ spacing 12 ] [ setStateMarkdownButton, setStateScreenShotButton ]
         ]
 
 

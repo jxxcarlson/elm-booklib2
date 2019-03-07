@@ -170,7 +170,7 @@ view : SharedState -> Model -> Element Msg
 view sharedState model =
     column (Style.mainColumn fill fill)
         [ row [ spacing 20 ]
-            [ showIf (model.state /= SignedIn) (welcomeColumn sharedState model)
+            [ welcomeColumn sharedState model
             , signInColumn sharedState model
             ]
         , footer sharedState model
@@ -180,8 +180,8 @@ view sharedState model =
 welcomeColumn : SharedState -> Model -> Element Msg
 welcomeColumn sharedState model =
     column [ alignTop, spacing 10 ]
-        [ row [] [ el [ Font.bold ] (text "Welcome to Booklib.io") ]
-        , row [] [ el [] (text "Create and share your annotated book list") ]
+        [ showIf (model.state /= SignedIn) (row [] [ el [ Font.bold ] (text "Welcome to Booklib.io") ])
+        , showIf (model.state /= SignedIn) (row [] [ el [] (text "Create and share your annotated book list") ])
         , image []
             { src = "https://www.hastac.org/sites/default/files/upload/images/post/books.jpg"
             , description = "Library"
