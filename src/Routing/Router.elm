@@ -341,7 +341,7 @@ view msgMapper sharedState model =
                     , showIf (sharedState.currentUser /= Nothing)
                         (Input.button (Style.activeButton (model.route == CurrentBookRoute))
                             { onPress = Just (NavigateTo CurrentBookRoute)
-                            , label = el [] (text "Current Book")
+                            , label = el [] (text "Book")
                             }
                         )
                     , showIf (sharedState.currentUser /= Nothing)
