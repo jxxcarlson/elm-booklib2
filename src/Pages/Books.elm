@@ -411,9 +411,13 @@ getBooksButton =
 --
 
 
+fstyle sharedState =
+    [ spacing 24, Background.color Style.charcoal, paddingXY 12 8, alignBottom, Font.size 14, width (px (sharedState.windowWidth - 15)) ]
+
+
 footer : SharedState -> Model -> Element Msg
 footer sharedState model =
-    row Style.footer
+    row (fstyle sharedState)
         [ el Style.footerItem (text <| "UTC: " ++ Utility.toUtcString (Just sharedState.currentTime))
         , el Style.footerItem (text <| userStatus sharedState.currentUser)
         , wordCountOfCurrentNotes sharedState
