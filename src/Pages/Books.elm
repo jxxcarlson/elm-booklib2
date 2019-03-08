@@ -458,7 +458,7 @@ userStatus user_ =
             "Not signed in."
 
         Just user ->
-            "Signed is as " ++ user.username
+            "Signed in as " ++ user.username
 
 
 
