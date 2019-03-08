@@ -328,7 +328,7 @@ view msgMapper sharedState model =
                     "404"
 
         body_ =
-            column [ padding 20, Background.color Style.grey, width fill, height fill ]
+            column [ paddingXY 0 0, Background.color Style.grey, width fill, height fill ]
                 [ row
                     (Style.navBar fill)
                     [ el [ Font.bold, Font.color Style.white ] (text "BookLib")

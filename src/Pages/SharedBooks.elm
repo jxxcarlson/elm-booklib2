@@ -296,6 +296,15 @@ view sharedState model =
         ]
 
 
+verticalMargin : Int
+verticalMargin =
+    100
+
+
+notesHeight sharedState =
+    String.fromInt (sharedState.windowHeight - verticalMargin - 20) ++ "px"
+
+
 bookListDisplay : SharedState -> Model -> Element Msg
 bookListDisplay sharedState model =
     Element.row [ spacing 20 ]
@@ -306,7 +315,7 @@ bookListDisplay sharedState model =
                 Element.none
 
             True ->
-                column [ Border.width 1, moveRight 12 ] [ Common.Book.notesViewedAsMarkdown "400px" "579px" sharedState.currentBook ]
+                column [ Border.width 1, moveRight 12 ] [ Common.Book.notesViewedAsMarkdown "400px" (notesHeight sharedState) sharedState.currentBook ]
         ]
 
 
@@ -331,7 +340,7 @@ sharedUserDisplay : SharedState -> Model -> Element Msg
 sharedUserDisplay sharedState model =
     Element.column
         [ width (px 270)
-        , height (px 600)
+        , height (px (sharedState.windowHeight - verticalMargin))
         , spacing 10
         , padding 10
         , Background.color Style.charcoal
@@ -362,7 +371,7 @@ bookListTable : SharedState -> Model -> Element Msg
 bookListTable sharedState model =
     Element.column
         [ width (px 500)
-        , height (px 600)
+        , height (px (sharedState.windowHeight - verticalMargin))
         , spacing 10
         , padding 10
         , Background.color Style.charcoal
@@ -388,7 +397,7 @@ listBooks sharedState model =
         , Font.size 13
         , Element.spacing 10
         , scrollbarY
-        , height (px 400)
+        , height (px (sharedState.windowHeight - verticalMargin - 50))
         , Background.color Style.charcoal
         , Font.color Style.white
         , clipX
@@ -662,17 +671,25 @@ userInfoView sharedState model =
     in
     Element.column [ spacing 12 ]
         [ Element.el [ Font.bold, Font.size 14 ] (Element.text (publicUserTitle pu))
-        , Element.column [ width (px 250), height (px 320), padding 15, spacing 10, scrollbarY, Border.width 1 ]
+        , Element.column [ width (px 250), height (px (userInfoViewHeight sharedState)), padding 15, spacing 10, scrollbarY, Border.width 1 ]
             [ Element.column [ spacing 4 ] (List.map (\publicUser -> displayPublicUser sharedState model publicUser) pu)
             ]
         ]
 
 
+userInfoViewHeight sharedState =
+    2 * (sharedState.windowHeight - verticalMargin) // 3 - 40
+
+
 followersView : SharedState -> Model -> Element Msg
 followersView sharedState model =
-    Element.column [ width (px 250), height (px 200), scrollbarY, padding 15, spacing 10, Border.width 1 ]
+    Element.column [ width (px 250), height (px (followersViewHeight sharedState)), scrollbarY, padding 15, spacing 10, Border.width 1 ]
         [ Element.column [ spacing 4 ] (List.map (\publicUser -> displayPublicUser sharedState model publicUser) (followerList sharedState))
         ]
+
+
+followersViewHeight sharedState =
+    (sharedState.windowHeight - verticalMargin) // 3 - 40
 
 
 followersButton : Model -> Element Msg
@@ -702,7 +719,7 @@ useColor flag =
 
 followingView : SharedState -> Model -> Element Msg
 followingView sharedState model =
-    Element.column [ width (px 250), height (px 200), scrollbarY, padding 15, spacing 10, Border.width 1 ]
+    Element.column [ width (px 250), height (px (followersViewHeight sharedState)), scrollbarY, padding 15, spacing 10, Border.width 1 ]
         [ Element.column [ spacing 4 ] (List.map (\publicUser -> displayPublicUser sharedState model publicUser) (followingList sharedState))
         ]
 

@@ -572,6 +572,11 @@ view sharedState model =
         ]
 
 
+verticalMargin : Int
+verticalMargin =
+    128
+
+
 mainRow : SharedState -> Model -> Element Msg
 mainRow sharedState model =
     row
@@ -592,17 +597,21 @@ mainPanel sharedState model =
             currentBookPanel sharedState model
 
 
+notesHeight sharedState =
+    String.fromInt (sharedState.windowHeight - verticalMargin - 20) ++ "px"
+
+
 sidePanel sharedState model =
     case model.appState of
         ReadingBook ->
             column [ Border.width 1 ]
-                [ Common.Book.notesViewedAsMarkdown "400px" "509px" sharedState.currentBook
+                [ Common.Book.notesViewedAsMarkdown "400px" (notesHeight sharedState) sharedState.currentBook
                 ]
 
         EditingNote ->
             row [ spacing 12 ]
-                [ notesInput (px 400) (px 509) sharedState model
-                , column [ Border.width 1 ] [ Common.Book.notesViewedAsMarkdown "400px" "509px" sharedState.currentBook ]
+                [ row [ moveUp 4 ] [ notesInput (px 400) (px (sharedState.windowHeight - verticalMargin - 38)) sharedState model ]
+                , column [ Border.width 1, moveUp 2 ] [ Common.Book.notesViewedAsMarkdown "400px" (notesHeight sharedState) sharedState.currentBook ]
                 ]
 
         EditingBook ->
@@ -623,15 +632,15 @@ currentBookPanel sharedState model =
             el [] (text "No book selected")
 
         Just book ->
-            column [ Background.color <| grey 0.9, padding 30, width (px 360), height (px 530), spacing 36, alignTop, Border.width 1 ]
+            column [ Background.color <| grey 0.9, padding 30, width (px 360), height (px (sharedState.windowHeight - verticalMargin)), spacing 36, alignTop, Border.width 1 ]
                 [ bookAndAuthorInfo book
                 , progressInfo sharedState book
                 , changeParameters sharedState model book
                 ]
 
 
-editControls model =
-    row [ paddingXY 20 5, spacing 12, Background.color <| grey 0.4, width (px 350), height (px 40) ]
+editControls w model =
+    row [ paddingXY 20 5, spacing 12, Background.color <| grey 0.4, width w, height (px 40) ]
         [ updateNotesButton model
         , doneEditingNotesButton model
         ]
@@ -681,7 +690,7 @@ changeParameters sharedState model book =
         ]
 
 
-notesInput h w sharedState model =
+notesInput w h sharedState model =
     let
         notes =
             case sharedState.currentBook of
@@ -694,7 +703,7 @@ notesInput h w sharedState model =
     column []
         [ Keyed.el []
             ( String.fromInt model.counter
-            , Input.multiline (textInputStyle (px 350) (px 485))
+            , Input.multiline (textInputStyle w h)
                 { onChange = InputNotes
                 , text = notes
                 , placeholder = Nothing
@@ -702,7 +711,7 @@ notesInput h w sharedState model =
                 , spellcheck = False
                 }
             )
-        , editControls model
+        , editControls w model
         ]
 
 
@@ -976,7 +985,7 @@ userStatus user_ =
 
 editBookPanel : SharedState -> Model -> Element Msg
 editBookPanel sharedState model =
-    Element.column [ paddingXY 10 10, spacing 10, height (px 531), Border.width 1 ]
+    Element.column [ paddingXY 10 10, spacing 10, height (px (sharedState.windowHeight - verticalMargin)), Border.width 1 ]
         [ Element.el [ Font.bold ] (text <| "Edit book")
         , inputTitle sharedState
         , inputSubtitle sharedState
@@ -991,7 +1000,7 @@ editBookPanel sharedState model =
 
 newBookPanel : SharedState -> Model -> Element Msg
 newBookPanel sharedState model =
-    Element.column [ paddingXY 10 10, spacing 10, height (px 531), Border.width 1 ]
+    Element.column [ paddingXY 10 10, spacing 10, height (px (sharedState.windowHeight - verticalMargin)), Border.width 1 ]
         [ Element.el [ Font.bold ] (text <| "New")
         , inputTitle sharedState
         , inputSubtitle sharedState

@@ -214,19 +214,6 @@ update sharedState msg model =
                     )
 
 
-
---
---        ReceiveSharedBlurb (Ok str) ->
---            ( { model | sharedBlurb = str }, Cmd.none, NoUpdate )
---
---        ReceiveSharedBlurb (Err err) ->
---            ( model, Cmd.none, NoUpdate )
---
---
--- VIEW
---
-
-
 view : SharedState -> Model -> Element Msg
 view sharedState model =
     column (Style.mainColumn fill fill)
@@ -243,8 +230,12 @@ bookListDisplay sharedState model =
                 Element.none
 
             True ->
-                column [ Border.width 1, moveRight 12 ] [ Common.Book.notesViewedAsMarkdown "400px" "579px" sharedState.currentBook ]
+                column [ Border.width 1, moveRight 12 ] [ Common.Book.notesViewedAsMarkdown "400px" (notesHeight sharedState) sharedState.currentBook ]
         ]
+
+
+notesHeight sharedState =
+    String.fromInt (sharedState.windowHeight - verticalMargin - 20) ++ "px"
 
 
 matchBookAndUserIds : SharedState -> Bool
@@ -264,10 +255,15 @@ matchBookAndUserIds sharedState =
             False
 
 
+verticalMargin : Int
+verticalMargin =
+    100
+
+
 bookListTable sharedState model =
     Element.column
         [ width fill
-        , height (px 600)
+        , height (px (sharedState.windowHeight - verticalMargin))
         , spacing 10
         , padding 10
         , Background.color Style.charcoal
@@ -298,7 +294,7 @@ listBooks sharedState model =
         , Font.size 13
         , Element.spacing 10
         , scrollbarY
-        , height (px 400)
+        , height (px (sharedState.windowHeight - verticalMargin - 60))
         , Background.color Style.charcoal
         , Font.color Style.white
         , clipX

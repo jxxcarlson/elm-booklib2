@@ -35,11 +35,13 @@ type alias Model =
     { appState : AppState
     , navKey : Browser.Navigation.Key
     , url : Url
+    , windowWidth : Int
+    , windowHeight : Int
     }
 
 
 type alias Flags =
-    { currentTime : Int }
+    { currentTime : Int, width : Int, height : Int }
 
 
 type AppState
@@ -66,6 +68,8 @@ init flags url navKey =
             NotReady url (Time.millisToPosix flags.currentTime) navKey
       , url = url
       , navKey = navKey
+      , windowWidth = flags.width
+      , windowHeight = flags.height
       }
     , OutsideInfo.sendInfoOutside (AskToReconnectUser Json.Encode.null)
     )
@@ -105,7 +109,7 @@ update msg model =
                     ( { model
                         | appState =
                             Ready
-                                (initialSharedState navKey posix Nothing)
+                                (initialSharedState navKey posix model.windowWidth model.windowHeight Nothing)
                                 (Router.initialModel url)
                         , url = url
                         , navKey = navKey
@@ -184,7 +188,7 @@ reconnectUser model url posix navKey (LocalStorageInfo user) =
 
         appState =
             Ready
-                (initialSharedState navKey posix (Just user))
+                (initialSharedState navKey posix model.windowWidth model.windowHeight (Just user))
                 (Router.initialModel url)
 
         cmd =

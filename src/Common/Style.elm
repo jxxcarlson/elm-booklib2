@@ -87,11 +87,11 @@ smallButton =
 
 
 mainColumn w h =
-    [ paddingXY 0 40, spacing 24, width w, height h ]
+    [ paddingXY 8 8, spacing 12, width w, height h, clipY, clipX ]
 
 
 mainColumn2 w h =
-    [ paddingXY 20 20, spacing 24, width w, height h, Background.color grey ]
+    [ paddingXY 8 8, spacing 12, width w, height h, Background.color grey, clipY, clipX ]
 
 
 shadedColumn w h =
@@ -107,7 +107,7 @@ navBar w =
 
 
 footer =
-    [ spacing 24, Background.color charcoal, paddingXY 12 8, alignBottom, width fill ]
+    [ spacing 24, Background.color charcoal, paddingXY 12 8, alignBottom, width fill, Font.size 14 ]
 
 
 footerItem =
