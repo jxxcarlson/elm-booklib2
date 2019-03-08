@@ -13,10 +13,12 @@
 <script src="Main.min.js"></script>
 <script>
     var root = document.getElementById('main');
-    var app = Elm.Main.init({node: root, flags:  {
+    var app = Elm.Main.init({
+       node: root, flags:  {
        width:  window.innerWidth,
        height: window.innerHeight,
-       currentTime: 1000}});
+       currentTime:  Date.now() }
+     });
 
 
         app.ports.infoForOutside.subscribe(msg => {
