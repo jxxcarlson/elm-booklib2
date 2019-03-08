@@ -7,6 +7,8 @@ import Element.Background as Background
 import Element.Font as Font
 import Element.Input as Input
 import Html exposing (Html)
+import Json.Encode
+import OutsideInfo exposing (InfoForOutside(..))
 import Pages.About as About
 import Pages.Admin as Admin
 import Pages.Books as Books
@@ -43,6 +45,7 @@ type Msg
     | GroupsMsg Groups.Msg
     | AdminMsg Admin.Msg
     | NavigateTo Route
+    | SignOut
 
 
 initialModel : Url -> Model
@@ -227,6 +230,22 @@ update sharedState msg model =
         AdminMsg adminMsg ->
             updateAdmin sharedState model adminMsg
 
+        SignOut ->
+            let
+                cmds =
+                    [ OutsideInfo.sendInfoOutside (DisconnectUser Json.Encode.null)
+                    , Browser.Navigation.pushUrl sharedState.navKey "#/"
+                    ]
+            in
+            ( { model
+                | bookModel = Books.init
+                , currentBookModel = CurrentBook.init
+                , currentUserModel = CurrentUser.initModel
+              }
+            , Cmd.batch cmds
+            , InvalidateCurrentUser
+            )
+
 
 updateBook : SharedState -> Model -> Books.Msg -> ( Model, Cmd Msg, SharedStateUpdate )
 updateBook sharedState model bookMsg =
@@ -382,6 +401,12 @@ view msgMapper sharedState model =
                         (Input.button (Style.activeButton (model.route == AdminRoute))
                             { onPress = Just (NavigateTo AdminRoute)
                             , label = el [] (text "Admin")
+                            }
+                        )
+                    , showIf (sharedState.currentUser /= Nothing)
+                        (Input.button (Style.button ++ [ alignRight ])
+                            { onPress = Just SignOut
+                            , label = el [] (text "Sign out")
                             }
                         )
                     ]

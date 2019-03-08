@@ -107,8 +107,7 @@ update sharedState msg model =
         ReceiveBookList (Ok bookList) ->
             let
                 currentBook =
-                    Debug.log "CURRENT BOOK" <|
-                        List.head bookList
+                    List.head bookList
 
                 pagesRead =
                     case currentBook of

@@ -48,7 +48,7 @@ update sharedState sharedStateUpdate =
             { sharedState | currentBook = currentBook }
 
         InvalidateCurrentUser ->
-            { sharedState | currentUser = Nothing }
+            { sharedState | currentUser = Nothing, currentBook = Nothing }
 
         NoUpdate ->
             sharedState
