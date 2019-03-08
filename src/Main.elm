@@ -1,7 +1,7 @@
 module Main exposing (main)
 
 import Browser exposing (UrlRequest(..))
-import Browser.Navigation
+import Browser.Navigation exposing (pushUrl)
 import Html exposing (..)
 import Json.Encode
 import OutsideInfo exposing (InfoForElm(..), InfoForOutside(..))
@@ -196,4 +196,4 @@ reconnectUser model url posix navKey (LocalStorageInfo user) =
                 |> Cmd.map Router.BookMsg
                 |> Cmd.map RouterMsg
     in
-    ( { model | appState = appState }, cmd )
+    ( { model | appState = appState }, Cmd.batch [ cmd, pushUrl navKey "#books" ] )
