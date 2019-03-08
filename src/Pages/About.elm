@@ -1,5 +1,6 @@
 module Pages.About exposing
-    ( Model
+    ( AppState(..)
+    , Model
     , Msg(..)
     , init
     , update

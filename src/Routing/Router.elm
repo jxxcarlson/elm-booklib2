@@ -171,8 +171,19 @@ update sharedState msg model =
 
                         _ ->
                             oldCurrentBookModel
+
+                oldAboutModel =
+                    model.aboutModel
+
+                newAboutModel =
+                    { oldAboutModel | appState = About.Default }
             in
-            ( { model | route = route, currentUserModel = newUserModel, currentBookModel = newCurrentBookModel }
+            ( { model
+                | route = route
+                , currentUserModel = newUserModel
+                , currentBookModel = newCurrentBookModel
+                , aboutModel = newAboutModel
+              }
             , cmd
             , NoUpdate
             )
