@@ -1,4 +1,4 @@
-module Pages.Admin exposing (Model, Msg(..), dateStringToInt, init, update, view)
+module Pages.Admin exposing (Model, Msg(..), dateStringToInt, getUsers, init, update, view)
 
 import Book.Coders
 import Book.Types exposing (Book)
