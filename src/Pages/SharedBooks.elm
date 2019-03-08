@@ -174,7 +174,7 @@ update sharedState msg model =
             )
 
         ReceiveBookList (Err err) ->
-            ( { model | errorMessage = "Error receiveing book list" }, Cmd.none, NoUpdate )
+            ( { model | errorMessage = "Error receiving book list" }, Cmd.none, SharedState.UpdateCurrentBook Nothing )
 
         ComputePagesRead result ->
             case result of

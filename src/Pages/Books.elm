@@ -107,7 +107,8 @@ update sharedState msg model =
         ReceiveBookList (Ok bookList) ->
             let
                 currentBook =
-                    List.head bookList
+                    Debug.log "CURRENT BOOK" <|
+                        List.head bookList
 
                 pagesRead =
                     case currentBook of
@@ -150,16 +151,11 @@ update sharedState msg model =
                 , finishDateString = finishDateString
               }
             , Cmd.none
-            , case sharedState.currentBook of
-                Nothing ->
-                    SharedState.UpdateCurrentBook currentBook
-
-                Just _ ->
-                    NoUpdate
+            , SharedState.UpdateCurrentBook currentBook
             )
 
         ReceiveBookList (Err err) ->
-            ( { model | errorMessage = "Error receiving book list" }, Cmd.none, NoUpdate )
+            ( { model | errorMessage = "Error receiving book list" }, Cmd.none, SharedState.UpdateCurrentBook Nothing )
 
         ComputePagesRead result ->
             case result of

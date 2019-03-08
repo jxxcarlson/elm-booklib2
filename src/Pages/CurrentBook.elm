@@ -629,7 +629,7 @@ currentBookPanel : SharedState -> Model -> Element Msg
 currentBookPanel sharedState model =
     case sharedState.currentBook of
         Nothing ->
-            el [] (text "No book selected")
+            el [ Font.color Style.blue ] (text "No book selected.  Click on 'New' to add a new book")
 
         Just book ->
             column [ Background.color <| grey 0.9, padding 30, width (px 360), height (px (sharedState.windowHeight - verticalMargin)), spacing 36, alignTop, Border.width 1 ]
