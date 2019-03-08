@@ -1,6 +1,7 @@
 module User.Session exposing (authenticate, registerUser, tokenEncoder, updateUser, userEncoder, userListDecoder)
 
 import Common.Days as Days
+import Common.Utility as Utility
 import Configuration
 import Http
 import Json.Decode as Decode exposing (Decoder)
@@ -96,7 +97,7 @@ userDecoder =
         |> required "follow" (Decode.list publicUserDecoder)
         |> required "followers" (Decode.list publicUserDecoder)
         |> required "admin" Decode.bool
-        |> required "inserted_at" (Decode.map usDateStringFromElixirDateString Decode.string)
+        |> required "inserted_at" (Decode.map Utility.usDateStringFromElixirDateString Decode.string)
         |> required "tags" (Decode.list Decode.string)
 
 
@@ -159,27 +160,3 @@ publicUserEncoder publicUser =
 --
 -- HELPERS
 --
-
-
-intListFromElixirDateString : String -> List Int
-intListFromElixirDateString str =
-    let
-        maybeElixirDate =
-            String.split "T" str |> List.head
-    in
-    case maybeElixirDate of
-        Nothing ->
-            []
-
-        Just str_ ->
-            String.split "-" str_
-                |> List.map String.toInt
-                |> List.map (Maybe.withDefault 0)
-
-
-usDateStringFromElixirDateString : String -> String
-usDateStringFromElixirDateString dateString =
-    dateString
-        |> intListFromElixirDateString
-        |> Days.fromIntList
-        |> Days.usDateStringFromDate

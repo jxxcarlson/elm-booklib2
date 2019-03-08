@@ -20,6 +20,23 @@ type alias User =
     }
 
 
+type alias AnnotatedUser =
+    { username : String
+    , id : Int
+    , firstname : String
+    , email : String
+    , token : String
+    , blurb : String
+    , public : Bool
+    , follow : List PublicUser
+    , followers : List PublicUser
+    , admin : Bool
+    , beginningDate : String
+    , tags : List String
+    , numberOfBooks : Int
+    }
+
+
 type alias UserRecord =
     { user : User }
 
@@ -70,18 +87,3 @@ type State
 
 type alias PublicUser =
     { username : String }
-
-
-type alias AnnotatedUser =
-    { username : String
-    , id : Int
-    , firstname : String
-    , email : String
-    , token : String
-    , blurb : String
-    , public : Bool
-    , follow : List String
-    , followers : List String
-    , admin : Bool
-    , numberOfBooks : Int
-    }

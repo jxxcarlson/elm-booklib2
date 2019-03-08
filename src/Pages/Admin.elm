@@ -1,4 +1,4 @@
-module Pages.Admin exposing (Model, Msg(..), dateStringToInt, getUsers, init, update, view)
+module Pages.Admin exposing (Model, Msg(..), dateStringToInt, getAnnotatedUsers, init, update, view)
 
 import Book.Coders
 import Book.Types exposing (Book)
@@ -20,11 +20,11 @@ import Pages.Books
 import SharedState exposing (SharedState, SharedStateUpdate(..))
 import User.Coders
 import User.Session
-import User.Types exposing (User)
+import User.Types exposing (AnnotatedUser)
 
 
 type alias Model =
-    { users : List User
+    { users : List AnnotatedUser
     , message : String
     }
 
@@ -32,7 +32,7 @@ type alias Model =
 type Msg
     = NoOp
     | GetUsers
-    | GotUsers (Result Http.Error (List User))
+    | GotUsers (Result Http.Error (List AnnotatedUser))
 
 
 init : Model
@@ -49,7 +49,7 @@ update sharedState msg model =
             ( model, Cmd.none, NoUpdate )
 
         GetUsers ->
-            ( model, getUsers sharedState, SharedState.NoUpdate )
+            ( model, getAnnotatedUsers sharedState, SharedState.NoUpdate )
 
         GotUsers (Ok users_) ->
             ( { model | users = users_ }, Cmd.none, SharedState.NoUpdate )
@@ -93,6 +93,12 @@ userList model =
                     \user ->
                         text user.username
               }
+            , { header = Element.el Style.tableHeading (Element.text "Books")
+              , width = px 70
+              , view =
+                    \user ->
+                        text <| String.fromInt <| user.numberOfBooks
+              }
             , { header = Element.el Style.tableHeading (Element.text "Email")
               , width = px 250
               , view =
@@ -130,8 +136,8 @@ getUsersButton =
         }
 
 
-getUsers : SharedState -> Cmd Msg
-getUsers sharedState =
+getAnnotatedUsers : SharedState -> Cmd Msg
+getAnnotatedUsers sharedState =
     case sharedState.currentUser of
         Nothing ->
             Cmd.none
@@ -140,9 +146,9 @@ getUsers sharedState =
             Http.request
                 { method = "Get"
                 , headers = []
-                , url = Configuration.backend ++ "/api/users?all=yes"
+                , url = Configuration.backend ++ "/api/users?all=annotated"
                 , body = Http.jsonBody (User.Session.tokenEncoder user.token)
-                , expect = Http.expectJson GotUsers User.Session.userListDecoder
+                , expect = Http.expectJson GotUsers User.Coders.annotatedUserListDecoder
                 , timeout = Nothing
                 , tracker = Nothing
                 }

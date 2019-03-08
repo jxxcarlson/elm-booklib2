@@ -8,6 +8,7 @@ module User.Coders exposing
     , userRecordEncoder
     )
 
+import Common.Utility as Utility
 import Json.Decode as Decode exposing (Decoder)
 import Json.Decode.Pipeline exposing (required)
 import Json.Encode as Encode
@@ -88,7 +89,26 @@ annotatedUserDecoder =
         |> required "token" Decode.string
         |> required "blurb" Decode.string
         |> required "public" Decode.bool
-        |> required "follow" (Decode.list Decode.string)
-        |> required "followers" (Decode.list Decode.string)
+        |> required "follow" (Decode.list publicUserDecoder)
+        |> required "followers" (Decode.list publicUserDecoder)
         |> required "admin" Decode.bool
+        |> required "inserted_at" (Decode.map Utility.usDateStringFromElixirDateString Decode.string)
+        |> required "tags" (Decode.list Decode.string)
         |> required "numberOfBooks" Decode.int
+
+
+type alias AnnotatedUser =
+    { username : String
+    , id : Int
+    , firstname : String
+    , email : String
+    , token : String
+    , blurb : String
+    , public : Bool
+    , follow : List PublicUser
+    , followers : List PublicUser
+    , admin : Bool
+    , beginningDate : String
+    , tags : List String
+    , numberOfBooks : Int
+    }

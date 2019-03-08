@@ -140,7 +140,7 @@ update sharedState msg model =
                             Groups.getGroupList |> Cmd.map GroupsMsg
 
                         AdminRoute ->
-                            Admin.getUsers sharedState |> Cmd.map AdminMsg
+                            Admin.getAnnotatedUsers sharedState |> Cmd.map AdminMsg
 
                         CurrentBookRoute ->
                             Cmd.none

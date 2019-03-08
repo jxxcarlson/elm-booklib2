@@ -1,14 +1,41 @@
 module Common.Utility exposing
-    ( replaceIf
+    ( intListFromElixirDateString
+    , replaceIf
     , roundTo
     , softBreakAlt
     , toUtcDateString
     , toUtcString
     , toggleList
+    , usDateStringFromElixirDateString
     )
 
+import Common.Days as Days
 import Regex
 import Time exposing (Month(..), Posix)
+
+
+intListFromElixirDateString : String -> List Int
+intListFromElixirDateString str =
+    let
+        maybeElixirDate =
+            String.split "T" str |> List.head
+    in
+    case maybeElixirDate of
+        Nothing ->
+            []
+
+        Just str_ ->
+            String.split "-" str_
+                |> List.map String.toInt
+                |> List.map (Maybe.withDefault 0)
+
+
+usDateStringFromElixirDateString : String -> String
+usDateStringFromElixirDateString dateString =
+    dateString
+        |> intListFromElixirDateString
+        |> Days.fromIntList
+        |> Days.usDateStringFromDate
 
 
 toUtcString : Maybe Posix -> String
