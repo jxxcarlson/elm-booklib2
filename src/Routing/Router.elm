@@ -511,5 +511,6 @@ currentBookBelongsToMe sharedState =
         ( Just book, Just user ) ->
             book.userId == user.id
 
-        ( _, _ ) ->
-            False
+        (Nothing, Just _) -> True
+
+        ( _, _ ) -> False
