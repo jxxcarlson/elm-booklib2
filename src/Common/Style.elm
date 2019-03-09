@@ -10,6 +10,7 @@ module Common.Style exposing
     , footer
     , footerItem
     , grey
+    , inactiveButton
     , lightGrey
     , listElementButtonStyleWithWidth2
     , mainColumn
@@ -60,6 +61,16 @@ buttonWithWidth width_ =
 button : List (Element.Attr () msg)
 button =
     [ Background.color black, Font.color white, Element.paddingXY 10 6 ] ++ basicButtonsStyle
+
+
+inactiveButton : List (Element.Attr () msg)
+inactiveButton =
+    [ Background.color (makeGrey 0.5)
+    , Font.color white
+    , Element.paddingXY 10 6
+    , buttonFontSize
+    , pointer
+    ]
 
 
 activeButton : Bool -> List (Element.Attr () msg)

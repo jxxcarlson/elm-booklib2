@@ -372,11 +372,19 @@ view msgMapper sharedState model =
                             }
                         )
                     , showIf (sharedState.currentUser /= Nothing)
-                        (Input.button (Style.activeButton (model.route == CurrentBookRoute))
-                            { onPress = Just (NavigateTo CurrentBookRoute)
-                            , label = el [] (text "Book")
-                            }
-                        )
+                       (case currentBookBelongsToMe sharedState of
+                            True ->
+                                Input.button (Style.activeButton (model.route == CurrentBookRoute))
+                                    { onPress = Just (NavigateTo CurrentBookRoute)
+                                    , label = el [] (text "Book")
+                                    }
+
+                            False ->
+                                Input.button Style.inactiveButton
+                                    { onPress = Nothing
+                                    , label = el [] (text "Book")
+                                    }
+                                    )
                     , showIf (sharedState.currentUser /= Nothing)
                         (Input.button (Style.activeButton (model.route == SharedBooksRoute))
                             { onPress = Just (NavigateTo SharedBooksRoute)
@@ -495,3 +503,13 @@ currentUserIsMe sharedState =
 
         Just user ->
             user.username == "jxxcarlson"
+
+
+currentBookBelongsToMe : SharedState -> Bool
+currentBookBelongsToMe sharedState =
+    case ( sharedState.currentBook, sharedState.currentUser ) of
+        ( Just book, Just user ) ->
+            book.userId == user.id
+
+        ( _, _ ) ->
+            False
