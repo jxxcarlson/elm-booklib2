@@ -665,7 +665,7 @@ bookAndAuthorInfo book =
         [ el strongFieldStyle (text <| book.title)
         , el fieldStyle (text <| book.subtitle)
         , el fieldStyle (text <| book.category)
-        , el [ clipX ] (text <| "by " ++ book.author)
+        , el fieldStyle (text <| "by " ++ book.author)
         ]
 
 
@@ -737,7 +737,7 @@ strongFieldStyle =
 
 
 fieldStyle =
-    [ Font.size 18, width (px 300), clipX ]
+    [ Font.size 14, width (px 300), clipX ]
 
 
 pageRatio : Book -> Float
@@ -1012,8 +1012,16 @@ newBookPanel sharedState model =
         ]
 
 
+inputWidth =
+    px 450
+
+
+inputWidthSmall =
+    px 120
+
+
 inputTitle sharedState =
-    Input.text [ width (px 300), height (px 30) ]
+    Input.text [ width inputWidth, height (px 30) ]
         { text = sharedState.currentBook |> Maybe.map .title |> Maybe.withDefault ""
         , placeholder = Nothing
         , onChange = \new -> InputTitle new
@@ -1022,7 +1030,7 @@ inputTitle sharedState =
 
 
 inputStartDate sharedState =
-    Input.text [ width (px 300), height (px 30) ]
+    Input.text [ width inputWidthSmall, height (px 30) ]
         { text = sharedState.currentBook |> Maybe.map .startDateString |> Maybe.withDefault ""
         , placeholder = Just <| Input.placeholder [ moveUp 6 ] (Element.text "1/15/2018")
         , onChange = \dateString -> InputStartDate dateString
@@ -1031,7 +1039,7 @@ inputStartDate sharedState =
 
 
 inputDateFinished sharedState =
-    Input.text [ width (px 300), height (px 30) ]
+    Input.text [ width inputWidthSmall, height (px 30) ]
         { text = sharedState.currentBook |> Maybe.map .finishDateString |> Maybe.withDefault ""
         , placeholder = Just <| Input.placeholder [ moveUp 6 ] (Element.text "2/28/2018")
         , onChange = \dateString -> InputFinishDate dateString
@@ -1040,7 +1048,7 @@ inputDateFinished sharedState =
 
 
 inputSubtitle sharedState =
-    Input.text [ width (px 300), height (px 30) ]
+    Input.text [ width inputWidth, height (px 30) ]
         { text = sharedState.currentBook |> Maybe.map .subtitle |> Maybe.withDefault ""
         , placeholder = Nothing
         , onChange = \new -> InputSubtitle new
@@ -1049,7 +1057,7 @@ inputSubtitle sharedState =
 
 
 inputCategory sharedState =
-    Input.text [ width (px 300), height (px 30) ]
+    Input.text [ width inputWidth, height (px 30) ]
         { text = sharedState.currentBook |> Maybe.map .category |> Maybe.withDefault ""
         , placeholder = Nothing
         , onChange = \new -> InputCategory new
@@ -1058,7 +1066,7 @@ inputCategory sharedState =
 
 
 inputAuthor sharedState =
-    Input.text [ width (px 300), height (px 30) ]
+    Input.text [ width inputWidth, height (px 30) ]
         { text = sharedState.currentBook |> Maybe.map .author |> Maybe.withDefault ""
         , placeholder = Nothing
         , onChange = \new -> InputAuthor new
@@ -1067,7 +1075,7 @@ inputAuthor sharedState =
 
 
 inputPages sharedState =
-    Input.text [ width (px 300), height (px 30) ]
+    Input.text [ width inputWidthSmall, height (px 30) ]
         { text = sharedState.currentBook |> Maybe.map .pages |> Maybe.map String.fromInt |> Maybe.withDefault ""
         , placeholder = Nothing
         , onChange = InputPages

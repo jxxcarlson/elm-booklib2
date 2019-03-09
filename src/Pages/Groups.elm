@@ -56,6 +56,7 @@ init =
 type Msg
     = NoOp
     | ReceiveGroupList (Result Http.Error (List Group))
+    | GroupCreated (Result Http.Error String)
     | SetCurrentGroup Group
 
 
@@ -70,6 +71,12 @@ update sharedState msg model =
 
         ReceiveGroupList (Err err) ->
             ( { model | message = "Error getting group" }, Cmd.none, NoUpdate )
+
+        GroupCreated (Ok group) ->
+            ( model, Cmd.none, NoUpdate )
+
+        GroupCreated (Err err) ->
+            ( model, Cmd.none, NoUpdate )
 
         SetCurrentGroup group ->
             ( { model | currentGroup = Just group }, Cmd.none, NoUpdate )
@@ -157,6 +164,31 @@ groupDecoder =
         |> required "members" (Decode.list Decode.string)
 
 
+groupEncoder : Group -> Encode.Value
+groupEncoder group =
+    Encode.object
+        [ ( "id", Encode.int group.id )
+        , ( "name", Encode.string group.name )
+        , ( "chair", Encode.string group.chair )
+        , ( "cochair", Encode.string group.cochair )
+        , ( "members", Encode.list Encode.string group.members )
+        ]
+
+
 groupListDecoder : Decoder (List Group)
 groupListDecoder =
     Decode.field "data" (Decode.list groupDecoder)
+
+
+
+--createGroup : Int -> Group -> String -> Cmd Msg
+--createGroup userid group token =
+--    Http.request
+--        { method = "Post"
+--        , headers = [ Http.header "Authorization" ("Bearer " ++ token) ]
+--        , url = Configuration.backend ++ "/api/books"
+--        , body = Http.jsonBody (groupEncoder userid group)
+--        , expect = Http.expectJson GroupCreated statusDecoder
+--        , timeout = Nothing
+--        , tracker = Nothing
+--        }

@@ -88,16 +88,16 @@ userList sharedState model =
                         text (String.fromInt user.id)
               }
             , { header = Element.el Style.tableHeading (Element.text "Username")
-              , width = px 170
+              , width = px 140
               , view =
                     \user ->
                         text user.username
               }
-            , { header = Element.el Style.tableHeading (Element.text "Books")
-              , width = px 70
+            , { header = Element.el (Style.tableHeading ++ [ moveLeft 30 ]) (Element.text "Books")
+              , width = px 40
               , view =
                     \user ->
-                        text <| String.fromInt <| user.numberOfBooks
+                        el [ moveLeft 30 ] (el [ alignRight ] (text <| String.fromInt <| user.numberOfBooks))
               }
             , { header = Element.el Style.tableHeading (Element.text "Email")
               , width = px 250
