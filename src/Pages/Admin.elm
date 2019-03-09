@@ -62,18 +62,18 @@ view : SharedState -> Model -> Element Msg
 view sharedState model =
     column (Style.mainColumn fill fill ++ [ padding 40 ])
         [ row [ spacing 8 ] [ getUsersButton, el [ Font.size 14 ] (text <| String.fromInt <| List.length model.users) ]
-        , userList model
+        , userList sharedState model
         ]
 
 
-userList : Model -> Element Msg
-userList model =
+userList : SharedState -> Model -> Element Msg
+userList sharedState model =
     Element.table
         [ Element.centerX
         , Font.size 13
         , Element.spacing 10
         , scrollbarY
-        , height (px 400)
+        , height (px (sharedState.windowHeight - 140))
         , Background.color Style.charcoal
         , Font.color Style.white
         , clipX
