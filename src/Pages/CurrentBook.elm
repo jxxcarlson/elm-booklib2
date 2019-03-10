@@ -676,7 +676,7 @@ progressInfo sharedState book =
         , row [ spacing 5, moveUp 10, Font.color Style.darkBlue ]
             [ el [ Font.size 15, moveDown 10 ] (text <| startMessage book)
             , el [ Font.size 15, moveDown 10 ] (text "—")
-            , el [ Font.size 15, moveDown 10 ] (text <| finishMessage book)
+            , el [ Font.size 15, moveDown 10 ] (text <| finishMessage sharedState book)
             ]
         , readingRateDisplay sharedState book
         ]
@@ -781,11 +781,20 @@ startMessage book =
             book.startDateString
 
 
-finishMessage : Book -> String
-finishMessage book =
+finishMessage : SharedState -> Book -> String
+finishMessage sharedState book =
     case book.finishDateString == "" of
         True ->
-            "Finish date"
+            let
+                n =
+                    daysToFinish sharedState book
+            in
+            case n == 1 of
+                True ->
+                    String.fromInt n ++ " day to finish"
+
+                False ->
+                    String.fromInt n ++ " days to finish"
 
         False ->
             book.finishDateString
@@ -803,13 +812,37 @@ readingRateDisplay sharedState book =
 
 readingRateString : SharedState -> Book -> String
 readingRateString sharedState book =
+    let
+        daysToComplete_ =
+            daysToComplete sharedState book
+
+        daysString =
+            case daysToComplete_ == 1 of
+                True ->
+                    " day)"
+
+                False ->
+                    " days)"
+    in
     (String.fromInt <|
         Basics.round <|
             readingRate sharedState book
     )
         ++ " pp/day ("
-        ++ (String.fromInt <| daysToComplete sharedState book)
-        ++ " days)"
+        ++ (String.fromInt <| daysToComplete_)
+        ++ daysString
+
+
+daysToFinish : SharedState -> Book -> Int
+daysToFinish sharedState book =
+    let
+        rate =
+            List.maximum [ readingRate sharedState book, 1 ] |> Maybe.withDefault 1.0
+
+        pagesRemaining =
+            toFloat <| book.pages - book.pagesRead
+    in
+    round (pagesRemaining / rate)
 
 
 daysToComplete : SharedState -> Book -> Int
