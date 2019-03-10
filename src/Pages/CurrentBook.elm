@@ -852,7 +852,7 @@ daysToComplete sharedState book =
             Days.fromUSDate book.startDateString book.finishDateString
 
         False ->
-            Days.fromUSDate book.startDateString (Utility.toUtcDateString <| Just sharedState.currentTime)
+            (\x -> x + 1) <| Days.fromUSDate book.startDateString (Utility.toUtcDateString <| Just sharedState.currentTime)
 
 
 readingRate : SharedState -> Book -> Float
