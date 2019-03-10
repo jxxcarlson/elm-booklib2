@@ -360,18 +360,30 @@ totalsString sharedState model =
                 Just user ->
                     user.beginningDate
 
+        nBooksRead : Float
+        nBooksRead =
+            toFloat <| booksCompleted model.bookList
+
+        daysElapsed : Float
         daysElapsed =
-            Days.fromUSDate startDate (Utility.toUtcDateString <| Just sharedState.currentTime)
+            toFloat <| Days.fromUSDate startDate (Utility.toUtcDateString <| Just sharedState.currentTime)
+
+        booksReadPerMonth : String
+        booksReadPerMonth =
+            String.fromFloat <| Utility.roundTo 1 <| nBooksRead / (daysElapsed / 30.5)
 
         pagesReadPerDay =
-            Utility.roundTo 1 (Basics.toFloat model.totalPagesRead / Basics.toFloat daysElapsed)
+            String.fromFloat <| Utility.roundTo 1 (Basics.toFloat model.totalPagesRead / daysElapsed)
     in
     String.fromInt model.totalPagesRead
         ++ " pages since "
         ++ startDate
         ++ " — "
-        ++ String.fromFloat pagesReadPerDay
+        ++ pagesReadPerDay
         ++ " pp/day"
+        ++ " — "
+        ++ booksReadPerMonth
+        ++ " books/month"
 
 
 bookListDisplayWidth model =
