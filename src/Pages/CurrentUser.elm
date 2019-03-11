@@ -169,13 +169,27 @@ update sharedState msg model =
 
 view : SharedState -> Model -> Element Msg
 view sharedState model =
-    column (Style.mainColumn fill fill)
-        [ row [ spacing 20 ]
-            [ welcomeColumn sharedState model
-            , signInColumn sharedState model
-            ]
-        , footer sharedState model
-        ]
+    case classifyDevice { width = sharedState.windowWidth, height = sharedState.windowHeight } |> .class of
+        Phone ->
+            column (Style.mainColumn fill fill)
+                [ showIf (model.state /= SignedIn) (row [] [ el [ Font.bold ] (text "Welcome to Booklib.io") ])
+                , showIf (model.state /= SignedIn) (row [ Font.size 14 ] [ el [] (text "Create and share your annotated book list") ])
+                , signInColumn sharedState model
+                , image [ width fill ]
+                    { src = "https://www.hastac.org/sites/default/files/upload/images/post/books.jpg"
+                    , description = "Library"
+                    }
+                , footer sharedState model
+                ]
+
+        _ ->
+            column (Style.mainColumn fill fill)
+                [ row [ spacing 20 ]
+                    [ welcomeColumn sharedState model
+                    , signInColumn sharedState model
+                    ]
+                , footer sharedState model
+                ]
 
 
 welcomeColumn : SharedState -> Model -> Element Msg
@@ -196,17 +210,26 @@ welcomeColumn sharedState model =
 
 signInColumn : SharedState -> Model -> Element Msg
 signInColumn sharedState model =
-    column (Style.signinColumn (px 480) fill)
-        [ showIf (model.state /= SignedIn) (inputUsername model)
-        , showIf (model.state /= SignedIn) (inputEmail model)
-        , showIf (model.state /= SignedIn) (inputPassword model)
-        , showIf (model.state /= SignedIn) (row [ moveRight 125, spacing 12 ] [ signInOrCancelButton model, registerButton model ])
+    column (Style.signinColumn fill fill)
+        [ showIf (model.state /= SignedIn) (inputUsername sharedState model)
+        , showIf (model.state /= SignedIn) (inputEmail sharedState model)
+        , showIf (model.state /= SignedIn) (inputPassword sharedState model)
+        , showIf (model.state /= SignedIn) (row (registrationStyle sharedState) [ signInOrCancelButton model, registerButton model ])
         , showIf (model.state == SignedIn) (signInOrCancelButton model)
         , showIf (model.state /= SignedIn) (el [ Font.size 18 ] (text model.message))
         , showIf (model.state == SignedIn) (publicCheckbox sharedState)
         , showIf (model.state == SignedIn) (tagInput model)
         , showIf (model.state == SignedIn) tagUpdateButton
         ]
+
+
+registrationStyle sharedState =
+    case deviceIsPhone sharedState of
+        True ->
+            [ moveRight 65, spacing 12 ]
+
+        False ->
+            [ moveRight 125, spacing 12 ]
 
 
 tagInput model =
@@ -233,6 +256,16 @@ footer sharedState model =
         ]
 
 
+deviceIsPhone : SharedState -> Bool
+deviceIsPhone sharedState =
+    case classifyDevice { width = sharedState.windowWidth, height = sharedState.windowHeight } |> .class of
+        Phone ->
+            True
+
+        _ ->
+            False
+
+
 showIf : Bool -> Element Msg -> Element Msg
 showIf flag element =
     if flag then
@@ -242,12 +275,12 @@ showIf flag element =
         Element.none
 
 
-inputEmail model =
+inputEmail sharedState model =
     Input.text inputStyle
         { onChange = AcceptEmail
         , text = model.email
         , placeholder = Nothing
-        , label = Input.labelLeft [ moveDown 12, Font.bold, width (px 120) ] (text "Email")
+        , label = inputLabel sharedState (inputLabelStyle sharedState) (text "Email")
         }
 
 
@@ -281,28 +314,46 @@ inputStyle =
     [ width (px 300), Background.color (Style.makeGrey 0.3), Font.color Style.white ]
 
 
-inputUsername model =
+inputLabelStyle sharedState =
+    case deviceIsPhone sharedState of
+        True ->
+            [ Font.bold, width (px 120) ]
+
+        False ->
+            [ moveDown 12, Font.bold, width (px 120) ]
+
+
+inputUsername sharedState model =
     case model.state of
         Registering ->
             Input.text inputStyle
                 { onChange = AcceptUsername
                 , text = model.username
                 , placeholder = Nothing
-                , label = Input.labelLeft [ moveDown 12, Font.bold, width (px 120) ] (text "Username")
+                , label = inputLabel sharedState (inputLabelStyle sharedState) (text "Username")
                 }
 
         _ ->
             Element.none
 
 
-inputPassword model =
+inputPassword sharedState model =
     Input.currentPassword inputStyle
         { onChange = AcceptPassword
         , text = model.password
         , placeholder = Nothing
-        , label = Input.labelLeft [ moveDown 12, Font.bold, width (px 120) ] (text "Password")
+        , label = inputLabel sharedState (inputLabelStyle sharedState) (text "Password")
         , show = False
         }
+
+
+inputLabel sharedState =
+    case deviceIsPhone sharedState of
+        True ->
+            Input.labelAbove
+
+        False ->
+            Input.labelLeft
 
 
 signInOrCancelButton model =
