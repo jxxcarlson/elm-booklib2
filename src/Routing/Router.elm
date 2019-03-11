@@ -331,8 +331,16 @@ updateAdmin sharedState model adminMsg =
     )
 
 
+
 view : (Msg -> msg) -> SharedState -> Model -> { body : List (Html.Html msg), title : String }
 view msgMapper sharedState model =
+    case classifyDevice { width = sharedState.windowWidth, height = sharedState.windowHeight} |> .class of
+        Phone -> phoneView msgMapper sharedState model
+        _ -> mainView msgMapper sharedState model
+
+
+mainView : (Msg -> msg) -> SharedState -> Model -> { body : List (Html.Html msg), title : String }
+mainView msgMapper sharedState model =
     let
         title =
             case model.route of
@@ -417,6 +425,76 @@ view msgMapper sharedState model =
                             , label = el [] (text "Sign out")
                             }
                         )
+                    ]
+                , pageView sharedState model
+                ]
+    in
+    { title = "BookLib"
+    , body = body_ |> Element.layoutWith { options = [ Style.myFocusStyle ] } [] |> Html.map msgMapper |> (\x -> [ x ])
+    }
+
+
+phoneView : (Msg -> msg) -> SharedState -> Model -> { body : List (Html.Html msg), title : String }
+phoneView msgMapper sharedState model =
+    let
+        title =
+            case model.route of
+                BooksRoute ->
+                    "Books"
+
+                SharedBooksRoute ->
+                    "Shared Books"
+
+                CurrentBookRoute ->
+                    "Current Book"
+
+                CurrentUserRoute ->
+                    "Current User"
+
+                AboutRoute ->
+                    "About"
+
+                GroupsRoute ->
+                    "Groups"
+
+                AdminRoute ->
+                    "Admin"
+
+                NotFoundRoute ->
+                    "404"
+
+        body_ =
+            column [ paddingXY 0 0, Background.color Style.grey, width fill, height fill ]
+                [ row
+                    (Style.navBar fill)
+                    [ el [ Font.bold, Font.color Style.white ] (text "BookLib")
+                    , showIf (sharedState.currentUser /= Nothing)
+                        (Input.button (Style.activeButton (model.route == BooksRoute))
+                            { onPress = Just (NavigateTo BooksRoute)
+                            , label = el [] (text "My Books")
+                            }
+                        )
+                    , showIf (sharedState.currentUser /= Nothing)
+                       (case currentBookBelongsToMe sharedState of
+                            True ->
+                                Input.button (Style.activeButton (model.route == CurrentBookRoute))
+                                    { onPress = Just (NavigateTo CurrentBookRoute)
+                                    , label = el [] (text "Book")
+                                    }
+
+                            False ->
+                                Input.button Style.inactiveButton
+                                    { onPress = Nothing
+                                    , label = el [] (text "Book")
+                                    }
+                                )
+
+ 
+                    , Input.button (Style.activeButton (model.route == CurrentUserRoute))
+                        { onPress = Just (NavigateTo CurrentUserRoute)
+                        , label = el [] (text "User")
+                        }
+
                     ]
                 , pageView sharedState model
                 ]

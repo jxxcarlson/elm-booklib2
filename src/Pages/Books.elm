@@ -211,13 +211,31 @@ update sharedState msg model =
 
 view : SharedState -> Model -> Element Msg
 view sharedState model =
+    case classifyDevice { width = sharedState.windowWidth, height = sharedState.windowHeight } |> .class of
+        Phone ->
+            phoneView sharedState model
+
+        _ ->
+            mainView sharedState model
+
+
+mainView : SharedState -> Model -> Element Msg
+mainView sharedState model =
     column (Style.mainColumn fill fill)
-        [ bookListDisplay sharedState model
+        [ bookListDisplayMain sharedState model
         , footer sharedState model
         ]
 
 
-bookListDisplay sharedState model =
+phoneView : SharedState -> Model -> Element Msg
+phoneView sharedState model =
+    column (Style.mainColumn fill fill)
+        [ bookListDisplayPhone sharedState model
+        , footerForPhone sharedState model
+        ]
+
+
+bookListDisplayMain sharedState model =
     Element.row []
         [ bookListTable sharedState model
         , case matchBookAndUserIds sharedState of
@@ -226,6 +244,12 @@ bookListDisplay sharedState model =
 
             True ->
                 column [ Border.width 1, moveRight 12 ] [ Common.Book.notesViewedAsMarkdown "400px" (notesHeight sharedState) sharedState.currentBook ]
+        ]
+
+
+bookListDisplayPhone sharedState model =
+    Element.row []
+        [ bookListTable sharedState model
         ]
 
 
@@ -271,10 +295,18 @@ bookListTable sharedState model =
 
 bookListTableHeader : SharedState -> Model -> Element Msg
 bookListTableHeader sharedState model =
-    Element.row [ spacing 15, Background.color Style.charcoal, Font.color Style.white ]
-        [ Element.el [ Font.bold, Font.color Style.white ] (text <| bookInfo model)
-        , Element.el [ Font.size 14, Font.color Style.orange ] (text <| totalsString sharedState model)
-        ]
+    case classifyDevice { width = sharedState.windowWidth, height = sharedState.windowHeight } |> .class of
+        Phone ->
+            Element.row [ spacing 15, Background.color Style.charcoal, Font.color Style.white ]
+                [ Element.el [ Font.bold, Font.color Style.white ] (text <| bookInfo model)
+                , Element.el [ Font.size 14, Font.color Style.orange ] (text <| totalsStringPhone sharedState model)
+                ]
+
+        _ ->
+            Element.row [ spacing 15, Background.color Style.charcoal, Font.color Style.white ]
+                [ Element.el [ Font.bold, Font.color Style.white ] (text <| bookInfo model)
+                , Element.el [ Font.size 14, Font.color Style.orange ] (text <| totalsString sharedState model)
+                ]
 
 
 
@@ -284,6 +316,15 @@ bookListTableHeader sharedState model =
 
 
 listBooks sharedState model =
+    case classifyDevice { width = sharedState.windowWidth, height = sharedState.windowHeight } |> .class of
+        Phone ->
+            listBooksForPhone sharedState model
+
+        _ ->
+            listBooksMain sharedState model
+
+
+listBooksMain sharedState model =
     Element.table
         [ Element.centerX
         , Font.size 13
@@ -331,6 +372,35 @@ listBooks sharedState model =
               , view =
                     \book ->
                         el [] (el [ alignRight, paddingXY 8 0 ] (Element.text (pageInfo2 book)))
+              }
+            ]
+        }
+
+
+listBooksForPhone sharedState model =
+    Element.table
+        [ Element.centerX
+        , Font.size 13
+        , Element.spacing 10
+        , scrollbarY
+        , height (px (sharedState.windowHeight - verticalMargin - 60))
+        , Background.color Style.charcoal
+        , Font.color Style.white
+        , clipX
+        ]
+        { data = model.bookList
+        , columns =
+            [ { header = Element.el (Style.tableHeading ++ [ clipX ]) (Element.text "Title")
+              , width = px 200
+              , view =
+                    \book ->
+                        titleButton book sharedState.currentBook
+              }
+            , { header = Element.el Style.tableHeading (Element.text "Author")
+              , width = px 150
+              , view =
+                    \book ->
+                        Element.text book.author
               }
             ]
         }
@@ -386,6 +456,37 @@ totalsString sharedState model =
         ++ " books/month"
 
 
+totalsStringPhone : SharedState -> Model -> String
+totalsStringPhone sharedState model =
+    let
+        startDate =
+            case sharedState.currentUser of
+                Nothing ->
+                    "6/1/2018"
+
+                Just user ->
+                    user.beginningDate
+
+        nBooksRead : Float
+        nBooksRead =
+            toFloat <| booksCompleted model.bookList
+
+        daysElapsed : Float
+        daysElapsed =
+            toFloat <| Days.fromUSDate startDate (Utility.toUtcDateString <| Just sharedState.currentTime)
+
+        booksReadPerMonth : String
+        booksReadPerMonth =
+            String.fromFloat <| Utility.roundTo 1 <| nBooksRead / (daysElapsed / 30.5)
+
+        pagesReadPerDay =
+            String.fromFloat <| Utility.roundTo 1 (Basics.toFloat model.totalPagesRead / daysElapsed)
+    in
+    String.fromInt model.totalPagesRead
+        ++ " pages since "
+        ++ startDate
+
+
 bookListDisplayWidth model =
     px 780
 
@@ -433,6 +534,14 @@ footer sharedState model =
         [ el Style.footerItem (text <| "UTC: " ++ Utility.toUtcString (Just sharedState.currentTime))
         , el Style.footerItem (text <| userStatus sharedState.currentUser)
         , wordCountOfCurrentNotes sharedState
+        , userBegginingDate sharedState
+        ]
+
+
+footerForPhone : SharedState -> Model -> Element Msg
+footerForPhone sharedState model =
+    row (fstyle sharedState)
+        [ el Style.footerItem (text <| userStatus sharedState.currentUser)
         , userBegginingDate sharedState
         ]
 

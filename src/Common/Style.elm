@@ -8,6 +8,7 @@ module Common.Style exposing
     , darkBlue
     , darkRed
     , footer
+    , footerForPhone
     , footerItem
     , grey
     , inactiveButton
@@ -119,6 +120,10 @@ navBar w =
 
 footer =
     [ spacing 24, Background.color charcoal, paddingXY 12 8, alignBottom, width fill, Font.size 14 ]
+
+
+footerForPhone =
+    [ spacing 8, Background.color charcoal, paddingXY 12 8, alignBottom, width fill, Font.size 12 ]
 
 
 footerItem =

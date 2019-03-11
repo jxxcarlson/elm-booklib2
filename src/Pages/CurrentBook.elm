@@ -45,6 +45,7 @@ type AppState
     = ReadingBook
     | EditingBook
     | EditingNote
+    | ViewingNote
     | CreatingBook
 
 
@@ -108,6 +109,7 @@ type Msg
     | DoneEditingNotes
     | SetModeToEditingBook
     | SetModeToEditingNote
+    | SetModeToViewingNote
     | SetModeToCreating
     | ArmDeleteState
     | DisarmArmDeleteState
@@ -499,6 +501,9 @@ update sharedState msg model =
         SetModeToEditingNote ->
             ( { model | appState = EditingNote }, Cmd.none, SharedState.NoUpdate )
 
+        SetModeToViewingNote ->
+            ( { model | appState = ViewingNote }, Cmd.none, SharedState.NoUpdate )
+
         SetModeToCreating ->
             ( { model | appState = CreatingBook }, Cmd.none, SharedState.NoUpdate )
 
@@ -564,11 +569,48 @@ userToken sharedState =
 --
 
 
+deviceIsPhone : SharedState -> Bool
+deviceIsPhone sharedState =
+    case classifyDevice { width = sharedState.windowWidth, height = sharedState.windowHeight } |> .class of
+        Phone ->
+            True
+
+        _ ->
+            False
+
+
+showIf : Bool -> Element Msg -> Element Msg
+showIf flag element =
+    if flag then
+        element
+
+    else
+        Element.none
+
+
 view : SharedState -> Model -> Element Msg
 view sharedState model =
+    case classifyDevice { width = sharedState.windowWidth, height = sharedState.windowHeight } |> .class of
+        Phone ->
+            phoneView sharedState model
+
+        _ ->
+            mainView sharedState model
+
+
+mainView : SharedState -> Model -> Element Msg
+mainView sharedState model =
     column (Style.mainColumn2 fill fill)
         [ mainRow sharedState model
         , footer sharedState model
+        ]
+
+
+phoneView : SharedState -> Model -> Element Msg
+phoneView sharedState model =
+    column (Style.mainColumn2 fill fill)
+        [ mainRowPhone sharedState model
+        , footerForPhone sharedState model
         ]
 
 
@@ -585,6 +627,34 @@ mainRow sharedState model =
         )
         [ mainPanel sharedState model
         , sidePanel sharedState model
+        ]
+
+
+mainRowPhone : SharedState -> Model -> Element Msg
+mainRowPhone sharedState model =
+    row
+        (Style.mainColumn2 fill fill
+            ++ [ spacing 20 ]
+        )
+        [ case model.appState of
+            ReadingBook ->
+                currentBookPanel sharedState model
+
+            EditingNote ->
+                row [ spacing 12 ]
+                    [ row [ moveUp 4 ] [ notesInput (px 350) (px (sharedState.windowHeight - verticalMargin)) sharedState model ]
+                    ]
+
+            ViewingNote ->
+                row [ spacing 12 ]
+                    [ column [ Border.width 1, moveUp 2 ] [ Common.Book.notesViewedAsMarkdown "350px" (notesHeight sharedState) sharedState.currentBook ]
+                    ]
+
+            EditingBook ->
+                editBookPanel sharedState model
+
+            CreatingBook ->
+                newBookPanel sharedState model
         ]
 
 
@@ -609,6 +679,12 @@ sidePanel sharedState model =
                 ]
 
         EditingNote ->
+            row [ spacing 12 ]
+                [ row [ moveUp 4 ] [ notesInput (px 400) (px (sharedState.windowHeight - verticalMargin - 38)) sharedState model ]
+                , column [ Border.width 1, moveUp 2 ] [ Common.Book.notesViewedAsMarkdown "400px" (notesHeight sharedState) sharedState.currentBook ]
+                ]
+
+        ViewingNote ->
             row [ spacing 12 ]
                 [ row [ moveUp 4 ] [ notesInput (px 400) (px (sharedState.windowHeight - verticalMargin - 38)) sharedState model ]
                 , column [ Border.width 1, moveUp 2 ] [ Common.Book.notesViewedAsMarkdown "400px" (notesHeight sharedState) sharedState.currentBook ]
@@ -852,7 +928,7 @@ daysToComplete sharedState book =
             Days.fromUSDate book.startDateString book.finishDateString
 
         False ->
-            (\x -> x + 1) <| Days.fromUSDate book.startDateString (Utility.toUtcDateString <| Just sharedState.currentTime)
+            Days.fromUSDate book.startDateString (Utility.toUtcDateString <| Just sharedState.currentTime)
 
 
 readingRate : SharedState -> Book -> Float
@@ -912,14 +988,21 @@ cancelCreateBookButton model =
 editBookButton model =
     Input.button (Style.activeButton (model.appState == EditingBook))
         { onPress = Just SetModeToEditingBook
-        , label = Element.text "Edit book"
+        , label = Element.text "Edit"
         }
 
 
 editNoteButton model =
     Input.button (Style.activeButton (model.appState == EditingNote))
         { onPress = Just SetModeToEditingNote
-        , label = Element.text "Edit notes"
+        , label = Element.text "Edit Notes"
+        }
+
+
+viewNoteButton model =
+    Input.button (Style.activeButton (model.appState == ViewingNote))
+        { onPress = Just SetModeToViewingNote
+        , label = Element.text "Notes"
         }
 
 
@@ -985,6 +1068,17 @@ footer sharedState model =
         ]
 
 
+footerForPhone : SharedState -> Model -> Element Msg
+footerForPhone sharedState model =
+    row Style.footerForPhone
+        [ deleteBookButton model
+        , newBookButton model
+        , editBookButton model
+        , viewNoteButton model
+        , editNoteButton model
+        ]
+
+
 wordCountOfCurrentNotes : SharedState -> Element Msg
 wordCountOfCurrentNotes sharedState =
     case sharedState.currentBook of
@@ -1045,8 +1139,13 @@ newBookPanel sharedState model =
         ]
 
 
-inputWidth =
-    px 450
+inputWidth sharedState =
+    case classifyDevice { width = sharedState.windowWidth, height = sharedState.windowHeight } |> .class of
+        Phone ->
+            px (sharedState.windowWidth - 50)
+
+        _ ->
+            px 400
 
 
 inputWidthSmall =
@@ -1054,7 +1153,7 @@ inputWidthSmall =
 
 
 inputTitle sharedState =
-    Input.text [ width inputWidth, height (px 30) ]
+    Input.text [ width (inputWidth sharedState), height (px 30) ]
         { text = sharedState.currentBook |> Maybe.map .title |> Maybe.withDefault ""
         , placeholder = Nothing
         , onChange = \new -> InputTitle new
@@ -1081,7 +1180,7 @@ inputDateFinished sharedState =
 
 
 inputSubtitle sharedState =
-    Input.text [ width inputWidth, height (px 30) ]
+    Input.text [ width (inputWidth sharedState), height (px 30) ]
         { text = sharedState.currentBook |> Maybe.map .subtitle |> Maybe.withDefault ""
         , placeholder = Nothing
         , onChange = \new -> InputSubtitle new
@@ -1090,7 +1189,7 @@ inputSubtitle sharedState =
 
 
 inputCategory sharedState =
-    Input.text [ width inputWidth, height (px 30) ]
+    Input.text [ width (inputWidth sharedState), height (px 30) ]
         { text = sharedState.currentBook |> Maybe.map .category |> Maybe.withDefault ""
         , placeholder = Nothing
         , onChange = \new -> InputCategory new
@@ -1099,7 +1198,7 @@ inputCategory sharedState =
 
 
 inputAuthor sharedState =
-    Input.text [ width inputWidth, height (px 30) ]
+    Input.text [ width (inputWidth sharedState), height (px 30) ]
         { text = sharedState.currentBook |> Maybe.map .author |> Maybe.withDefault ""
         , placeholder = Nothing
         , onChange = \new -> InputAuthor new
