@@ -347,13 +347,13 @@ listBooksMain sharedState model =
               , width = px 150
               , view =
                     \book ->
-                        Element.text book.author
+                        el [ clipX ] (Element.text book.author)
               }
             , { header = Element.el Style.tableHeading (Element.text "Category")
               , width = px 150
               , view =
                     \book ->
-                        Element.text book.category
+                        el [ clipX ] (Element.text book.category)
               }
             , { header = Element.el Style.tableHeading (Element.text "")
               , width = px 110
@@ -384,6 +384,7 @@ listBooksForPhone sharedState model =
         , Element.spacing 10
         , scrollbarY
         , height (px (sharedState.windowHeight - verticalMargin - 60))
+        , width fill
         , Background.color Style.charcoal
         , Font.color Style.white
         , clipX
@@ -391,16 +392,16 @@ listBooksForPhone sharedState model =
         { data = model.bookList
         , columns =
             [ { header = Element.el (Style.tableHeading ++ [ clipX ]) (Element.text "Title")
-              , width = px 200
+              , width = px <| round <| toFloat sharedState.windowWidth / 2 - 20
               , view =
                     \book ->
                         titleButton book sharedState.currentBook
               }
             , { header = Element.el Style.tableHeading (Element.text "Author")
-              , width = px 150
+              , width = px <| round <| toFloat sharedState.windowWidth / 2 - 30
               , view =
                     \book ->
-                        Element.text book.author
+                        el [ clipX ] (Element.text book.author)
               }
             ]
         }

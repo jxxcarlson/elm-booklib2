@@ -96,6 +96,7 @@ type Msg
     | EditBook
     | CancelEditBook
     | DeleteBook
+    | CancelDeleteBook
     | UpdateBook
     | BookIsCreated (Result Http.Error String)
     | BookIsUpdated (Result Http.Error String)
@@ -398,6 +399,9 @@ update sharedState msg model =
                 ( _, _ ) ->
                     ( { model | deleteBookState = Ready }, Cmd.none, NoUpdate )
 
+        CancelDeleteBook ->
+            ( { model | deleteBookState = Ready }, Cmd.none, NoUpdate )
+
         CancelEditBook ->
             ( { model | appState = ReadingBook }, Cmd.none, NoUpdate )
 
@@ -608,7 +612,7 @@ mainView sharedState model =
 
 phoneView : SharedState -> Model -> Element Msg
 phoneView sharedState model =
-    column (Style.mainColumn2 fill fill)
+    column (Style.mainColumnPhone fill fill)
         [ mainRowPhone sharedState model
         , footerForPhone sharedState model
         ]
@@ -960,6 +964,14 @@ deleteBookButton model =
         }
 
 
+cancelDeleteBookButton : Model -> Element Msg
+cancelDeleteBookButton model =
+    Input.button (Style.activeButton (model.deleteBookState == Armed))
+        { onPress = Just CancelDeleteBook
+        , label = Element.text "Cancel"
+        }
+
+
 deleteBookMsg : Model -> Msg
 deleteBookMsg model =
     case model.deleteBookState of
@@ -1060,7 +1072,8 @@ footer : SharedState -> Model -> Element Msg
 footer sharedState model =
     row Style.footer
         [ deleteBookButton model
-        , newBookButton model
+        , showIf (model.deleteBookState == Armed) (cancelDeleteBookButton model)
+        , showIf (model.deleteBookState /= Armed) (newBookButton model)
         , editBookButton model
         , editNoteButton model
         , el Style.footerItem (text <| userStatus sharedState.currentUser)
@@ -1072,8 +1085,9 @@ footerForPhone : SharedState -> Model -> Element Msg
 footerForPhone sharedState model =
     row Style.footerForPhone
         [ deleteBookButton model
-        , newBookButton model
-        , editBookButton model
+        , showIf (model.deleteBookState == Armed) (cancelDeleteBookButton model)
+        , showIf (model.deleteBookState /= Armed) (newBookButton model)
+        , showIf (model.deleteBookState /= Armed) (editBookButton model)
         , viewNoteButton model
         , editNoteButton model
         ]
@@ -1112,7 +1126,7 @@ userStatus user_ =
 
 editBookPanel : SharedState -> Model -> Element Msg
 editBookPanel sharedState model =
-    Element.column [ paddingXY 10 10, spacing 10, height (px (sharedState.windowHeight - verticalMargin)), Border.width 1 ]
+    Element.column [ clipX, paddingXY 10 10, spacing 10, height (px (sharedState.windowHeight - verticalMargin)), Border.width 1 ]
         [ Element.el [ Font.bold ] (text <| "Edit book")
         , inputTitle sharedState
         , inputSubtitle sharedState

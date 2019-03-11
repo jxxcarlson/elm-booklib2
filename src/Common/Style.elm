@@ -16,6 +16,7 @@ module Common.Style exposing
     , listElementButtonStyleWithWidth2
     , mainColumn
     , mainColumn2
+    , mainColumnPhone
     , makeGrey
     , myFocusStyle
     , navBar
@@ -104,6 +105,10 @@ mainColumn w h =
 
 mainColumn2 w h =
     [ paddingXY 8 8, spacing 12, width w, height h, Background.color grey, clipY, clipX ]
+
+
+mainColumnPhone w h =
+    [ spacing 12, width w, height h, Background.color grey, clipY, clipX ]
 
 
 shadedColumn w h =
