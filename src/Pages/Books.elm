@@ -392,16 +392,16 @@ listBooksForPhone sharedState model =
         { data = model.bookList
         , columns =
             [ { header = Element.el (Style.tableHeading ++ [ clipX ]) (Element.text "Title")
-              , width = px <| round <| toFloat sharedState.windowWidth / 2 - 20
+              , width = px <| round <| 0.65 * toFloat sharedState.windowWidth - 20
               , view =
                     \book ->
                         titleButton book sharedState.currentBook
               }
-            , { header = Element.el Style.tableHeading (Element.text "Author")
-              , width = px <| round <| toFloat sharedState.windowWidth / 2 - 30
+            , { header = Element.el Style.tableHeading (Element.text "")
+              , width = px 110
               , view =
                     \book ->
-                        el [ clipX ] (Element.text book.author)
+                        Element.el [] (Indicator.indicator 100 10 "orange" (pageRatio book))
               }
             ]
         }

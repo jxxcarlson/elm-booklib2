@@ -218,7 +218,7 @@ signInColumn sharedState model =
         , showIf (model.state == SignedIn) (signInOrCancelButton model)
         , showIf (model.state /= SignedIn) (el [ Font.size 18 ] (text model.message))
         , showIf (model.state == SignedIn) (publicCheckbox sharedState)
-        , showIf (model.state == SignedIn) (tagInput model)
+        , showIf (model.state == SignedIn) (tagInput sharedState model)
         , showIf (model.state == SignedIn) tagUpdateButton
         ]
 
@@ -232,13 +232,23 @@ registrationStyle sharedState =
             [ moveRight 125, spacing 12 ]
 
 
-tagInput model =
-    Input.text [ width (px 400), height (px 20), Font.size 14 ]
-        { text = model.tagString
-        , placeholder = Just <| Input.placeholder [ moveUp 6 ] (el [] (Element.text "history, ficton, science"))
-        , onChange = InputTagString
-        , label = Input.labelLeft [ Font.size 14, moveDown 5 ] (text "Tags ")
-        }
+tagInput sharedState model =
+    case classifyDevice { width = sharedState.windowWidth, height = sharedState.windowHeight } |> .class of
+        Phone ->
+            Input.text [ width (px 280), height (px 20), Font.size 14 ]
+                { text = model.tagString
+                , placeholder = Just <| Input.placeholder [ moveUp 6 ] (el [] (Element.text "history, ficton, science"))
+                , onChange = InputTagString
+                , label = Input.labelLeft [ Font.size 14, moveDown 5 ] (text "Tags ")
+                }
+
+        _ ->
+            Input.text [ width (px 400), height (px 20), Font.size 14 ]
+                { text = model.tagString
+                , placeholder = Just <| Input.placeholder [ moveUp 6 ] (el [] (Element.text "history, ficton, science"))
+                , onChange = InputTagString
+                , label = Input.labelLeft [ Font.size 14, moveDown 5 ] (text "Tags ")
+                }
 
 
 tagUpdateButton =
@@ -311,7 +321,7 @@ icon status =
 
 
 inputStyle =
-    [ width (px 300), Background.color (Style.makeGrey 0.3), Font.color Style.white ]
+    [ width (px 300), Background.color (Style.makeGrey 0.3), Font.color Style.white, Style.noAutocapitalize ]
 
 
 inputLabelStyle sharedState =
