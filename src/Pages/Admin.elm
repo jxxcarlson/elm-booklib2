@@ -61,9 +61,26 @@ update sharedState msg model =
 view : SharedState -> Model -> Element Msg
 view sharedState model =
     column (Style.mainColumn fill fill ++ [ padding 40 ])
-        [ row [ spacing 8 ] [ getUsersButton, el [ Font.size 14 ] (text <| String.fromInt <| List.length model.users) ]
+        [ row [ spacing 8 ] [ getUsersButton ]
+        , row [ spacing 12 ]
+            [ el [ Font.size 14 ] (text <| "Users: " ++ (String.fromInt <| totalNumberOfUsers model))
+            , el [ Font.size 14 ] (text <| "Books: " ++ (String.fromInt <| totalNumberOfBooks model))
+            ]
         , userList sharedState model
         ]
+
+
+totalNumberOfUsers : Model -> Int
+totalNumberOfUsers model =
+    model.users
+        |> List.length
+
+
+totalNumberOfBooks : Model -> Int
+totalNumberOfBooks model =
+    model.users
+        |> List.map .numberOfBooks
+        |> List.sum
 
 
 userList : SharedState -> Model -> Element Msg

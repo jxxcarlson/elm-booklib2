@@ -661,7 +661,7 @@ mainRowPhone sharedState model =
 
             ViewingNote ->
                 row [ spacing 12 ]
-                    [ column [ Border.width 1, moveUp 2 ] [ Common.Book.notesViewedAsMarkdown "350px" (notesHeight sharedState) sharedState.currentBook ]
+                    [ column [ Border.width 1, moveUp 2 ] [ Common.Book.notesViewedAsMarkdown 60 "350px" (notesHeight sharedState) sharedState.currentBook ]
                     ]
 
             EditingBook ->
@@ -689,19 +689,19 @@ sidePanel sharedState model =
     case model.appState of
         ReadingBook ->
             column [ Border.width 1 ]
-                [ Common.Book.notesViewedAsMarkdown "400px" (notesHeight sharedState) sharedState.currentBook
+                [ Common.Book.notesViewedAsMarkdown 70 "400px" (notesHeight sharedState) sharedState.currentBook
                 ]
 
         EditingNote ->
             row [ spacing 12 ]
                 [ row [ moveUp 4 ] [ notesInput (px 400) (px (sharedState.windowHeight - verticalMargin - 38)) sharedState model ]
-                , column [ Border.width 1, moveUp 2 ] [ Common.Book.notesViewedAsMarkdown "400px" (notesHeight sharedState) sharedState.currentBook ]
+                , column [ Border.width 1, moveUp 2 ] [ Common.Book.notesViewedAsMarkdown 70 "400px" (notesHeight sharedState) sharedState.currentBook ]
                 ]
 
         ViewingNote ->
             row [ spacing 12 ]
                 [ row [ moveUp 4 ] [ notesInput (px 400) (px (sharedState.windowHeight - verticalMargin - 38)) sharedState model ]
-                , column [ Border.width 1, moveUp 2 ] [ Common.Book.notesViewedAsMarkdown "400px" (notesHeight sharedState) sharedState.currentBook ]
+                , column [ Border.width 1, moveUp 2 ] [ Common.Book.notesViewedAsMarkdown 70 (notesWidth sharedState) (notesHeight sharedState) sharedState.currentBook ]
                 ]
 
         EditingBook ->
@@ -709,6 +709,11 @@ sidePanel sharedState model =
 
         CreatingBook ->
             Element.none
+
+
+notesWidth : SharedState -> String
+notesWidth sharedState =
+    sharedState.windowWidth - 55 |> String.fromInt |> (\x -> x ++ "px")
 
 
 grey p =

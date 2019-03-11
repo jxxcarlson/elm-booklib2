@@ -17,10 +17,10 @@ view2 markdownString =
         |> div []
 
 
-view : String -> Html msg
-view markdownString =
+view : Int -> String -> Html msg
+view k markdownString =
     markdownString
-        |> Utility.softBreakAlt 70
+        |> Utility.softBreakAlt k
         |> String.join "\n"
         |> Block.parse Nothing
         -- See answer 2 why

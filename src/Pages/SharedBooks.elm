@@ -344,7 +344,7 @@ phoneView sharedState model =
 
         ViewSharedBook ->
             column (phoneViewStyle fill fill)
-                [ column [ Border.width 1, moveRight 12 ] [ Common.Book.notesViewedAsMarkdown (notesWidth sharedState) (notesHeight sharedState) sharedState.currentBook ]
+                [ column [ Border.width 1, moveRight 12 ] [ Common.Book.notesViewedAsMarkdown 60 (notesWidth sharedState) (notesHeight sharedState) sharedState.currentBook ]
                 , footerForPhone sharedState model
                 ]
 
@@ -382,7 +382,7 @@ bookListDisplay sharedState model =
                 Element.none
 
             True ->
-                column [ Border.width 1, moveRight 12 ] [ Common.Book.notesViewedAsMarkdown "400px" (notesHeight sharedState) sharedState.currentBook ]
+                column [ Border.width 1, moveRight 12 ] [ Common.Book.notesViewedAsMarkdown 70 "400px" (notesHeight sharedState) sharedState.currentBook ]
         ]
 
 

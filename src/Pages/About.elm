@@ -85,7 +85,7 @@ markDownView sharedState model =
         [ aboutMarkDown sharedState model
         , textView markDownExample
         , column [ spacing 12 ]
-            [ Common.Book.textViewedAsMarkdown "400px" "500px" markDownExample
+            [ Common.Book.textViewedAsMarkdown 70 "400px" "500px" markDownExample
             ]
         ]
 

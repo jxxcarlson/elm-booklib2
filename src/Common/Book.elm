@@ -9,19 +9,19 @@ import Html exposing (..)
 import Html.Attributes as HA
 
 
-notesViewedAsMarkdown : String -> String -> Maybe Book -> Element msg
-notesViewedAsMarkdown w h currentBook =
+notesViewedAsMarkdown : Int -> String -> String -> Maybe Book -> Element msg
+notesViewedAsMarkdown k w h currentBook =
     case currentBook of
         Nothing ->
             Element.none
 
         Just book ->
-            Element.html <| Html.div (markdownStyle w h) <| [ MarkdownExtra.view book.notes ]
+            Element.html <| Html.div (markdownStyle w h) <| [ MarkdownExtra.view k book.notes ]
 
 
-textViewedAsMarkdown : String -> String -> String -> Element msg
-textViewedAsMarkdown w h text_ =
-    Element.html <| Html.div (markdownStyle w h) <| [ MarkdownExtra.view text_ ]
+textViewedAsMarkdown : Int -> String -> String -> String -> Element msg
+textViewedAsMarkdown k w h text_ =
+    Element.html <| Html.div (markdownStyle w h) <| [ MarkdownExtra.view k text_ ]
 
 
 verbatimTextView : Int -> Int -> String -> Element msg

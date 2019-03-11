@@ -243,7 +243,7 @@ bookListDisplayMain sharedState model =
                 Element.none
 
             True ->
-                column [ Border.width 1, moveRight 12 ] [ Common.Book.notesViewedAsMarkdown "400px" (notesHeight sharedState) sharedState.currentBook ]
+                column [ Border.width 1, moveRight 12 ] [ Common.Book.notesViewedAsMarkdown 70 "400px" (notesHeight sharedState) sharedState.currentBook ]
         ]
 
 
