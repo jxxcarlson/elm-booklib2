@@ -331,22 +331,31 @@ phoneView : SharedState -> Model -> Element Msg
 phoneView sharedState model =
     case model.viewState of
         ViewUsers ->
-            column (Style.mainColumn fill fill)
+            column (phoneViewStyle fill fill)
                 [ sharedUserDisplay sharedState model
                 , footerForPhone sharedState model
                 ]
 
         ViewSharedUserBookList ->
-            column (Style.mainColumn fill fill)
+            column (phoneViewStyle fill fill)
                 [ bookListTable sharedState model
                 , footerForPhone sharedState model
                 ]
 
         ViewSharedBook ->
-            column (Style.mainColumn fill fill)
-                [ column [ Border.width 1, moveRight 12 ] [ Common.Book.notesViewedAsMarkdown "380px" (notesHeight sharedState) sharedState.currentBook ]
+            column (phoneViewStyle fill fill)
+                [ column [ Border.width 1, moveRight 12 ] [ Common.Book.notesViewedAsMarkdown (notesWidth sharedState) (notesHeight sharedState) sharedState.currentBook ]
                 , footerForPhone sharedState model
                 ]
+
+
+phoneViewStyle w h =
+    [ spacing 12, paddingXY 4 8, width w, height h, clipY, clipX ]
+
+
+notesWidth : SharedState -> String
+notesWidth sharedState =
+    sharedState.windowWidth - 45 |> String.fromInt |> (\x -> x ++ "px")
 
 
 verticalMargin : Int
@@ -404,7 +413,13 @@ sharedUserDisplay sharedState model =
              else
                 px 270
             )
-        , height (px (sharedState.windowHeight - verticalMargin - 15))
+        , height
+            (if deviceIsPhone sharedState then
+                px <| round <| (1.0 * toFloat (sharedState.windowHeight - verticalMargin))
+
+             else
+                px (sharedState.windowHeight - verticalMargin)
+            )
         , spacing 10
         , padding 10
         , Background.color Style.charcoal
@@ -587,31 +602,24 @@ titleButton book maybeCurrentBook =
         }
 
 
-getBooksButton =
-    Input.button Style.button
-        { onPress = Just GetCurrentUserBookList
-        , label = Element.text "Get books"
-        }
-
-
 usersButton model =
     Input.button (Style.activeButton (model.viewState == ViewUsers))
         { onPress = Just SetViewStateToViewUsers
-        , label = Element.text "Users"
+        , label = Element.text "Readers"
         }
 
 
 bookListButton model =
     Input.button (Style.activeButton (model.viewState == ViewSharedUserBookList))
         { onPress = Just SetViewStateToViewSharedBookList
-        , label = Element.text "Shared Books List"
+        , label = Element.text "Shared Books"
         }
 
 
 sharedBookButton model =
     Input.button (Style.activeButton (model.viewState == ViewSharedBook))
         { onPress = Just SetViewStateToViewSharedBook
-        , label = Element.text "Shared Book"
+        , label = Element.text "Notes"
         }
 
 
@@ -832,7 +840,13 @@ userInfoView sharedState model =
                  else
                     px 250
                 )
-            , height (px (userInfoViewHeight sharedState))
+            , height
+                (if deviceIsPhone sharedState then
+                    px <| round <| (0.6 * toFloat (sharedState.windowHeight - verticalMargin) - 35)
+
+                 else
+                    px (userInfoViewHeight sharedState)
+                )
             , padding 15
             , spacing 10
             , scrollbarY
