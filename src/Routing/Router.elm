@@ -467,8 +467,7 @@ phoneView msgMapper sharedState model =
             column [ paddingXY 0 0, Background.color Style.grey, width fill, height fill ]
                 [ row
                     (Style.navBar fill)
-                    [ el [ Font.bold, Font.color Style.white ] (text "BookLib")
-                    , showIf (sharedState.currentUser /= Nothing)
+                    [  showIf (sharedState.currentUser /= Nothing)
                         (Input.button (Style.activeButton (model.route == BooksRoute))
                             { onPress = Just (NavigateTo BooksRoute)
                             , label = el [] (text "My Books")
@@ -488,7 +487,12 @@ phoneView msgMapper sharedState model =
                                     , label = el [] (text "Book")
                                     }
                                 )
-
+                    , showIf (sharedState.currentUser /= Nothing)
+                                            (Input.button (Style.activeButton (model.route == SharedBooksRoute))
+                                                { onPress = Just (NavigateTo SharedBooksRoute)
+                                                , label = el [] (text "Shared")
+                                                }
+                                            )
  
                     , Input.button (Style.activeButton (model.route == CurrentUserRoute))
                         { onPress = Just (NavigateTo CurrentUserRoute)

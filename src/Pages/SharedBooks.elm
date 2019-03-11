@@ -46,12 +46,19 @@ type alias Model =
     , errorMessage : String
     , startDateString : String
     , appState : AppState
+    , viewState : ViewState
     }
 
 
 type AppState
     = ShowFollowers
     | ShowFollowing
+
+
+type ViewState
+    = ViewUsers
+    | ViewSharedUserBookList
+    | ViewSharedBook
 
 
 init : Model
@@ -67,6 +74,7 @@ init =
     , finishDateString = ""
     , startDateString = ""
     , appState = ShowFollowing
+    , viewState = ViewUsers
     }
 
 
@@ -106,6 +114,9 @@ type Msg
       --
     | FollowUser String
     | SetAppState AppState
+    | SetViewStateToViewUsers
+    | SetViewStateToViewSharedBookList
+    | SetViewStateToViewSharedBook
 
 
 
@@ -202,6 +213,7 @@ update sharedState msg model =
             ( { model
                 | startDateString = book.startDateString
                 , finishDateString = book.finishDateString
+                , viewState = ViewSharedBook
               }
             , Cmd.none
             , SharedState.UpdateCurrentBook (Just book)
@@ -213,7 +225,7 @@ update sharedState msg model =
                     ( model, Cmd.none, NoUpdate )
 
                 Just user ->
-                    ( { model | currentPublicUser = Just { username = username } }
+                    ( { model | currentPublicUser = Just { username = username }, viewState = ViewSharedUserBookList }
                     , Cmd.batch
                         [ getSharedBooks username user.token
                         ]
@@ -287,13 +299,54 @@ update sharedState msg model =
         SetAppState appState ->
             ( { model | appState = appState }, Cmd.none, NoUpdate )
 
+        SetViewStateToViewUsers ->
+            ( { model | viewState = ViewUsers }, Cmd.none, NoUpdate )
+
+        SetViewStateToViewSharedBookList ->
+            ( { model | viewState = ViewSharedUserBookList }, Cmd.none, NoUpdate )
+
+        SetViewStateToViewSharedBook ->
+            ( { model | viewState = ViewSharedBook }, Cmd.none, NoUpdate )
+
 
 view : SharedState -> Model -> Element Msg
 view sharedState model =
+    case classifyDevice { width = sharedState.windowWidth, height = sharedState.windowHeight } |> .class of
+        Phone ->
+            phoneView sharedState model
+
+        _ ->
+            mainView sharedState model
+
+
+mainView : SharedState -> Model -> Element Msg
+mainView sharedState model =
     column (Style.mainColumn fill fill)
         [ bookListDisplay sharedState model
         , footer sharedState model
         ]
+
+
+phoneView : SharedState -> Model -> Element Msg
+phoneView sharedState model =
+    case model.viewState of
+        ViewUsers ->
+            column (Style.mainColumn fill fill)
+                [ sharedUserDisplay sharedState model
+                , footerForPhone sharedState model
+                ]
+
+        ViewSharedUserBookList ->
+            column (Style.mainColumn fill fill)
+                [ bookListTable sharedState model
+                , footerForPhone sharedState model
+                ]
+
+        ViewSharedBook ->
+            column (Style.mainColumn fill fill)
+                [ column [ Border.width 1, moveRight 12 ] [ Common.Book.notesViewedAsMarkdown "380px" (notesHeight sharedState) sharedState.currentBook ]
+                , footerForPhone sharedState model
+                ]
 
 
 verticalMargin : Int
@@ -302,7 +355,12 @@ verticalMargin =
 
 
 notesHeight sharedState =
-    String.fromInt (sharedState.windowHeight - verticalMargin - 20) ++ "px"
+    case deviceIsPhone sharedState of
+        True ->
+            String.fromInt (sharedState.windowHeight - verticalMargin - 40) ++ "px"
+
+        False ->
+            String.fromInt (sharedState.windowHeight - verticalMargin - 20) ++ "px"
 
 
 bookListDisplay : SharedState -> Model -> Element Msg
@@ -339,8 +397,14 @@ matchBookAndUserIds sharedState =
 sharedUserDisplay : SharedState -> Model -> Element Msg
 sharedUserDisplay sharedState model =
     Element.column
-        [ width (px 270)
-        , height (px (sharedState.windowHeight - verticalMargin))
+        [ width
+            (if deviceIsPhone sharedState then
+                fill
+
+             else
+                px 270
+            )
+        , height (px (sharedState.windowHeight - verticalMargin - 15))
         , spacing 10
         , padding 10
         , Background.color Style.charcoal
@@ -349,6 +413,16 @@ sharedUserDisplay sharedState model =
         [ followView sharedState model
         , userInfoView sharedState model
         ]
+
+
+deviceIsPhone : SharedState -> Bool
+deviceIsPhone sharedState =
+    case classifyDevice { width = sharedState.windowWidth, height = sharedState.windowHeight } |> .class of
+        Phone ->
+            True
+
+        _ ->
+            False
 
 
 followView sharedState model =
@@ -370,8 +444,13 @@ showFollowingOrFollower sharedState model =
 bookListTable : SharedState -> Model -> Element Msg
 bookListTable sharedState model =
     Element.column
-        [ width (px 500)
-        , height (px (sharedState.windowHeight - verticalMargin))
+        [ width fill
+        , clipY
+        , if deviceIsPhone sharedState then
+            height (px (sharedState.windowHeight - verticalMargin - 10))
+
+          else
+            height (px (sharedState.windowHeight - verticalMargin))
         , spacing 10
         , padding 10
         , Background.color Style.charcoal
@@ -392,6 +471,16 @@ bookListTableHeader sharedState model =
 
 listBooks : SharedState -> Model -> Element Msg
 listBooks sharedState model =
+    case classifyDevice { width = sharedState.windowWidth, height = sharedState.windowHeight } |> .class of
+        Phone ->
+            listBooksPhone sharedState model
+
+        _ ->
+            listBooksMain sharedState model
+
+
+listBooksMain : SharedState -> Model -> Element Msg
+listBooksMain sharedState model =
     Element.table
         [ Element.centerX
         , Font.size 13
@@ -421,6 +510,36 @@ listBooks sharedState model =
               , view =
                     \book ->
                         Element.text book.category
+              }
+            ]
+        }
+
+
+listBooksPhone : SharedState -> Model -> Element Msg
+listBooksPhone sharedState model =
+    Element.table
+        [ Element.centerX
+        , Font.size 13
+        , Element.spacing 10
+        , scrollbarY
+        , height (px (sharedState.windowHeight - verticalMargin - 50))
+        , Background.color Style.charcoal
+        , Font.color Style.white
+        , clipX
+        ]
+        { data = model.bookList
+        , columns =
+            [ { header = Element.el Style.tableHeading (Element.text "Title")
+              , width = px 200
+              , view =
+                    \book ->
+                        titleButton book sharedState.currentBook
+              }
+            , { header = Element.el Style.tableHeading (Element.text "Author")
+              , width = px 150
+              , view =
+                    \book ->
+                        Element.text book.author
               }
             ]
         }
@@ -475,6 +594,27 @@ getBooksButton =
         }
 
 
+usersButton model =
+    Input.button (Style.activeButton (model.viewState == ViewUsers))
+        { onPress = Just SetViewStateToViewUsers
+        , label = Element.text "Users"
+        }
+
+
+bookListButton model =
+    Input.button (Style.activeButton (model.viewState == ViewSharedUserBookList))
+        { onPress = Just SetViewStateToViewSharedBookList
+        , label = Element.text "Shared Books List"
+        }
+
+
+sharedBookButton model =
+    Input.button (Style.activeButton (model.viewState == ViewSharedBook))
+        { onPress = Just SetViewStateToViewSharedBook
+        , label = Element.text "Shared Book"
+        }
+
+
 
 --
 -- FOOTER
@@ -492,6 +632,15 @@ footer sharedState model =
         , el Style.footerItem (text <| userStatus sharedState.currentUser)
         , wordCountOfCurrentNotes sharedState
         , userBegginingDate sharedState
+        ]
+
+
+footerForPhone : SharedState -> Model -> Element Msg
+footerForPhone sharedState model =
+    row (footerStyle sharedState)
+        [ usersButton model
+        , bookListButton model
+        , sharedBookButton model
         ]
 
 
@@ -675,7 +824,20 @@ userInfoView sharedState model =
     in
     Element.column [ spacing 12 ]
         [ Element.el [ Font.bold, Font.size 14 ] (Element.text (publicUserTitle pu))
-        , Element.column [ width (px 250), height (px (userInfoViewHeight sharedState)), padding 15, spacing 10, scrollbarY, Border.width 1 ]
+        , Element.column
+            [ width
+                (if deviceIsPhone sharedState then
+                    px (sharedState.windowWidth - iphoneInset)
+
+                 else
+                    px 250
+                )
+            , height (px (userInfoViewHeight sharedState))
+            , padding 15
+            , spacing 10
+            , scrollbarY
+            , Border.width 1
+            ]
             [ Element.column [ spacing 4 ] (List.map (\publicUser -> displayPublicUser sharedState model publicUser) pu)
             ]
         ]
@@ -685,9 +847,26 @@ userInfoViewHeight sharedState =
     2 * (sharedState.windowHeight - verticalMargin) // 3 - 40
 
 
+iphoneInset =
+    35
+
+
 followersView : SharedState -> Model -> Element Msg
 followersView sharedState model =
-    Element.column [ width (px 250), height (px (followersViewHeight sharedState)), scrollbarY, padding 15, spacing 10, Border.width 1 ]
+    Element.column
+        [ width
+            (if deviceIsPhone sharedState then
+                px (sharedState.windowWidth - iphoneInset)
+
+             else
+                px 250
+            )
+        , height (px (followersViewHeight sharedState))
+        , scrollbarY
+        , padding 15
+        , spacing 10
+        , Border.width 1
+        ]
         [ Element.column [ spacing 4 ] (List.map (\publicUser -> displayPublicUser sharedState model publicUser) (followerList sharedState))
         ]
 
@@ -723,7 +902,20 @@ useColor flag =
 
 followingView : SharedState -> Model -> Element Msg
 followingView sharedState model =
-    Element.column [ width (px 250), height (px (followersViewHeight sharedState)), scrollbarY, padding 15, spacing 10, Border.width 1 ]
+    Element.column
+        [ width
+            (if deviceIsPhone sharedState then
+                px (sharedState.windowWidth - iphoneInset)
+
+             else
+                px 250
+            )
+        , height (px (followersViewHeight sharedState))
+        , scrollbarY
+        , padding 15
+        , spacing 10
+        , Border.width 1
+        ]
         [ Element.column [ spacing 4 ] (List.map (\publicUser -> displayPublicUser sharedState model publicUser) (followingList sharedState))
         ]
 
