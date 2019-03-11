@@ -500,13 +500,23 @@ update sharedState msg model =
             ( { model | appState = ReadingBook }, Cmd.none, NoUpdate )
 
         SetModeToEditingBook ->
-            ( { model | appState = EditingBook }, Cmd.none, SharedState.NoUpdate )
+            case model.appState of
+                EditingBook ->
+                    ( { model | appState = ReadingBook }, Cmd.none, SharedState.NoUpdate )
+
+                _ ->
+                    ( { model | appState = EditingBook }, Cmd.none, SharedState.NoUpdate )
 
         SetModeToEditingNote ->
             ( { model | appState = EditingNote }, Cmd.none, SharedState.NoUpdate )
 
         SetModeToViewingNote ->
-            ( { model | appState = ViewingNote }, Cmd.none, SharedState.NoUpdate )
+            case model.appState of
+                ViewingNote ->
+                    ( { model | appState = ReadingBook }, Cmd.none, SharedState.NoUpdate )
+
+                _ ->
+                    ( { model | appState = ViewingNote }, Cmd.none, SharedState.NoUpdate )
 
         SetModeToCreating ->
             ( { model | appState = CreatingBook }, Cmd.none, SharedState.NoUpdate )
@@ -1126,7 +1136,14 @@ userStatus user_ =
 
 editBookPanel : SharedState -> Model -> Element Msg
 editBookPanel sharedState model =
-    Element.column [ clipX, paddingXY 10 10, spacing 10, height (px (sharedState.windowHeight - verticalMargin)), Border.width 1 ]
+    Element.column
+        [ clipX
+        , paddingXY 10 10
+        , spacing 10
+        , width (px (phoneWidth sharedState + 0))
+        , height (px (sharedState.windowHeight - verticalMargin))
+        , Border.width 1
+        ]
         [ Element.el [ Font.bold ] (text <| "Edit book")
         , inputTitle sharedState
         , inputSubtitle sharedState
@@ -1137,6 +1154,10 @@ editBookPanel sharedState model =
         , inputDateFinished sharedState
         , row [ spacing 12 ] [ updateEditNotesButton model, cancelEditNoteButton model ]
         ]
+
+
+phoneWidth sharedState =
+    sharedState.windowWidth - 40
 
 
 newBookPanel : SharedState -> Model -> Element Msg
@@ -1166,8 +1187,26 @@ inputWidthSmall =
     px 120
 
 
+inputStyle sharedState =
+    case deviceIsPhone sharedState of
+        True ->
+            [ width (px (sharedState.windowWidth - 80)), height (px 25), Font.size 14 ]
+
+        False ->
+            [ width (px 400), height (px 30) ]
+
+
+inputStyleSmall sharedState =
+    case deviceIsPhone sharedState of
+        True ->
+            [ width (px 100), height (px 25), Font.size 14 ]
+
+        False ->
+            [ width (px 120), height (px 30) ]
+
+
 inputTitle sharedState =
-    Input.text [ width (inputWidth sharedState), height (px 30) ]
+    Input.text (inputStyle sharedState)
         { text = sharedState.currentBook |> Maybe.map .title |> Maybe.withDefault ""
         , placeholder = Nothing
         , onChange = \new -> InputTitle new
@@ -1176,7 +1215,7 @@ inputTitle sharedState =
 
 
 inputStartDate sharedState =
-    Input.text [ width inputWidthSmall, height (px 30) ]
+    Input.text (inputStyleSmall sharedState)
         { text = sharedState.currentBook |> Maybe.map .startDateString |> Maybe.withDefault ""
         , placeholder = Just <| Input.placeholder [ moveUp 6 ] (Element.text "1/15/2018")
         , onChange = \dateString -> InputStartDate dateString
@@ -1185,7 +1224,7 @@ inputStartDate sharedState =
 
 
 inputDateFinished sharedState =
-    Input.text [ width inputWidthSmall, height (px 30) ]
+    Input.text (inputStyleSmall sharedState)
         { text = sharedState.currentBook |> Maybe.map .finishDateString |> Maybe.withDefault ""
         , placeholder = Just <| Input.placeholder [ moveUp 6 ] (Element.text "2/28/2018")
         , onChange = \dateString -> InputFinishDate dateString
@@ -1194,7 +1233,7 @@ inputDateFinished sharedState =
 
 
 inputSubtitle sharedState =
-    Input.text [ width (inputWidth sharedState), height (px 30) ]
+    Input.text (inputStyle sharedState)
         { text = sharedState.currentBook |> Maybe.map .subtitle |> Maybe.withDefault ""
         , placeholder = Nothing
         , onChange = \new -> InputSubtitle new
@@ -1203,7 +1242,7 @@ inputSubtitle sharedState =
 
 
 inputCategory sharedState =
-    Input.text [ width (inputWidth sharedState), height (px 30) ]
+    Input.text (inputStyle sharedState)
         { text = sharedState.currentBook |> Maybe.map .category |> Maybe.withDefault ""
         , placeholder = Nothing
         , onChange = \new -> InputCategory new
@@ -1212,7 +1251,7 @@ inputCategory sharedState =
 
 
 inputAuthor sharedState =
-    Input.text [ width (inputWidth sharedState), height (px 30) ]
+    Input.text (inputStyle sharedState)
         { text = sharedState.currentBook |> Maybe.map .author |> Maybe.withDefault ""
         , placeholder = Nothing
         , onChange = \new -> InputAuthor new
@@ -1221,7 +1260,7 @@ inputAuthor sharedState =
 
 
 inputPages sharedState =
-    Input.text [ width inputWidthSmall, height (px 30) ]
+    Input.text (inputStyleSmall sharedState)
         { text = sharedState.currentBook |> Maybe.map .pages |> Maybe.map String.fromInt |> Maybe.withDefault ""
         , placeholder = Nothing
         , onChange = InputPages

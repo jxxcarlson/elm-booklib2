@@ -179,6 +179,7 @@ view sharedState model =
                     { src = "https://www.hastac.org/sites/default/files/upload/images/post/books.jpg"
                     , description = "Library"
                     }
+                , el [ Font.size 14 ] (text "Bug reports and suggestions to jxxcarlson@gmail.com")
                 , footer sharedState model
                 ]
 

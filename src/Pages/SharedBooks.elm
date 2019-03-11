@@ -355,7 +355,7 @@ phoneViewStyle w h =
 
 notesWidth : SharedState -> String
 notesWidth sharedState =
-    sharedState.windowWidth - 45 |> String.fromInt |> (\x -> x ++ "px")
+    sharedState.windowWidth - 55 |> String.fromInt |> (\x -> x ++ "px")
 
 
 verticalMargin : Int
