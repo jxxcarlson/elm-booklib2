@@ -1,5 +1,6 @@
 module Common.Style exposing
     ( activeButton
+    , activeButtonDarkRed
     , activeButtonRed
     , blue
     , button
@@ -95,6 +96,16 @@ activeButtonRed active =
             button
 
 
+activeButtonDarkRed : Bool -> List (Element.Attr () msg)
+activeButtonDarkRed active =
+    case active of
+        True ->
+            activeButtonDarkRedStyle
+
+        False ->
+            button
+
+
 smallButton =
     [ Background.color black, Font.color grey, Font.size 12, Element.paddingXY 6 4, alignRight ] ++ basicButtonsStyle
 
@@ -182,6 +193,11 @@ activeButtonStyle =
 activeButtonRedStyle : List (Element.Attr () msg)
 activeButtonRedStyle =
     [ Background.color (Element.rgb 1 0 0), Font.color white, Element.paddingXY 10 6 ] ++ basicButtonsStyle
+
+
+activeButtonDarkRedStyle : List (Element.Attr () msg)
+activeButtonDarkRedStyle =
+    [ Background.color darkRed, Font.color white, Element.paddingXY 10 6 ] ++ basicButtonsStyle
 
 
 

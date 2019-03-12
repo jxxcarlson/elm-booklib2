@@ -112,6 +112,7 @@ type Msg
     | SetModeToEditingNote
     | SetModeToViewingNote
     | SetModeToCreating
+    | SetInfoToDefaultState
     | ArmDeleteState
     | DisarmArmDeleteState
 
@@ -510,6 +511,9 @@ update sharedState msg model =
         SetModeToEditingNote ->
             ( { model | appState = EditingNote }, Cmd.none, SharedState.NoUpdate )
 
+        SetInfoToDefaultState ->
+            ( { model | appState = ReadingBook }, Cmd.none, SharedState.NoUpdate )
+
         SetModeToViewingNote ->
             case model.appState of
                 ViewingNote ->
@@ -806,7 +810,12 @@ notesInput w h sharedState model =
                 , spellcheck = False
                 }
             )
-        , editControls w model
+        , case deviceIsPhone sharedState of
+            True ->
+                Element.none
+
+            False ->
+                editControls w model
         ]
 
 
@@ -971,6 +980,14 @@ newBookButton model =
         }
 
 
+bookInfoButton : Model -> Element Msg
+bookInfoButton model =
+    Input.button (Style.activeButtonDarkRed (model.appState /= ReadingBook))
+        { onPress = Just SetInfoToDefaultState
+        , label = Element.text "Info"
+        }
+
+
 deleteBookButton : Model -> Element Msg
 deleteBookButton model =
     Input.button (Style.activeButtonRed (model.deleteBookState == Armed))
@@ -1099,7 +1116,12 @@ footer sharedState model =
 footerForPhone : SharedState -> Model -> Element Msg
 footerForPhone sharedState model =
     row Style.footerForPhone
-        [ deleteBookButton model
+        [ case model.appState of
+            ReadingBook ->
+                deleteBookButton model
+
+            _ ->
+                bookInfoButton model
         , showIf (model.deleteBookState == Armed) (cancelDeleteBookButton model)
         , showIf (model.deleteBookState /= Armed) (newBookButton model)
         , showIf (model.deleteBookState /= Armed) (editBookButton model)
