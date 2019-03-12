@@ -706,7 +706,7 @@ sidePanel sharedState model =
 
         EditingNote ->
             row [ spacing 12 ]
-                [ row [ moveUp 4 ] [ notesInput (px 400) (px (sharedState.windowHeight - verticalMargin - 38)) sharedState model ]
+                [ row [ moveUp 4 ] [ notesInput (px 400) (px (sharedState.windowHeight - verticalMargin - 18)) sharedState model ]
                 , column [ Border.width 1, moveUp 2 ] [ Common.Book.notesViewedAsMarkdown 70 "400px" (notesHeight sharedState) sharedState.currentBook ]
                 ]
 
@@ -747,6 +747,12 @@ currentBookPanel sharedState model =
 
 
 editControls w model =
+    row [ paddingXY 20 5, spacing 12, Background.color <| grey 0.4, width w, height (px 20) ]
+        [ el [ Font.size 14, Font.color Style.white ] (text "Editing note, auto-save on")
+        ]
+
+
+oldEditControls w model =
     row [ paddingXY 20 5, spacing 12, Background.color <| grey 0.4, width w, height (px 40) ]
         [ updateNotesButton model
         , doneEditingNotesButton model
@@ -820,7 +826,7 @@ notesInput w h sharedState model =
             )
         , case deviceIsPhone sharedState of
             True ->
-                Element.none
+                editControls w model
 
             False ->
                 editControls w model
