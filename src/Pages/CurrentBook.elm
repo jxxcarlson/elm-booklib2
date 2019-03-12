@@ -512,7 +512,15 @@ update sharedState msg model =
             ( { model | appState = EditingNote }, Cmd.none, SharedState.NoUpdate )
 
         SetInfoToDefaultState ->
-            ( { model | appState = ReadingBook }, Cmd.none, SharedState.NoUpdate )
+            case model.appState of
+                CreatingBook ->
+                    ( { model | appState = ReadingBook, previousBook = Nothing }
+                    , Cmd.none
+                    , SharedState.UpdateCurrentBook model.previousBook
+                    )
+
+                _ ->
+                    ( { model | appState = ReadingBook }, Cmd.none, SharedState.NoUpdate )
 
         SetModeToViewingNote ->
             case model.appState of
@@ -1103,7 +1111,12 @@ bookTitle book_ =
 footer : SharedState -> Model -> Element Msg
 footer sharedState model =
     row Style.footer
-        [ deleteBookButton model
+        [ case model.appState of
+            ReadingBook ->
+                deleteBookButton model
+
+            _ ->
+                bookInfoButton model
         , showIf (model.deleteBookState == Armed) (cancelDeleteBookButton model)
         , showIf (model.deleteBookState /= Armed) (newBookButton model)
         , editBookButton model
@@ -1167,7 +1180,12 @@ editBookPanel sharedState model =
         [ clipX
         , paddingXY 10 10
         , spacing 10
-        , width (px (phoneWidth sharedState + 0))
+        , case deviceIsPhone sharedState of
+            True ->
+                width (px (phoneWidth sharedState))
+
+            False ->
+                width (px 430)
         , height (px (sharedState.windowHeight - verticalMargin))
         , Border.width 1
         ]
