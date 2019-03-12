@@ -90,7 +90,7 @@ userList sharedState model =
         , Font.size 13
         , Element.spacing 10
         , scrollbarY
-        , height (px (sharedState.windowHeight - 140))
+        , height (px (sharedState.windowHeight - 180))
         , Background.color Style.charcoal
         , Font.color Style.white
         , clipX

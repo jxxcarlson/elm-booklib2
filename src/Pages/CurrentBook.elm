@@ -634,7 +634,7 @@ mainView sharedState model =
 
 phoneView : SharedState -> Model -> Element Msg
 phoneView sharedState model =
-    column (Style.mainColumnPhone fill fill)
+    column [ width fill, height fill, clipY, clipX ]
         [ mainRowPhone sharedState model
         , footerForPhone sharedState model
         ]
@@ -659,21 +659,19 @@ mainRow sharedState model =
 mainRowPhone : SharedState -> Model -> Element Msg
 mainRowPhone sharedState model =
     row
-        (Style.mainColumn2 fill fill
-            ++ [ spacing 20 ]
-        )
+        []
         [ case model.appState of
             ReadingBook ->
                 currentBookPanel sharedState model
 
             EditingNote ->
-                row [ spacing 12 ]
-                    [ row [ moveUp 4 ] [ notesInput (px 350) (px (sharedState.windowHeight - verticalMargin)) sharedState model ]
+                row []
+                    [ row [] [ notesInput sharedState model ]
                     ]
 
             ViewingNote ->
-                row [ spacing 12 ]
-                    [ column [ Border.width 1, moveUp 2 ] [ Common.Book.notesViewedAsMarkdown 60 "350px" (notesHeight sharedState) sharedState.currentBook ]
+                row []
+                    [ column [] [ Common.Book.notesViewedAsMarkdown 60 (notesWidthForPhone sharedState) (notesHeightForPhone sharedState) sharedState.currentBook ]
                     ]
 
             EditingBook ->
@@ -693,6 +691,14 @@ mainPanel sharedState model =
             currentBookPanel sharedState model
 
 
+notesWidthForPhone sharedState =
+    String.fromInt sharedState.windowWidth ++ "px"
+
+
+notesHeightForPhone sharedState =
+    String.fromInt (sharedState.windowHeight - 110) ++ "px"
+
+
 notesHeight sharedState =
     String.fromInt (sharedState.windowHeight - verticalMargin - 20) ++ "px"
 
@@ -706,13 +712,13 @@ sidePanel sharedState model =
 
         EditingNote ->
             row [ spacing 12 ]
-                [ row [ moveUp 4 ] [ notesInput (px 400) (px (sharedState.windowHeight - verticalMargin - 18)) sharedState model ]
+                [ row [ moveUp 4 ] [ notesInput sharedState model ]
                 , column [ Border.width 1, moveUp 2 ] [ Common.Book.notesViewedAsMarkdown 70 "400px" (notesHeight sharedState) sharedState.currentBook ]
                 ]
 
         ViewingNote ->
             row [ spacing 12 ]
-                [ row [ moveUp 4 ] [ notesInput (px 400) (px (sharedState.windowHeight - verticalMargin - 38)) sharedState model ]
+                [ row [ moveUp 4 ] [ notesInput sharedState model ]
                 , column [ Border.width 1, moveUp 2 ] [ Common.Book.notesViewedAsMarkdown 70 (notesWidth sharedState) (notesHeight sharedState) sharedState.currentBook ]
                 ]
 
@@ -739,38 +745,47 @@ currentBookPanel sharedState model =
             el [ Font.color Style.blue ] (text "No book selected.  Click on 'New' to add a new book")
 
         Just book ->
-            column [ Background.color <| grey 0.9, padding 30, width (px 360), height (px (sharedState.windowHeight - verticalMargin)), spacing 36, alignTop, Border.width 1 ]
+            column
+                [ Background.color <| grey 0.9
+                , padding 30
+                , case deviceIsPhone sharedState of
+                    True ->
+                        width (px (sharedState.windowHeight - 20))
+
+                    False ->
+                        width (px 360)
+                , case deviceIsPhone sharedState of
+                    True ->
+                        height (px (sharedState.windowHeight - 88))
+
+                    False ->
+                        height (px (sharedState.windowHeight - verticalMargin))
+                , spacing 36
+                , alignTop
+                , case deviceIsPhone sharedState of
+                    True ->
+                        Border.width 0
+
+                    False ->
+                        Border.width 1
+                ]
                 [ bookAndAuthorInfo book
                 , progressInfo sharedState book
                 , changeParameters sharedState model book
                 ]
 
 
-editControls w model =
-    row [ paddingXY 20 5, spacing 12, Background.color <| grey 0.4, width w, height (px 20) ]
-        [ el [ Font.size 14, Font.color Style.white ] (text "Editing note, auto-save on")
-        ]
+editControls sharedState =
+    case deviceIsPhone sharedState of
+        True ->
+            row [ paddingXY 20 0, spacing 12, Background.color <| grey 0.1, width <| px <| sharedState.windowWidth, height (px 20) ]
+                [ el [ Font.size 14, Font.color Style.white ] (text "Editing note, auto-save on")
+                ]
 
-
-oldEditControls w model =
-    row [ paddingXY 20 5, spacing 12, Background.color <| grey 0.4, width w, height (px 40) ]
-        [ updateNotesButton model
-        , doneEditingNotesButton model
-        ]
-
-
-updateNotesButton model =
-    Input.button Style.button
-        { onPress = Just UpdateNotes
-        , label = Element.text "Update"
-        }
-
-
-doneEditingNotesButton model =
-    Input.button Style.button
-        { onPress = Just DoneEditingNotes
-        , label = Element.text "Done"
-        }
+        False ->
+            row [ paddingXY 20 0, spacing 12, Background.color <| grey 0.1, height (px 20), width <| px <| 400 ]
+                [ el [ Font.size 14, Font.color Style.white ] (text "Editing note, auto-save on")
+                ]
 
 
 bookAndAuthorInfo book =
@@ -803,7 +818,7 @@ changeParameters sharedState model book =
         ]
 
 
-notesInput w h sharedState model =
+notesInput sharedState model =
     let
         notes =
             case sharedState.currentBook of
@@ -816,33 +831,49 @@ notesInput w h sharedState model =
     column []
         [ Keyed.el []
             ( String.fromInt model.counter
-            , Input.multiline (textInputStyle w h)
+            , Input.multiline (textInputStyle sharedState)
                 { onChange = InputNotes
                 , text = notes
                 , placeholder = Nothing
-                , label = Input.labelAbove [ Font.size 0, Font.bold ] (text "")
+                , label = Input.labelBelow [ Font.size 0, Font.bold ] (text "")
                 , spellcheck = False
                 }
             )
-        , case deviceIsPhone sharedState of
-            True ->
-                editControls w model
-
-            False ->
-                editControls w model
+        , editControls sharedState
         ]
 
 
-textInputStyle w h =
+textInputStyle sharedState =
     [ Style.preWrap
-    , height h
-    , width w
-    , scrollbarY
+    , case deviceIsPhone sharedState of
+        True ->
+            height <| px <| sharedState.windowHeight - 110
+
+        -- 100, 130
+        False ->
+            height <| px <| sharedState.windowHeight - 146
+    , case deviceIsPhone sharedState of
+        True ->
+            width <| px <| sharedState.windowWidth
+
+        False ->
+            width <| px <| 400
     , clipX
+    , paddingXY 12 12
     , Font.size 13
-    , paddingXY 8 20
+    , case deviceIsPhone sharedState of
+        True ->
+            paddingXY 5 5
+
+        False ->
+            paddingXY 8 20
     , Background.color Style.lightGrey
-    , Border.width 2
+    , case deviceIsPhone sharedState of
+        True ->
+            Border.width 0
+
+        False ->
+            Border.width 2
     ]
 
 
@@ -1043,17 +1074,35 @@ cancelCreateBookButton model =
         }
 
 
-editBookButton model =
+editBookButton sharedState model =
+    let
+        label =
+            case deviceIsPhone sharedState of
+                True ->
+                    "Edit"
+
+                False ->
+                    "Edit book"
+    in
     Input.button (Style.activeButton (model.appState == EditingBook))
         { onPress = Just SetModeToEditingBook
-        , label = Element.text "Edit"
+        , label = Element.text label
         }
 
 
-editNoteButton model =
+editNoteButton sharedState model =
+    let
+        label =
+            case deviceIsPhone sharedState of
+                True ->
+                    "Edit"
+
+                False ->
+                    "Edit note"
+    in
     Input.button (Style.activeButton (model.appState == EditingNote))
         { onPress = Just SetModeToEditingNote
-        , label = Element.text "Edit Notes"
+        , label = Element.text label
         }
 
 
@@ -1125,16 +1174,15 @@ footer sharedState model =
                 bookInfoButton model
         , showIf (model.deleteBookState == Armed) (cancelDeleteBookButton model)
         , showIf (model.deleteBookState /= Armed) (newBookButton model)
-        , editBookButton model
-        , editNoteButton model
-        , el Style.footerItem (text <| userStatus sharedState.currentUser)
-        , wordCountOfCurrentNotes sharedState
+        , showIf (model.appState /= CreatingBook) (editBookButton sharedState model)
+        , showIf (model.appState /= CreatingBook) (editNoteButton sharedState model)
+        , showIf (List.member model.appState [ ReadingBook, EditingNote, ViewingNote ]) (wordCountOfCurrentNotes sharedState)
         ]
 
 
 footerForPhone : SharedState -> Model -> Element Msg
 footerForPhone sharedState model =
-    row Style.footerForPhone
+    row [ spacing 8, Background.color Style.charcoal, paddingXY 12 8, alignBottom, width fill, Font.size 12 ]
         [ case model.appState of
             ReadingBook ->
                 deleteBookButton model
@@ -1142,10 +1190,10 @@ footerForPhone sharedState model =
             _ ->
                 bookInfoButton model
         , showIf (model.deleteBookState == Armed) (cancelDeleteBookButton model)
-        , showIf (model.deleteBookState /= Armed) (newBookButton model)
-        , showIf (model.deleteBookState /= Armed) (editBookButton model)
-        , viewNoteButton model
-        , editNoteButton model
+        , showIf (model.deleteBookState /= Armed && (not <| List.member model.appState [ EditingNote, ViewingNote, EditingBook ])) (newBookButton model)
+        , showIf (model.deleteBookState /= Armed && model.appState /= CreatingBook && (not <| List.member model.appState [ EditingNote, ViewingNote, EditingBook ])) (editBookButton sharedState model)
+        , showIf (model.appState /= CreatingBook) (viewNoteButton model)
+        , showIf (List.member model.appState [ ViewingNote, EditingNote, EditingBook ]) (editNoteButton sharedState model)
         ]
 
 
@@ -1188,12 +1236,22 @@ editBookPanel sharedState model =
         , spacing 10
         , case deviceIsPhone sharedState of
             True ->
-                width (px (phoneWidth sharedState))
+                width (px (sharedState.windowHeight - 20))
 
             False ->
-                width (px 430)
-        , height (px (sharedState.windowHeight - verticalMargin))
-        , Border.width 1
+                width (px 420)
+        , case deviceIsPhone sharedState of
+            True ->
+                height (px (sharedState.windowHeight - 88))
+
+            False ->
+                height (px (sharedState.windowHeight - verticalMargin))
+        , case deviceIsPhone sharedState of
+            True ->
+                Border.width 0
+
+            False ->
+                Border.width 1
         ]
         [ Element.el [ Font.bold ] (text <| "Edit book")
         , inputTitle sharedState
@@ -1213,8 +1271,29 @@ phoneWidth sharedState =
 
 newBookPanel : SharedState -> Model -> Element Msg
 newBookPanel sharedState model =
-    Element.column [ paddingXY 10 10, spacing 10, height (px (sharedState.windowHeight - verticalMargin)), Border.width 1 ]
-        [ Element.el [ Font.bold ] (text <| "New")
+    Element.column
+        [ paddingXY 10 10
+        , spacing 10
+        , case deviceIsPhone sharedState of
+            True ->
+                width (px (sharedState.windowHeight - 20))
+
+            False ->
+                width (px 430)
+        , case deviceIsPhone sharedState of
+            True ->
+                height (px (sharedState.windowHeight - 88))
+
+            False ->
+                height (px (sharedState.windowHeight - verticalMargin))
+        , case deviceIsPhone sharedState of
+            True ->
+                Border.width 0
+
+            False ->
+                Border.width 1
+        ]
+        [ Element.el [ Font.bold ] (text <| "New Book!!")
         , inputTitle sharedState
         , inputSubtitle sharedState
         , inputCategory sharedState

@@ -343,8 +343,12 @@ phoneView sharedState model =
                 ]
 
         ViewSharedBook ->
+            let
+                w =
+                    sharedState.windowWidth - 20 |> String.fromInt |> (\x -> x ++ "px")
+            in
             column (phoneViewStyle fill fill)
-                [ column [ Border.width 1, moveRight 12 ] [ Common.Book.notesViewedAsMarkdown 60 (notesWidth sharedState) (notesHeight sharedState) sharedState.currentBook ]
+                [ column [] [ Common.Book.notesViewedAsMarkdown 70 w (notesHeight sharedState) sharedState.currentBook ]
                 , footerForPhone sharedState model
                 ]
 
