@@ -131,19 +131,32 @@ update sharedState msg model =
                 cmd =
                     case route of
                         BooksRoute ->
-                            Books.getBookListViaSharedState sharedState |> Cmd.map BookMsg
+                            Cmd.batch [
+                              Books.getBookListViaSharedState sharedState |> Cmd.map BookMsg
+                              , CurrentUser.getStats |> Cmd.map CurrentUserMsg
+                              ]
 
                         SharedBooksRoute ->
-                            SharedBooks.getPublicUsers sharedState |> Cmd.map SharedBookMsg
+                            Cmd.batch [
+                              SharedBooks.getPublicUsers sharedState |> Cmd.map SharedBookMsg
+                             , CurrentUser.getStats |> Cmd.map CurrentUserMsg
+                             ]
+
+                        AboutRoute ->
+                             CurrentUser.getStats |> Cmd.map CurrentUserMsg
+
 
                         GroupsRoute ->
                             Groups.getGroupList |> Cmd.map GroupsMsg
 
                         AdminRoute ->
-                            Admin.getAnnotatedUsers sharedState |> Cmd.map AdminMsg
+                            Cmd.batch [
+                              Admin.getAnnotatedUsers sharedState |> Cmd.map AdminMsg
+                              , CurrentUser.getStats |> Cmd.map CurrentUserMsg
+                            ]
 
                         CurrentBookRoute ->
-                            Cmd.none
+                            CurrentUser.getStats |> Cmd.map CurrentUserMsg
 
                         _ ->
                             Cmd.none
