@@ -1,6 +1,7 @@
 module Pages.CurrentUser exposing
     ( Model
     , currentSharedStateView
+    , getStats
     , initModel
     , update
     , view
@@ -9,6 +10,7 @@ module Pages.CurrentUser exposing
 import Browser.Navigation exposing (pushUrl)
 import Common.Style as Style
 import Common.Utility as Utility
+import Configuration
 import Element exposing (..)
 import Element.Background as Background
 import Element.Font as Font
@@ -18,6 +20,7 @@ import Json.Encode
 import OutsideInfo exposing (InfoForOutside(..))
 import Routing.Helpers exposing (Route(..), reverseRoute)
 import SharedState exposing (SharedState, SharedStateUpdate(..))
+import Stats exposing (Stats)
 import User.Session as Session
 import User.Types exposing (Msg(..), State(..), User)
 import User.Utility
@@ -98,6 +101,7 @@ update sharedState msg model =
             , Cmd.batch
                 [ pushUrl sharedState.navKey "#books"
                 , OutsideInfo.sendInfoOutside (UserData (OutsideInfo.userEncoder user))
+                , getStats
                 ]
             , UpdateCurrentUser (Just user)
             )
@@ -165,6 +169,12 @@ update sharedState msg model =
                             ( Just nextUser_, Session.updateUser nextUser_ nextUser_.token )
             in
             ( model, cmd, SharedState.UpdateCurrentUser nextCurrentUser )
+
+        GotStats (Ok stats) ->
+            ( model, Cmd.none, UpdateStats (Just stats) )
+
+        GotStats (Err err) ->
+            ( { model | message = httpErrorExplanation err }, Cmd.none, NoUpdate )
 
 
 view : SharedState -> Model -> Element Msg
@@ -516,3 +526,11 @@ cleanupErrorMessage str =
         |> String.replace "message" ""
         |> String.replace "\"" ""
         |> String.dropLeft 1
+
+
+getStats : Cmd Msg
+getStats =
+    Http.get
+        { url = Configuration.backend ++ "/api/stats/last"
+        , expect = Http.expectJson GotStats Stats.decoder
+        }

@@ -2,6 +2,7 @@ module SharedState exposing (SharedState, SharedStateUpdate(..), initialSharedSt
 
 import Book.Types exposing (Book)
 import Browser.Navigation
+import Stats exposing (Stats)
 import Time exposing (Posix)
 import User.Types exposing (User)
 
@@ -14,15 +15,6 @@ type alias SharedState =
     , windowWidth : Int
     , windowHeight : Int
     , stats : Maybe Stats
-    }
-
-
-type alias Stats =
-    { users : Int
-    , books : Int
-    , booksRead : Int
-    , pages : Int
-    , pagesRead : Int
     }
 
 

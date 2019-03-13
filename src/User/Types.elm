@@ -2,6 +2,7 @@ module User.Types exposing (AnnotatedUser, Msg(..), PublicUser, State(..), User,
 
 import Http
 import Routing.Helpers exposing (Route)
+import Stats exposing (Stats)
 
 
 type alias User =
@@ -76,6 +77,7 @@ type Msg
     | ToggleUserPublic Bool
     | InputTagString String
     | UpdateUserTags
+    | GotStats (Result Http.Error Stats)
 
 
 type State

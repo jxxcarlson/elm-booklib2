@@ -1,23 +1,15 @@
 module Pages.Admin exposing (Model, Msg(..), dateStringToInt, getAnnotatedUsers, init, update, view)
 
-import Book.Coders
-import Book.Types exposing (Book)
-import Browser.Navigation exposing (pushUrl)
-import Common.Book
-import Common.Days as Days
-import Common.Indicator as Indicator
 import Common.Style as Style
-import Common.Utility as Utility
 import Configuration
 import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
 import Element.Font as Font
 import Element.Input as Input
-import Element.Keyed as Keyed
 import Http
-import Pages.Books
 import SharedState exposing (SharedState, SharedStateUpdate(..))
+import Stats exposing (Stats)
 import User.Coders
 import User.Session
 import User.Types exposing (AnnotatedUser)
@@ -67,6 +59,7 @@ view sharedState model =
             , el [ Font.size 14 ] (text <| "Books: " ++ (String.fromInt <| totalNumberOfBooks model))
             ]
         , userList sharedState model
+        , displayStats sharedState.stats
         ]
 
 
@@ -90,7 +83,7 @@ userList sharedState model =
         , Font.size 13
         , Element.spacing 10
         , scrollbarY
-        , height (px (sharedState.windowHeight - 180))
+        , height (px (sharedState.windowHeight - 320))
         , Background.color Style.charcoal
         , Font.color Style.white
         , clipX
@@ -175,3 +168,23 @@ getAnnotatedUsers sharedState =
                 , timeout = Nothing
                 , tracker = Nothing
                 }
+
+
+displayStats : Maybe Stats -> Element Msg
+displayStats stats_ =
+    case stats_ of
+        Nothing ->
+            Element.none
+
+        Just stats ->
+            column [ spacing 8 ]
+                [ statsRow "Users" stats.users
+                , statsRow "Books" stats.books
+                , statsRow "Books read" stats.booksRead
+                , statsRow "Pages" stats.pages
+                , statsRow "Pages read" stats.pagesRead
+                ]
+
+
+statsRow a b =
+    row [ Font.size 12 ] [ el [ width (px 40) ] (text a), el [ moveRight 50, width (px 40) ] (el [ alignRight ] (text <| String.fromInt b)) ]

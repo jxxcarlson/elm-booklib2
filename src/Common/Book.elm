@@ -2,7 +2,6 @@ module Common.Book exposing (notesViewedAsMarkdown, textViewedAsMarkdown, verbat
 
 import Book.MarkdownExtra as MarkdownExtra
 import Book.Types exposing (Book)
-import Common.Style as Style
 import Element exposing (Element, column, el, height, px, width)
 import Element.Font as Font
 import Html exposing (..)

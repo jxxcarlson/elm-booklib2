@@ -1,6 +1,5 @@
 module User.Session exposing (authenticate, registerUser, tokenEncoder, updateUser, userEncoder, userListDecoder)
 
-import Common.Days as Days
 import Common.Utility as Utility
 import Configuration
 import Http
