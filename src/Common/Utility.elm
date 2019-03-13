@@ -1,8 +1,11 @@
 module Common.Utility exposing
-    ( intListFromElixirDateString
+    ( foo
+    , intListFromElixirDateString
+    , removeLeadingZeros
     , replaceIf
     , roundTo
     , softBreakAlt
+    , stringFromIntWithCommas
     , toUtcDateString
     , toUtcString
     , toggleList
@@ -226,3 +229,61 @@ roundTo k x =
             toFloat k
     in
     x * 10.0 ^ kk |> round |> toFloat |> (\y -> y / 10.0 ^ kk)
+
+
+stringFromIntWithCommas : Int -> String
+stringFromIntWithCommas x =
+    let
+        i =
+            modBy 1000 x
+
+        j_ =
+            x // 1000
+
+        j =
+            modBy 1000 j_
+
+        k_ =
+            j_ // 1000
+
+        tl =
+            [ j, i ]
+                |> removeLeadingZeros
+                |> List.map String.fromInt
+                |> List.map (String.padLeft 3 '0')
+                |> String.join ","
+    in
+    if k_ > 0 then
+        String.fromInt k_ ++ "," ++ tl
+
+    else
+        tl
+
+
+foo x =
+    let
+        i =
+            modBy 1000 x
+
+        j_ =
+            x // 1000
+
+        j =
+            modBy 1000 j_
+
+        k_ =
+            j_ // 1000
+    in
+    [ k_, j, i ]
+
+
+removeLeadingZeros list =
+    case List.head list of
+        Nothing ->
+            []
+
+        Just 0 ->
+            removeLeadingZeros (List.tail list |> Maybe.withDefault [])
+
+        Just _ ->
+            list

@@ -9,6 +9,7 @@ module Pages.About exposing
 
 import Common.Book
 import Common.Style as Style
+import Common.Utility as Utility
 import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
@@ -167,24 +168,34 @@ textColumn sharedState model =
             [ text """We will be adding a few new features as things progress, but our
             overarching goal is to keep things simple, useful, and enjoyable.
              Contact me at jxxcarlson@gmail.com with your ideas.""" ]
-        , case sharedState.stats of
-            Nothing ->
-                Element.none
+        , paragraph
+            []
+            [ text """We are just staring out, but here are some usage statistics:""" ]
 
-            Just _ ->
-                el [ Font.bold ] (text "Statistics")
+        --        , case sharedState.stats of
+        --            Nothing ->
+        --                Element.none
+        --
+        --            Just _ ->
+        --                el [ Font.bold ] (text "Statistics")
         , case sharedState.stats of
             Nothing ->
                 Element.none
 
             Just st ->
-                row [ spacing 0 ] [ statsRow 30 "Books" st.books, el [ paddingXY 18 0, moveRight 9 ] (text "|"), statsRow 55 "Books read" st.booksRead ]
+                row [ spacing 0, moveRight 20 ] [ statsRow 30 "Users" st.users ]
         , case sharedState.stats of
             Nothing ->
                 Element.none
 
             Just st ->
-                row [ spacing 0 ] [ statsRow 30 "Pages" st.pages, el [ paddingXY 18 0, moveRight 9 ] (text "|"), statsRow 55 "Pages read" st.pagesRead ]
+                row [ spacing 0, moveRight 20 ] [ statsRow 30 "Books" st.books, el [ paddingXY 18 0, moveRight 9 ] (text "|"), statsRow 55 "Books read" st.booksRead ]
+        , case sharedState.stats of
+            Nothing ->
+                Element.none
+
+            Just st ->
+                row [ spacing 0, moveRight 20 ] [ statsRow 30 "Pages" st.pages, el [ paddingXY 18 0, moveRight 9 ] (text "|"), statsRow 55 "Pages read" st.pagesRead ]
         , el [ Font.bold ] (text "Markdown")
         , paragraph
             []

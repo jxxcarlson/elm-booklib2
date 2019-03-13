@@ -190,6 +190,7 @@ view sharedState model =
                     , description = "Library"
                     }
                 , el [ Font.size 14 ] (text "Bug reports and suggestions to jxxcarlson@gmail.com")
+                , statistics sharedState
                 , footer sharedState model
                 ]
 
@@ -201,6 +202,41 @@ view sharedState model =
                     ]
                 , footer sharedState model
                 ]
+
+
+statistics sharedState =
+    column [ Font.size 14, spacing 8 ]
+        [ case sharedState.stats of
+            Nothing ->
+                Element.none
+
+            Just st ->
+                paragraph
+                    []
+                    [ text """We are just staring out, but here are some usage statistics:""" ]
+        , case sharedState.stats of
+            Nothing ->
+                Element.none
+
+            Just st ->
+                row [ spacing 0, moveRight 20 ] [ statsRow 30 "Users" st.users ]
+        , case sharedState.stats of
+            Nothing ->
+                Element.none
+
+            Just st ->
+                row [ spacing 0, moveRight 20 ] [ statsRow 30 "Books" st.books, el [ paddingXY 18 0, moveRight 9 ] (text "|"), statsRow 55 "Books read" st.booksRead ]
+        , case sharedState.stats of
+            Nothing ->
+                Element.none
+
+            Just st ->
+                row [ spacing 0, moveRight 20 ] [ statsRow 30 "Pages" st.pages, el [ paddingXY 18 0, moveRight 9 ] (text "|"), statsRow 55 "Pages read" st.pagesRead ]
+        ]
+
+
+statsRow k a b =
+    row [ Font.size 12 ] [ el [ width (px k) ] (text a), el [ moveRight 15, width (px 30) ] (el [ alignRight ] (text <| String.fromInt b)) ]
 
 
 welcomeColumn : SharedState -> Model -> Element Msg
