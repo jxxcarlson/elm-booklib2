@@ -13,6 +13,16 @@ type alias SharedState =
     , currentBook : Maybe Book
     , windowWidth : Int
     , windowHeight : Int
+    , stats : Maybe Stats
+    }
+
+
+type alias Stats =
+    { users : Int
+    , books : Int
+    , booksRead : Int
+    , pages : Int
+    , pagesRead : Int
     }
 
 
@@ -22,6 +32,7 @@ type SharedStateUpdate
     | UpdateCurrentUser (Maybe User)
     | InvalidateCurrentUser
     | UpdateCurrentBook (Maybe Book)
+    | UpdateStats (Maybe Stats)
 
 
 initialSharedState : Browser.Navigation.Key -> Posix -> Int -> Int -> Maybe User -> SharedState
@@ -32,6 +43,7 @@ initialSharedState navKey time w h currentUser =
     , currentBook = Nothing
     , windowWidth = w
     , windowHeight = h
+    , stats = Nothing
     }
 
 
@@ -49,6 +61,9 @@ update sharedState sharedStateUpdate =
 
         InvalidateCurrentUser ->
             { sharedState | currentUser = Nothing, currentBook = Nothing }
+
+        UpdateStats stats ->
+            { sharedState | stats = stats }
 
         NoUpdate ->
             sharedState

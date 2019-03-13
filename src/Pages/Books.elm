@@ -283,7 +283,7 @@ bookListTable sharedState model =
     Element.column
         [ width fill
         , height (px (sharedState.windowHeight - verticalMargin))
-        , spacing 10
+        , spacing 18
         , padding 10
         , Background.color Style.charcoal
         , Font.color Style.white
@@ -297,9 +297,12 @@ bookListTableHeader : SharedState -> Model -> Element Msg
 bookListTableHeader sharedState model =
     case classifyDevice { width = sharedState.windowWidth, height = sharedState.windowHeight } |> .class of
         Phone ->
-            Element.row [ spacing 15, Background.color Style.charcoal, Font.color Style.white ]
-                [ Element.el [ Font.bold, Font.color Style.white ] (text <| bookInfo model)
+            column [ spacing 6 ]
+                [ row [ spacing 15, Background.color Style.charcoal, Font.color Style.white ]
+                    [ Element.el [ Font.bold, Font.color Style.white ] (text <| bookInfo model)
+                    ]
                 , Element.el [ Font.size 14, Font.color Style.orange ] (text <| totalsStringPhone sharedState model)
+                , Element.el [ Font.size 14, Font.color Style.orange ] (text <| totalsStringPhone2 sharedState model)
                 ]
 
         _ ->
@@ -383,7 +386,7 @@ listBooksForPhone sharedState model =
         , Font.size 13
         , Element.spacing 10
         , scrollbarY
-        , height (px (sharedState.windowHeight - verticalMargin - 60))
+        , height (px (sharedState.windowHeight - 190))
         , width fill
         , Background.color Style.charcoal
         , Font.color Style.white
@@ -467,6 +470,22 @@ totalsStringPhone sharedState model =
 
                 Just user ->
                     user.beginningDate
+    in
+    String.fromInt model.totalPagesRead
+        ++ " pages since "
+        ++ startDate
+
+
+totalsStringPhone2 : SharedState -> Model -> String
+totalsStringPhone2 sharedState model =
+    let
+        startDate =
+            case sharedState.currentUser of
+                Nothing ->
+                    "6/1/2018"
+
+                Just user ->
+                    user.beginningDate
 
         nBooksRead : Float
         nBooksRead =
@@ -483,9 +502,11 @@ totalsStringPhone sharedState model =
         pagesReadPerDay =
             String.fromFloat <| Utility.roundTo 1 (Basics.toFloat model.totalPagesRead / daysElapsed)
     in
-    String.fromInt model.totalPagesRead
-        ++ " pages since "
-        ++ startDate
+    pagesReadPerDay
+        ++ " pp/day"
+        ++ " — "
+        ++ booksReadPerMonth
+        ++ " books/month"
 
 
 bookListDisplayWidth model =
