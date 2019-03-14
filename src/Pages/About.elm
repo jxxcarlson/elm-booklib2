@@ -207,7 +207,7 @@ textColumn sharedState model =
 
 
 statsRow k a b =
-    row [ Font.size 12 ] [ el [ width (px k) ] (text a), el [ moveRight 15, width (px 30) ] (el [ alignRight ] (text <| String.fromInt b)) ]
+    row [ Font.size 12 ] [ el [ width (px k) ] (text a), el [ moveRight 15, width (px 30) ] (el [ alignRight ] (text <| Utility.stringFromIntWithCommas b)) ]
 
 
 aboutMarkDown sharedState model =

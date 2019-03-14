@@ -1,6 +1,6 @@
 module Common.Utility exposing
-    ( foo
-    , intListFromElixirDateString
+    ( intListFromElixirDateString
+    , removeLeadingString
     , removeLeadingZeros
     , replaceIf
     , roundTo
@@ -245,36 +245,13 @@ stringFromIntWithCommas x =
 
         k_ =
             j_ // 1000
-
-        tl =
-            [ j, i ]
-                |> removeLeadingZeros
-                |> List.map String.fromInt
-                |> List.map (String.padLeft 3 '0')
-                |> String.join ","
-    in
-    if k_ > 0 then
-        String.fromInt k_ ++ "," ++ tl
-
-    else
-        tl
-
-
-foo x =
-    let
-        i =
-            modBy 1000 x
-
-        j_ =
-            x // 1000
-
-        j =
-            modBy 1000 j_
-
-        k_ =
-            j_ // 1000
     in
     [ k_, j, i ]
+        |> removeLeadingZeros
+        |> List.map String.fromInt
+        |> List.map (String.padLeft 3 '0')
+        |> String.join ","
+        |> removeLeadingString "0"
 
 
 removeLeadingZeros list =
@@ -287,3 +264,12 @@ removeLeadingZeros list =
 
         Just _ ->
             list
+
+
+removeLeadingString : String -> String -> String
+removeLeadingString s str =
+    if String.startsWith s str then
+        removeLeadingString s (String.dropLeft (String.length s) str)
+
+    else
+        str

@@ -1,6 +1,7 @@
 module Pages.Admin exposing (Model, Msg(..), dateStringToInt, getAnnotatedUsers, init, update, view)
 
 import Common.Style as Style
+import Common.Utility as Utility
 import Configuration
 import Element exposing (..)
 import Element.Background as Background
@@ -187,4 +188,4 @@ displayStats stats_ =
 
 
 statsRow a b =
-    row [ Font.size 12 ] [ el [ width (px 40) ] (text a), el [ moveRight 50, width (px 40) ] (el [ alignRight ] (text <| String.fromInt b)) ]
+    row [ Font.size 12 ] [ el [ width (px 40) ] (text a), el [ moveRight 50, width (px 40) ] (el [ alignRight ] (text <| Utility.stringFromIntWithCommas b)) ]

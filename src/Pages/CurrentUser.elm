@@ -213,7 +213,7 @@ statistics sharedState =
             Just st ->
                 paragraph
                     []
-                    [ text """We are just staring out, but here are some usage statistics:""" ]
+                    [ text """We are just staring out, but here are some statistics:""" ]
         , case sharedState.stats of
             Nothing ->
                 Element.none
@@ -236,7 +236,7 @@ statistics sharedState =
 
 
 statsRow k a b =
-    row [ Font.size 12 ] [ el [ width (px k) ] (text a), el [ moveRight 15, width (px 30) ] (el [ alignRight ] (text <| String.fromInt b)) ]
+    row [ Font.size 12 ] [ el [ width (px k) ] (text a), el [ moveRight 15, width (px 30) ] (el [ alignRight ] (text <| Utility.stringFromIntWithCommas b)) ]
 
 
 welcomeColumn : SharedState -> Model -> Element Msg
