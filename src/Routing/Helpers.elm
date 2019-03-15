@@ -9,6 +9,7 @@ type Route
     | SharedBooksRoute
     | CurrentBookRoute
     | CurrentUserRoute
+    | ChartRoute
     | AboutRoute
     | GroupsRoute
     | AdminRoute
@@ -20,6 +21,9 @@ reverseRoute route =
     case route of
         CurrentUserRoute ->
             "#/"
+
+        ChartRoute ->
+            "#/chart"
 
         BooksRoute ->
             "#/books"
@@ -47,6 +51,7 @@ routeParser =
     Url.Parser.oneOf
         [ Url.Parser.map CurrentUserRoute Url.Parser.top
         , Url.Parser.map BooksRoute (Url.Parser.s "books")
+        , Url.Parser.map ChartRoute (Url.Parser.s "chart")
         , Url.Parser.map CurrentBookRoute (Url.Parser.s "currentbook")
         , Url.Parser.map SharedBooksRoute (Url.Parser.s "sharedbooks")
         , Url.Parser.map AboutRoute (Url.Parser.s "about")

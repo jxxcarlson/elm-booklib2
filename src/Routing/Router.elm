@@ -12,6 +12,7 @@ import OutsideInfo exposing (InfoForOutside(..))
 import Pages.About as About
 import Pages.Admin as Admin
 import Pages.Books as Books
+import Pages.Chart as Chart
 import Pages.CurrentBook as CurrentBook exposing (AppState(..))
 import Pages.CurrentUser as CurrentUser
 import Pages.Groups as Groups
@@ -25,6 +26,7 @@ import User.Utility
 
 type alias Model =
     { bookModel : Books.Model
+    , chartModel : Chart.Model
     , sharedBookModel : SharedBooks.Model
     , currentBookModel : CurrentBook.Model
     , currentUserModel : CurrentUser.Model
@@ -41,6 +43,7 @@ type Msg
     | SharedBookMsg SharedBooks.Msg
     | CurrentBookMsg CurrentBook.Msg
     | CurrentUserMsg User.Types.Msg
+    | ChartMsg Chart.Msg
     | AboutMsg About.Msg
     | GroupsMsg Groups.Msg
     | AdminMsg Admin.Msg
@@ -60,6 +63,9 @@ initialModel url =
         currentBookModel =
             CurrentBook.init
 
+        chartModel =
+                    Chart.init
+
         currentUserModel =
             CurrentUser.initModel
 
@@ -73,6 +79,7 @@ initialModel url =
             Admin.init
     in
     { bookModel = bookModel
+    , chartModel = chartModel
     , currentBookModel = currentBookModel
     , sharedBookModel = sharedBookModel
     , currentUserModel = currentUserModel
@@ -88,6 +95,8 @@ init url =
     let
         bookModel =
             Books.init
+
+        chartModel = Chart.init
 
         currentBookModel =
             CurrentBook.init
@@ -108,6 +117,7 @@ init url =
             Admin.init
     in
     ( { bookModel = bookModel
+      , chartModel = chartModel
       , sharedBookModel = sharedBookModel
       , currentBookModel = currentBookModel
       , currentUserModel = currentUserModel
@@ -225,6 +235,9 @@ update sharedState msg model =
         BookMsg bookMsg ->
             updateBook sharedState model bookMsg
 
+        ChartMsg chartMsg ->
+            updateChart sharedState model chartMsg
+
         SharedBookMsg sharedBookMsg ->
             updateSharedBook sharedState model sharedBookMsg
 
@@ -268,6 +281,18 @@ updateBook sharedState model bookMsg =
     in
     ( { model | bookModel = nextBookModel }
     , Cmd.map BookMsg bookCmd
+    , sharedStateUpdate
+    )
+
+
+updateChart : SharedState -> Model -> Chart.Msg -> ( Model, Cmd Msg, SharedStateUpdate )
+updateChart sharedState model chartMsg =
+    let
+        ( nextChartModel, chartCmd, sharedStateUpdate ) =
+            Chart.update sharedState chartMsg model.chartModel
+    in
+    ( { model | chartModel = nextChartModel }
+    , Cmd.map ChartMsg chartCmd
     , sharedStateUpdate
     )
 
@@ -363,6 +388,9 @@ mainView msgMapper sharedState model =
                 SharedBooksRoute ->
                     "Shared Books"
 
+                ChartRoute ->
+                     "Chart"
+
                 CurrentBookRoute ->
                     "Current Book"
 
@@ -422,6 +450,10 @@ mainView msgMapper sharedState model =
                         { onPress = Just (NavigateTo CurrentUserRoute)
                         , label = el [] (text "User")
                         }
+                    , Input.button (Style.activeButton (model.route == ChartRoute))
+                                            { onPress = Just (NavigateTo ChartRoute)
+                                            , label = el [] (text "Chart")
+                                            }
                     , Input.button (Style.activeButton (model.route == AboutRoute))
                         { onPress = Just (NavigateTo AboutRoute)
                         , label = el [] (text "About")
@@ -457,6 +489,9 @@ phoneView msgMapper sharedState model =
 
                 SharedBooksRoute ->
                     "Shared Books"
+
+                ChartRoute ->
+                   "Chart"
 
                 CurrentBookRoute ->
                     "Current Book"
@@ -549,6 +584,10 @@ pageView sharedState model =
             SharedBooksRoute ->
                 SharedBooks.view sharedState model.sharedBookModel
                     |> Element.map SharedBookMsg
+
+            ChartRoute ->
+                Chart.view sharedState model.chartModel
+                    |> Element.map ChartMsg
 
             CurrentBookRoute ->
                 CurrentBook.view sharedState model.currentBookModel
