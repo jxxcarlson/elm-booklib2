@@ -64,7 +64,13 @@ testUser =
     , admin = False
     , beginningDate = "1/1/1800"
     , tags = []
-    , readingStats = []
+    , readingStats =
+        [ { dateString = "2019-01-31", pagesRead = 400 }
+        , { dateString = "2019-02-28", pagesRead = 800 }
+        , { dateString = "2019-03-31", pagesRead = 1000 }
+        , { dateString = "2019-04-30", pagesRead = 1100 }
+        , { dateString = "2019-05-31", pagesRead = 1600 }
+        ]
     }
 
 
