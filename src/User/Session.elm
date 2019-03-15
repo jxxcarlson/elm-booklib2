@@ -7,7 +7,7 @@ import Json.Decode as Decode exposing (Decoder)
 import Json.Decode.Pipeline exposing (required)
 import Json.Encode as Encode
 import User.Coders
-import User.Types exposing (Msg(..), PublicUser, User, UserRecord)
+import User.Types exposing (Msg(..), PublicUser, ReadingStat, User, UserRecord)
 
 
 authenticate : String -> String -> Cmd Msg
@@ -98,22 +98,31 @@ userDecoder =
         |> required "admin" Decode.bool
         |> required "inserted_at" (Decode.map Utility.usDateStringFromElixirDateString Decode.string)
         |> required "tags" (Decode.list Decode.string)
+        |> required "reading_stats" (Decode.list readingStatDecoder)
 
 
-type alias User =
-    { username : String
-    , id : Int
-    , firstname : String
-    , email : String
-    , token : String
-    , blurb : String
-    , public : Bool
-    , follow : List PublicUser
-    , followers : List PublicUser
-    , admin : Bool
-    , beginningDate : String
-    , tags : List String
-    }
+readingStatDecoder : Decoder ReadingStat
+readingStatDecoder =
+    Decode.succeed ReadingStat
+        |> required "date" Decode.string
+        |> required "pages_read" Decode.int
+
+
+
+--type alias User =
+--    { username : String
+--    , id : Int
+--    , firstname : String
+--    , email : String
+--    , token : String
+--    , blurb : String
+--    , public : Bool
+--    , follow : List PublicUser
+--    , followers : List PublicUser
+--    , admin : Bool
+--    , beginningDate : String
+--    , tags : List String
+--    }
 
 
 userListDecoder : Decoder (List User)

@@ -95,6 +95,20 @@ annotatedUserDecoder =
         |> required "inserted_at" (Decode.map Utility.usDateStringFromElixirDateString Decode.string)
         |> required "tags" (Decode.list Decode.string)
         |> required "numberOfBooks" Decode.int
+        |> required "reading_stats" (Decode.list readingStatDecoder)
+
+
+readingStatDecoder : Decoder ReadingStat
+readingStatDecoder =
+    Decode.succeed ReadingStat
+        |> required "date" Decode.string
+        |> required "pages_read" Decode.int
+
+
+type alias ReadingStat =
+    { dateString : String
+    , pagesRead : Int
+    }
 
 
 type alias AnnotatedUser =
@@ -111,4 +125,5 @@ type alias AnnotatedUser =
     , beginningDate : String
     , tags : List String
     , numberOfBooks : Int
+    , readingStats : List ReadingStat
     }

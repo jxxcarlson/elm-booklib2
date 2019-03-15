@@ -79,6 +79,20 @@ userDecoderForOutside =
         |> required "admin" (Decode.map stringToBool Decode.string)
         |> required "beginningDate" Decode.string
         |> required "tags" (Decode.string |> Decode.map (String.split ","))
+        |> required "reading_stats" (Decode.list readingStatDecoder)
+
+
+readingStatDecoder : Decode.Decoder ReadingStat
+readingStatDecoder =
+    Decode.succeed ReadingStat
+        |> required "date" Decode.string
+        |> required "pages_read" Decode.int
+
+
+type alias ReadingStat =
+    { dateString : String
+    , pagesRead : Int
+    }
 
 
 

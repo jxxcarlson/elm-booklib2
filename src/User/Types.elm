@@ -1,4 +1,4 @@
-module User.Types exposing (AnnotatedUser, Msg(..), PublicUser, State(..), User, UserRecord, testUser)
+module User.Types exposing (AnnotatedUser, Msg(..), PublicUser, ReadingStat, State(..), User, UserRecord, testUser)
 
 import Http
 import Routing.Helpers exposing (Route)
@@ -18,6 +18,13 @@ type alias User =
     , admin : Bool
     , beginningDate : String
     , tags : List String
+    , readingStats : List ReadingStat
+    }
+
+
+type alias ReadingStat =
+    { dateString : String
+    , pagesRead : Int
     }
 
 
@@ -35,6 +42,7 @@ type alias AnnotatedUser =
     , beginningDate : String
     , tags : List String
     , numberOfBooks : Int
+    , readingStats : List ReadingStat
     }
 
 
@@ -56,6 +64,7 @@ testUser =
     , admin = False
     , beginningDate = "1/1/1800"
     , tags = []
+    , readingStats = []
     }
 
 
