@@ -109,7 +109,7 @@ userList sharedState model =
                     \user ->
                         el [ moveLeft 30 ] (el [ alignRight ] (text <| String.join ", " <| user.tags))
               }
-            , { header = Element.el (Style.tableHeading ++ [ moveLeft 30 ]) (Element.text "Books")
+            , { header = Element.el (Style.tableHeading ++ [ moveLeft 30 ]) (Element.text "Pages read`")
               , width = px 40
               , view =
                     \user ->
