@@ -55,14 +55,15 @@
     		   "email": localStorage.getItem("email"),
     		   "id": localStorage.getItem("id"),
     		   "username": localStorage.getItem("username"),
-           "blurb": localStorage.getItem("blurb"),
+               "blurb": localStorage.getItem("blurb"),
     		   "firstname": localStorage.getItem("firstname"),
-           "public": localStorage.getItem("public"),
-           "follow": localStorage.getItem("follow"),
-           "followers": localStorage.getItem("followers"),
-           "admin": localStorage.getItem("admin"),
-           "beginningDate": localStorage.getItem("beginningDate"),
-           "tags": localStorage.getItem("tags")
+               "public": localStorage.getItem("public"),
+               "follow": localStorage.getItem("follow"),
+               "followers": localStorage.getItem("followers"),
+               "admin": localStorage.getItem("admin"),
+               "beginningDate": localStorage.getItem("beginningDate"),
+               "tags": localStorage.getItem("tags"),
+               "reading_stats": localStorage.getItem("reading_stats")
 
 
 
@@ -74,19 +75,20 @@
 
        var processUserData = function(userSettings) {
          console.log("JS, processUserData")
-         localStorage.clear()
-         localStorage.setItem("token", userSettings.token);
+           localStorage.clear()
+           localStorage.setItem("token", userSettings.token);
     	   localStorage.setItem("email", userSettings.email);
     	   localStorage.setItem("id", userSettings.id);
     	   localStorage.setItem("username", userSettings.username);
-         localStorage.setItem("blurb", userSettings.blurb);
+           localStorage.setItem("blurb", userSettings.blurb);
     	   localStorage.setItem("firstname", userSettings.firstname);
-         localStorage.setItem("public", userSettings.public);
-         localStorage.setItem("follow", userSettings.follow);
-         localStorage.setItem("followers", userSettings.followers);
-         localStorage.setItem("admin", userSettings.admin);
-         localStorage.setItem("beginningDate", userSettings.beginningDate);
-         localStorage.setItem("tags", userSettings.tags);
+           localStorage.setItem("public", userSettings.public);
+           localStorage.setItem("follow", userSettings.follow);
+           localStorage.setItem("followers", userSettings.followers);
+           localStorage.setItem("admin", userSettings.admin);
+           localStorage.setItem("beginningDate", userSettings.beginningDate);
+           localStorage.setItem("tags", userSettings.tags);
+           localStorage.setItem("reading_stats", userSettings.reading_stats);
        }
 
 

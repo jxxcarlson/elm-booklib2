@@ -1,4 +1,4 @@
-module User.Session exposing (authenticate, registerUser, tokenEncoder, updateUser, userEncoder, userListDecoder)
+module User.Session exposing (authenticate, registerUser, tokenEncoder, updateUser, userListDecoder)
 
 import Common.Utility as Utility
 import Configuration
@@ -136,21 +136,22 @@ publicUserDecoder =
         |> required "username" Decode.string
 
 
-userEncoder : User -> Encode.Value
-userEncoder user =
-    Encode.object
-        [ ( "username", Encode.string user.username )
-        , ( "id", Encode.int user.id )
-        , ( "firstname", Encode.string user.firstname )
-        , ( "email", Encode.string user.email )
-        , ( "token", Encode.string user.token )
-        , ( "blurb", Encode.string user.blurb )
-        , ( "public", Encode.bool user.public )
-        , ( "follow", followEncoder user.follow )
-        , ( "followers", followEncoder user.followers )
-        , ( "admin", Encode.bool user.admin )
-        , ( "beginningDate", Encode.string user.beginningDate )
-        ]
+
+--userEncoder : User -> Encode.Value
+--userEncoder user =
+--    Encode.object
+--        [ ( "username", Encode.string user.username )
+--        , ( "id", Encode.int user.id )
+--        , ( "firstname", Encode.string user.firstname )
+--        , ( "email", Encode.string user.email )
+--        , ( "token", Encode.string user.token )
+--        , ( "blurb", Encode.string user.blurb )
+--        , ( "public", Encode.bool user.public )
+--        , ( "follow", followEncoder user.follow )
+--        , ( "followers", followEncoder user.followers )
+--        , ( "admin", Encode.bool user.admin )
+--        , ( "beginningDate", Encode.string user.beginningDate )
+--        ]
 
 
 followEncoder : List PublicUser -> Encode.Value

@@ -7,6 +7,7 @@ port module OutsideInfo exposing
     , userEncoder
     )
 
+import Common.Utility as Utility
 import Json.Decode as Decode
 import Json.Decode.Pipeline exposing (required)
 import Json.Encode as Encode
@@ -79,24 +80,41 @@ userDecoderForOutside =
         |> required "admin" (Decode.map stringToBool Decode.string)
         |> required "beginningDate" Decode.string
         |> required "tags" (Decode.string |> Decode.map (String.split ","))
-        |> required "reading_stats" (Decode.list readingStatDecoder)
+        |> required "reading_stats" (Decode.string |> Decode.map statListStringToReadingStatList)
 
 
-readingStatDecoder : Decode.Decoder ReadingStat
-readingStatDecoder =
-    Decode.succeed ReadingStat
-        |> required "date" Decode.string
-        |> required "pages_read" Decode.int
+statListStringToReadingStatList : String -> List ReadingStat
+statListStringToReadingStatList str =
+    str
+        |> String.split ","
+        |> List.map statStringToReadingStat
+        |> Utility.maybeExtraValues
+
+
+statStringToReadingStat : String -> Maybe ReadingStat
+statStringToReadingStat str =
+    let
+        parts =
+            String.split ":" str
+
+        datePart =
+            List.head parts
+
+        pagesReadPart =
+            parts |> List.tail |> Maybe.andThen List.head
+    in
+    case ( datePart, pagesReadPart ) of
+        ( Just dateString, Just pagesReadString ) ->
+            Just { dateString = dateString, pagesRead = String.toInt pagesReadString |> Maybe.withDefault 0 }
+
+        ( _, _ ) ->
+            Nothing
 
 
 type alias ReadingStat =
     { dateString : String
     , pagesRead : Int
     }
-
-
-
--- |> required "admin" (Decode.map stringToBool Decode.string)
 
 
 userEncoder : User -> Encode.Value
@@ -114,7 +132,20 @@ userEncoder user =
         , ( "admin", Encode.string (boolToString user.admin) )
         , ( "beginningDate", Encode.string user.beginningDate )
         , ( "tags", Encode.string (user.tags |> String.join ",") )
+        , ( "reading_stats", Encode.string (statListStringValue user.readingStats) )
         ]
+
+
+statStringValue : ReadingStat -> String
+statStringValue stat =
+    stat.dateString ++ ":" ++ String.fromInt stat.pagesRead
+
+
+statListStringValue : List ReadingStat -> String
+statListStringValue stats =
+    stats
+        |> List.map statStringValue
+        |> String.join ","
 
 
 publicUserListToString : List PublicUser -> String

@@ -1,5 +1,6 @@
 module Common.Utility exposing
     ( intListFromElixirDateString
+    , maybeExtraValues
     , removeLeadingString
     , removeLeadingZeros
     , replaceIf
@@ -273,3 +274,18 @@ removeLeadingString s str =
 
     else
         str
+
+
+maybeExtraValues : List (Maybe a) -> List a
+maybeExtraValues =
+    List.foldr foldrValues []
+
+
+foldrValues : Maybe a -> List a -> List a
+foldrValues item list =
+    case item of
+        Nothing ->
+            list
+
+        Just v ->
+            v :: list

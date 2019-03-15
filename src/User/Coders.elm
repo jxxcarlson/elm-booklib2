@@ -41,6 +41,15 @@ userEncoder user =
         , ( "admin", Encode.bool user.admin )
         , ( "beginningDate", Encode.string user.beginningDate )
         , ( "tags", Encode.list Encode.string user.tags )
+        , ( "reading_stats", Encode.list encodeStat user.readingStats )
+        ]
+
+
+encodeStat : ReadingStat -> Encode.Value
+encodeStat st =
+    Encode.object
+        [ ( "date", Encode.string st.dateString )
+        , ( "pages_read", Encode.int st.pagesRead )
         ]
 
 
