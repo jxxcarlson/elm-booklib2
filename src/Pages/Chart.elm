@@ -65,12 +65,51 @@ view sharedState model =
 
         _ ->
             column (Style.mainColumn fill fill)
-                [ column [ spacing 12 ]
-                    [ el [ Font.size 14, Font.bold, moveDown 24, moveRight 30 ] (text "Pages read per month")
-                    , row [ moveRight 15, Font.size 12 ] [ chart sharedState ]
+                [ column
+                    [ spacing 12
+                    , width (px sharedState.windowWidth)
+                    , height (px (sharedState.windowHeight - 100))
+                    , Background.color (Style.makeGrey 0.4)
+                    ]
+                    [ chartPanelSwitch sharedState
                     ]
                 , footer sharedState model
                 ]
+
+
+chartPanelSwitch : SharedState -> Element msg
+chartPanelSwitch sharedState =
+    case sharedState.currentUser of
+        Nothing ->
+            Element.none
+
+        Just user ->
+            case List.length user.readingStats < 2 of
+                True ->
+                    el
+                        [ Font.color Style.white
+                        , Font.size 18
+                        , Background.color (Style.makeGrey 0.1)
+                        , paddingXY 10 10
+                        , centerX
+                        , centerY
+                        ]
+                        (text "There will be a chart here soon")
+
+                False ->
+                    chartPanel user
+
+
+chartPanel : User -> Element msg
+chartPanel user =
+    column
+        [ centerX
+        , centerY
+        , Font.size 12
+        , Background.color (Style.makeGrey 0.8)
+        , Font.color Style.white
+        ]
+        [ chart user, el [ Font.size 14, Font.color Style.white, moveDown 24 ] (text "Pages read per month") ]
 
 
 footer : SharedState -> Model -> Element Msg
@@ -105,10 +144,6 @@ dataFromTuple ( a, b ) =
     { month = toFloat (a + 1), pagesRead = toFloat b }
 
 
-type alias Point =
-    { x : Float, y : Float }
-
-
 first : ( Int, Int ) -> Float
 first ( a, b ) =
     toFloat (a + 1)
@@ -119,28 +154,11 @@ second ( a, b ) =
     toFloat b
 
 
-chart1 : List ReadingStat -> Element msg
-chart1 readingStats =
-    LineChart.view1 first second (prepareStats readingStats) |> Element.html
-
-
-testChart : List ReadingStat -> Element msg
-testChart readingStats =
+chart : User -> Element msg
+chart user =
     LineChart.viewCustom chartConfig
-        [ LineChart.line Colors.blue Dots.square "Pages Read" (prepareStats2 readingStats) ]
+        [ LineChart.line Colors.blue Dots.square "Pages Read" (prepareStats2 user.readingStats) ]
         |> Element.html
-
-
-chart : SharedState -> Element msg
-chart sharedState =
-    case sharedState.currentUser of
-        Nothing ->
-            Element.none
-
-        Just user ->
-            LineChart.viewCustom chartConfig
-                [ LineChart.line Colors.blue Dots.square "Pages Read" (prepareStats2 user.readingStats) ]
-                |> Element.html
 
 
 type alias Data =
@@ -154,13 +172,13 @@ chartConfig =
     { x = Axis.full 800 "Month" .month
     , y = Axis.full 400 "Pages" .pagesRead
     , container = Container.default "line-chart-1"
-    , interpolation = Interpolation.default
+    , interpolation = Interpolation.monotone
     , intersection = Intersection.default
     , legends = Legends.none
     , events = Events.default
     , junk = Junk.default
     , grid = Grid.default
-    , area = Area.stacked 0.1 -- Changed from the default!
+    , area = Area.stacked 0.3 -- Changed from the default!
     , line = Line.wider 2
     , dots = Dots.default
     }
