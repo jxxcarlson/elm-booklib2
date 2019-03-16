@@ -552,6 +552,11 @@ phoneView msgMapper sharedState model =
                         , label = el [] (text "User")
                         }
 
+                    , Input.button (Style.activeButton (model.route == ChartRoute))
+                                                                 { onPress = Just (NavigateTo ChartRoute)
+                                                                 , label = el [] (text "Ch")
+                                                                 }
+
                     ]
                 , pageView sharedState model
                 ]

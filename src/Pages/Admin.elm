@@ -56,7 +56,7 @@ view sharedState model =
         [ row [ spacing 8 ] [ getUsersButton ]
         , row [ spacing 12 ]
             [ el [ Font.size 14 ] (text <| "Users: " ++ (String.fromInt <| totalNumberOfUsers model))
-            , el [ Font.size 14 ] (text <| "Books: " ++ (String.fromInt <| totalNumberOfBooks model))
+            , el [ Font.size 14 ] (text <| "Pages read: " ++ (String.fromInt <| totalNumberOfBooks model))
             ]
         , userList sharedState model
         , displayStats sharedState.stats
