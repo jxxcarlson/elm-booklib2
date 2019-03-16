@@ -42,22 +42,21 @@ update sharedState msg model =
             ( model, Cmd.none, NoUpdate )
 
 
-testReadingStats =
-    [ { dateString = "2019-01-31", pagesRead = 400 }
-    , { dateString = "2019-02-28", pagesRead = 800 }
-    , { dateString = "2019-03-31", pagesRead = 1000 }
-    , { dateString = "2019-04-30", pagesRead = 1100 }
-    , { dateString = "2019-05-31", pagesRead = 1600 }
-    ]
+deviceIsPhone : SharedState -> Bool
+deviceIsPhone sharedState =
+    case classifyDevice { width = sharedState.windowWidth, height = sharedState.windowHeight } |> .class of
+        Phone ->
+            True
+
+        _ ->
+            False
 
 
 view : SharedState -> Model -> Element Msg
 view sharedState model =
     case classifyDevice { width = sharedState.windowWidth, height = sharedState.windowHeight } |> .class of
         Phone ->
-            column (Style.mainColumn fill fill)
-                [ footer sharedState model
-                ]
+            chartPanelSwitch sharedState
 
         _ ->
             column (Style.mainColumn fill fill)
@@ -93,11 +92,20 @@ chartPanelSwitch sharedState =
                         (text "There will be a chart here soon")
 
                 False ->
-                    chartPanel user
+                    chartPanel sharedState user
 
 
-chartPanel : User -> Element msg
-chartPanel user =
+chartPanel : SharedState -> User -> Element msg
+chartPanel sharedState user =
+    case deviceIsPhone sharedState of
+        False ->
+            mainChart user
+
+        True ->
+            phoneChart sharedState user
+
+
+mainChart user =
     column
         [ centerX
         , centerY
@@ -105,7 +113,27 @@ chartPanel user =
         , Background.color (Style.makeGrey 0.8)
         , Font.color Style.white
         ]
-        [ chart user, el [ Font.size 14, Font.color Style.white, moveDown 24 ] (text "Pages read per month") ]
+        [ chart user
+        , el [ Font.size 14, Font.color Style.white, moveDown 24 ] (text "Pages read per month")
+        ]
+
+
+phoneChart sharedState user =
+    column
+        [ moveDown 120
+        , moveLeft 115
+        ]
+        [ column
+            [ Font.size 12
+            , rotate (radians -90)
+            ]
+            [ User.Chart.phoneChart (sharedState.windowHeight - 40) sharedState.windowWidth user ]
+        ]
+
+
+radians : Float -> Float
+radians degrees =
+    3.1416 * degrees / 180.0
 
 
 footer : SharedState -> Model -> Element Msg

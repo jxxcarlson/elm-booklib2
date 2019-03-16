@@ -1,4 +1,4 @@
-module User.Chart exposing (chart, prepareStats2)
+module User.Chart exposing (chart, phoneChart)
 
 import Element exposing (..)
 import LineChart
@@ -61,6 +61,13 @@ chart user =
         |> Element.html
 
 
+phoneChart : Int -> Int -> User -> Element msg
+phoneChart w h user =
+    LineChart.viewCustom (chartConfigPhone w h)
+        [ LineChart.line Colors.blue Dots.square "Pages Read" (prepareStats2 user.readingStats) ]
+        |> Element.html
+
+
 type alias Data =
     { month : Float
     , pagesRead : Float
@@ -71,6 +78,23 @@ chartConfig : LineChart.Config Data msg
 chartConfig =
     { x = Axis.full 800 "Month" .month
     , y = Axis.full 400 "Pages" .pagesRead
+    , container = Container.default "line-chart-1"
+    , interpolation = Interpolation.monotone
+    , intersection = Intersection.default
+    , legends = Legends.none
+    , events = Events.default
+    , junk = Junk.default
+    , grid = Grid.default
+    , area = Area.stacked 0.3 -- Changed from the default!
+    , line = Line.wider 2
+    , dots = Dots.default
+    }
+
+
+chartConfigPhone : Int -> Int -> LineChart.Config Data msg
+chartConfigPhone w h =
+    { x = Axis.full w "Month" .month
+    , y = Axis.full h "Pages" .pagesRead
     , container = Container.default "line-chart-1"
     , interpolation = Interpolation.monotone
     , intersection = Intersection.default

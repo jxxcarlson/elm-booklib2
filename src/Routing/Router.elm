@@ -519,7 +519,7 @@ phoneView msgMapper sharedState model =
         body_ =
             column [ paddingXY 0 0, Background.color Style.grey, width fill, height fill ]
                 [ row
-                    (Style.navBar fill)
+                    (Style.navBarPhone fill)
                     [  showIf (sharedState.currentUser /= Nothing)
                         (Input.button (Style.activeButton (model.route == BooksRoute))
                             { onPress = Just (NavigateTo BooksRoute)
@@ -553,9 +553,9 @@ phoneView msgMapper sharedState model =
                         }
 
                     , Input.button (Style.activeButton (model.route == ChartRoute))
-                                                                 { onPress = Just (NavigateTo ChartRoute)
-                                                                 , label = el [] (text "Ch")
-                                                                 }
+                              { onPress = Just (NavigateTo ChartRoute)
+                                , label = el [] (text "C")
+                               }
 
                     ]
                 , pageView sharedState model

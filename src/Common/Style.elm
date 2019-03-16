@@ -21,6 +21,7 @@ module Common.Style exposing
     , makeGrey
     , myFocusStyle
     , navBar
+    , navBarPhone
     , noAutocapitalize
     , noAutocorrect
     , orange
@@ -132,6 +133,10 @@ signinColumn w h =
 
 navBar w =
     [ spacing 24, Background.color charcoal, paddingXY 12 8, width w ]
+
+
+navBarPhone w =
+    [ spacing 8, Background.color charcoal, paddingXY 12 8, width w ]
 
 
 footer =
