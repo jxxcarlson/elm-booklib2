@@ -36,7 +36,12 @@ update sharedState msg model =
             ( model, Cmd.none, NoUpdate )
 
         GotUser (Ok user) ->
-            ( model, Cmd.none, SharedState.UpdateCurrentUser (Just user) )
+            case sharedState.currentUser of
+                Nothing ->
+                    ( model, Cmd.none, NoUpdate )
+
+                Just currentUser ->
+                    ( model, Cmd.none, SharedState.UpdateCurrentUser (Just { user | token = currentUser.token }) )
 
         GotUser (Err err) ->
             ( model, Cmd.none, NoUpdate )
@@ -153,7 +158,7 @@ getUser sharedState =
             Http.request
                 { method = "Get"
                 , headers = []
-                , url = Configuration.backend ++ "/api/users?all=annotated"
+                , url = Configuration.backend ++ "/api/users/" ++ String.fromInt user.id
                 , body = Http.jsonBody (User.Session.tokenEncoder user.token)
                 , expect = Http.expectJson GotUser User.Session.userDecoder
                 , timeout = Nothing

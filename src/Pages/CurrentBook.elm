@@ -943,7 +943,7 @@ finishMessage sharedState book =
                     String.fromInt n ++ " day to finish"
 
                 False ->
-                    String.fromInt n ++ " days to finish"
+                    String.fromInt n ++ " days to finish: " ++ String.fromInt (daysRemaining book) ++ " pp"
 
         False ->
             book.finishDateString
@@ -992,6 +992,11 @@ daysToFinish sharedState book =
             toFloat <| book.pages - book.pagesRead
     in
     round (pagesRemaining / rate)
+
+
+daysRemaining : Book -> Int
+daysRemaining book =
+    book.pages - book.pagesRead
 
 
 daysToComplete : SharedState -> Book -> Int
