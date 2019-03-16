@@ -29,6 +29,7 @@ echo
 echo "${color}Uploading to cloud ...${reset}"
 scp -r ./index-remote.html  root@206.189.184.194:/var/www/html/index.html
 scp -r ./Main.min.js root@206.189.184.194:/var/www/html/
+scp -r ./Main.js root@206.189.184.194:/var/www/html/
 
 
 echo
