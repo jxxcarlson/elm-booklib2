@@ -1,4 +1,4 @@
-module User.Session exposing (authenticate, registerUser, tokenEncoder, updateUser, userListDecoder)
+module User.Session exposing (authenticate, registerUser, tokenEncoder, updateUser, userDecoder, userListDecoder)
 
 import Common.Utility as Utility
 import Configuration

@@ -156,6 +156,11 @@ update sharedState msg model =
                              CurrentUser.getStats |> Cmd.map CurrentUserMsg
 
 
+                        ChartRoute ->
+                            Chart.getUser sharedState |> Cmd.map ChartMsg
+
+
+
                         GroupsRoute ->
                             Groups.getGroupList |> Cmd.map GroupsMsg
 

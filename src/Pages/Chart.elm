@@ -1,10 +1,12 @@
-module Pages.Chart exposing (Model, Msg(..), init, update, view)
+module Pages.Chart exposing (Model, Msg(..), getUser, init, update, view)
 
 import Common.Style as Style
 import Common.Utility as Utility
+import Configuration
 import Element exposing (..)
 import Element.Background as Background
 import Element.Font as Font
+import Http
 import LineChart
 import LineChart.Area as Area
 import LineChart.Axis as Axis
@@ -21,6 +23,7 @@ import LineChart.Junk as Junk
 import LineChart.Legends as Legends
 import LineChart.Line as Line
 import SharedState exposing (SharedState, SharedStateUpdate(..))
+import User.Session
 import User.Types exposing (Msg(..), ReadingStat, State(..), User)
 
 
@@ -31,6 +34,7 @@ type alias Model =
 
 type Msg
     = NoOp String
+    | GotUser (Result Http.Error User)
 
 
 init : Model
@@ -43,6 +47,12 @@ update : SharedState -> Msg -> Model -> ( Model, Cmd Msg, SharedStateUpdate )
 update sharedState msg model =
     case msg of
         NoOp str ->
+            ( model, Cmd.none, NoUpdate )
+
+        GotUser (Ok user) ->
+            ( model, Cmd.none, SharedState.UpdateCurrentUser (Just user) )
+
+        GotUser (Err err) ->
             ( model, Cmd.none, NoUpdate )
 
 
@@ -187,3 +197,21 @@ chartConfig =
 ticksConfig : Ticks.Config msg
 ticksConfig =
     Ticks.intCustom 7 Tick.int
+
+
+getUser : SharedState -> Cmd Msg
+getUser sharedState =
+    case sharedState.currentUser of
+        Nothing ->
+            Cmd.none
+
+        Just user ->
+            Http.request
+                { method = "Get"
+                , headers = []
+                , url = Configuration.backend ++ "/api/users?all=annotated"
+                , body = Http.jsonBody (User.Session.tokenEncoder user.token)
+                , expect = Http.expectJson GotUser User.Session.userDecoder
+                , timeout = Nothing
+                , tracker = Nothing
+                }
