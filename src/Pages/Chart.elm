@@ -111,6 +111,29 @@ chartPanel sharedState user =
 
 
 mainChart user =
+    let
+        summary =
+            User.Chart.summary user
+
+        avString =
+            String.fromFloat <| Utility.roundTo 1 summary.averagePagesPerMonth
+
+        lastMonthString =
+            String.fromInt summary.pagesReadLastMonth
+
+        thisMonthString =
+            String.fromInt summary.pagesReadThisMonth
+
+        infoString =
+            "Average: "
+                ++ avString
+                ++ ", "
+                ++ "last month: "
+                ++ lastMonthString
+                ++ ", "
+                ++ "this month: "
+                ++ thisMonthString
+    in
     column
         [ centerX
         , centerY
@@ -119,7 +142,8 @@ mainChart user =
         , Font.color Style.white
         ]
         [ chart user
-        , el [ Font.size 14, Font.color Style.white, moveDown 24 ] (text "Pages read per month")
+        , el [ Font.size 14, Font.color Style.white, moveDown 34 ] (text "Pages read per month")
+        , el [ Font.size 14, Font.color Style.white, moveDown 38 ] (text <| infoString)
         ]
 
 

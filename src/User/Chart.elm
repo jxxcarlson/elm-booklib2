@@ -1,4 +1,4 @@
-module User.Chart exposing (chart, phoneChart)
+module User.Chart exposing (chart, phoneChart, summary)
 
 import Element exposing (..)
 import LineChart
@@ -17,6 +17,40 @@ import LineChart.Junk as Junk
 import LineChart.Legends as Legends
 import LineChart.Line as Line
 import User.Types exposing (Msg(..), ReadingStat, State(..), User)
+
+
+type alias StatSummary =
+    { averagePagesPerMonth : Float
+    , pagesReadLastMonth : Int
+    , pagesReadThisMonth : Int
+    }
+
+
+summary : User -> StatSummary
+summary user =
+    let
+        prList =
+            user.readingStats |> List.map .pagesRead
+
+        n =
+            List.length prList
+
+        deltas =
+            List.map2 (-) (List.take (n - 1) prList) (List.drop 1 prList)
+
+        average =
+            toFloat (List.sum deltas) / toFloat n
+
+        thisMonth =
+            List.head deltas |> Maybe.withDefault 0
+
+        lastMonth =
+            List.head (List.drop 1 deltas) |> Maybe.withDefault 0
+    in
+    { averagePagesPerMonth = average
+    , pagesReadLastMonth = lastMonth
+    , pagesReadThisMonth = thisMonth
+    }
 
 
 prepareStats : List ReadingStat -> List ( Int, Int )
