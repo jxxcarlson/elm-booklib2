@@ -147,6 +147,37 @@ mainChart user =
         ]
 
 
+chartInfo user =
+    let
+        summary =
+            User.Chart.summary user
+
+        avString =
+            String.fromFloat <| Utility.roundTo 1 summary.averagePagesPerMonth
+
+        lastMonthString =
+            String.fromInt summary.pagesReadLastMonth
+
+        thisMonthString =
+            String.fromInt summary.pagesReadThisMonth
+
+        infoString =
+            "Average: "
+                ++ avString
+                ++ ", "
+                ++ "last month: "
+                ++ lastMonthString
+                ++ ", "
+                ++ "this month: "
+                ++ thisMonthString
+    in
+    column
+        []
+        [ el [ Font.size 14, Font.color Style.white, moveDown 34 ] (text "Pages read per month")
+        , el [ Font.size 14, Font.color Style.white, moveDown 38 ] (text <| infoString)
+        ]
+
+
 phoneChart sharedState user =
     column
         [ moveDown 120
@@ -156,7 +187,8 @@ phoneChart sharedState user =
             [ Font.size 12
             , rotate (radians -90)
             ]
-            [ User.Chart.phoneChart (sharedState.windowHeight - 40) sharedState.windowWidth user ]
+            [ User.Chart.phoneChart (sharedState.windowHeight - 40) sharedState.windowWidth user
+            ]
         ]
 
 
