@@ -168,34 +168,35 @@ textColumn sharedState model =
             [ text """We will be adding a few new features as things progress, but our
             overarching goal is to keep things simple, useful, and enjoyable.
              Contact me at jxxcarlson@gmail.com with your ideas.""" ]
-        , paragraph
-            []
-            [ text """We are just staring out, but here are some usage statistics:""" ]
 
+        --        , paragraph
+        --            []
+        --            [ text """We are just staring out, but here are some usage statistics:"""
+        --            ]
         --        , case sharedState.stats of
         --            Nothing ->
         --                Element.none
         --
         --            Just _ ->
         --                el [ Font.bold ] (text "Statistics")
-        , case sharedState.stats of
-            Nothing ->
-                Element.none
-
-            Just st ->
-                row [ spacing 0, moveRight 20 ] [ statsRow 30 "Users" st.users ]
-        , case sharedState.stats of
-            Nothing ->
-                Element.none
-
-            Just st ->
-                row [ spacing 0, moveRight 20 ] [ statsRow 30 "Books" st.books, el [ paddingXY 18 0, moveRight 9 ] (text "|"), statsRow 55 "Books read" st.booksRead ]
-        , case sharedState.stats of
-            Nothing ->
-                Element.none
-
-            Just st ->
-                row [ spacing 0, moveRight 20 ] [ statsRow 30 "Pages" st.pages, el [ paddingXY 18 0, moveRight 9 ] (text "|"), statsRow 55 "Pages read" st.pagesRead ]
+        --        , case sharedState.stats of
+        --            Nothing ->
+        --                Element.none
+        --
+        --            Just st ->
+        --                row [ spacing 0, moveRight 20 ] [ statsRow 30 "Users" st.users ]
+        --        , case sharedState.stats of
+        --            Nothing ->
+        --                Element.none
+        --
+        --            Just st ->
+        --                row [ spacing 0, moveRight 20 ] [ statsRow 30 "Books" st.books, el [ paddingXY 18 0, moveRight 9 ] (text "|"), statsRow 55 "Books read" st.booksRead ]
+        --        , case sharedState.stats of
+        --            Nothing ->
+        --                Element.none
+        --
+        --            Just st ->
+        --                row [ spacing 0, moveRight 20 ] [ statsRow 30 "Pages" st.pages, el [ paddingXY 18 0, moveRight 9 ] (text "|"), statsRow 55 "Pages read" st.pagesRead ]
         , el [ Font.bold ] (text "Markdown")
         , paragraph
             []

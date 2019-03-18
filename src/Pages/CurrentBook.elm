@@ -940,7 +940,7 @@ finishMessage sharedState book =
             in
             case n == 1 of
                 True ->
-                    String.fromInt n ++ " day to finish" ++ String.fromInt (daysRemaining book) ++ " pp"
+                    String.fromInt n ++ " day to finish " ++ String.fromInt (daysRemaining book) ++ " pp"
 
                 False ->
                     String.fromInt n ++ " days to finish: " ++ String.fromInt (daysRemaining book) ++ " pp"

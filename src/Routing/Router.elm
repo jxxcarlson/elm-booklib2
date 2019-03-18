@@ -438,7 +438,7 @@ mainView msgMapper sharedState model =
                                     { onPress = Nothing
                                     , label = el [] (text "Book")
                                     }
-                                    )
+                                 )
                     , showIf (sharedState.currentUser /= Nothing)
                         (Input.button (Style.activeButton (model.route == SharedBooksRoute))
                             { onPress = Just (NavigateTo SharedBooksRoute)
@@ -455,10 +455,11 @@ mainView msgMapper sharedState model =
                         { onPress = Just (NavigateTo CurrentUserRoute)
                         , label = el [] (text "User")
                         }
-                    , Input.button (Style.activeButton (model.route == ChartRoute))
+                    , showIf (sharedState.currentUser /= Nothing) (Input.button (Style.activeButton (model.route == ChartRoute))
                                             { onPress = Just (NavigateTo ChartRoute)
                                             , label = el [] (text "Chart")
                                             }
+                                            )
                     , Input.button (Style.activeButton (model.route == AboutRoute))
                         { onPress = Just (NavigateTo AboutRoute)
                         , label = el [] (text "About")
@@ -552,10 +553,11 @@ phoneView msgMapper sharedState model =
                         , label = el [] (text "User")
                         }
 
-                    , Input.button (Style.activeButton (model.route == ChartRoute))
+                    , showIf (sharedState.currentUser /= Nothing) (Input.button (Style.activeButton (model.route == ChartRoute))
                               { onPress = Just (NavigateTo ChartRoute)
                                 , label = el [] (text "C")
                                }
+                               )
 
                     ]
                 , pageView sharedState model

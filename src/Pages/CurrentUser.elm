@@ -21,6 +21,7 @@ import OutsideInfo exposing (InfoForOutside(..))
 import Routing.Helpers exposing (Route(..), reverseRoute)
 import SharedState exposing (SharedState, SharedStateUpdate(..))
 import Stats exposing (Stats)
+import User.Chart
 import User.Session as Session
 import User.Types exposing (Msg(..), ReadingStat, State(..), User)
 
@@ -188,8 +189,8 @@ view sharedState model =
                     { src = "https://www.hastac.org/sites/default/files/upload/images/post/books.jpg"
                     , description = "Library"
                     }
-                , el [ Font.size 14 ] (text "Bug reports and suggestions to jxxcarlson@gmail.com")
-                , statistics sharedState
+                , infoLine
+                , statistics2 sharedState
                 , footer sharedState model
                 ]
 
@@ -203,17 +204,54 @@ view sharedState model =
                 ]
 
 
+infoLine =
+    el [ Font.size 14 ] (text "Bug reports and suggestions to jxxcarlson@gmail.com")
+
+
+statistics2 : SharedState -> Element msg
+statistics2 sharedState =
+    case sharedState.currentUser of
+        Nothing ->
+            Element.none
+
+        Just user ->
+            let
+                summary =
+                    User.Chart.summary user
+
+                avString =
+                    String.fromFloat <| Utility.roundTo 1 summary.averagePagesPerMonth
+
+                lastMonthString =
+                    String.fromInt summary.pagesReadLastMonth
+
+                thisMonthString =
+                    String.fromInt summary.pagesReadThisMonth
+
+                info =
+                    "Pages/mo: "
+                        ++ avString
+                        ++ ", "
+                        ++ "last month: "
+                        ++ lastMonthString
+                        ++ ", "
+                        ++ "this month: "
+                        ++ thisMonthString
+            in
+            el [ Font.size 14 ] (text info)
+
+
 statistics sharedState =
     column [ Font.size 14, spacing 8 ]
-        [ case sharedState.stats of
-            Nothing ->
-                Element.none
-
-            Just st ->
-                paragraph
-                    []
-                    [ text """We are just staring out, but here are some statistics:""" ]
-        , case sharedState.stats of
+        [ -- case sharedState.stats of
+          --            Nothing ->
+          --                Element.none
+          --
+          --            Just st ->
+          --                paragraph
+          --                    []
+          --                    [ text """We are just starting out, but here are some statistics:""" ]
+          case sharedState.stats of
             Nothing ->
                 Element.none
 
@@ -266,7 +304,21 @@ signInColumn sharedState model =
         , showIf (model.state == SignedIn) (publicCheckbox sharedState)
         , showIf (model.state == SignedIn) (tagInput sharedState model)
         , showIf (model.state == SignedIn) tagUpdateButton
+        , infoPanel sharedState model
         ]
+
+
+infoPanel sharedState model =
+    case deviceIsPhone sharedState of
+        True ->
+            Element.none
+
+        False ->
+            showIf (model.state == SignedIn) <|
+                column [ paddingXY 0 18, spacing 12 ]
+                    [ infoLine
+                    , statistics2 sharedState
+                    ]
 
 
 registrationStyle sharedState =
