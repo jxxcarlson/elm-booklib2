@@ -39,7 +39,7 @@ summary user =
             List.map2 (-) (List.take (n - 1) prList) (List.drop 1 prList)
 
         average =
-            toFloat (List.sum deltas) / toFloat n
+            toFloat (List.sum deltas) / toFloat (n - 1)
 
         thisMonth =
             List.head deltas |> Maybe.withDefault 0

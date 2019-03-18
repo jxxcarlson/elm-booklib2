@@ -54,12 +54,10 @@ view : SharedState -> Model -> Element Msg
 view sharedState model =
     column (Style.mainColumn fill fill ++ [ padding 40 ])
         [ row [ spacing 8 ] [ getUsersButton ]
-        , row [ spacing 12 ]
-            [ el [ Font.size 14 ] (text <| "Users: " ++ (String.fromInt <| totalNumberOfUsers model))
-            , el [ Font.size 14 ] (text <| "Pages read: " ++ (String.fromInt <| totalNumberOfBooks model))
+        , column [ spacing 12 ]
+            [ displayStats sharedState.stats
+            , userList sharedState model
             ]
-        , userList sharedState model
-        , displayStats sharedState.stats
         ]
 
 

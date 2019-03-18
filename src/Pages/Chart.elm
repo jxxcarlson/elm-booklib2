@@ -129,7 +129,7 @@ chartInfo color user =
             User.Chart.summary user
 
         avString =
-            String.fromFloat <| Utility.roundTo 1 summary.averagePagesPerMonth
+            String.fromFloat <| Utility.roundTo 0 summary.averagePagesPerMonth
 
         lastMonthString =
             String.fromInt summary.pagesReadLastMonth
@@ -164,7 +164,7 @@ phoneChart sharedState user =
             , rotate (radians -90)
             , above (column [ moveRight 120 ] [ chartInfo Style.black user ])
             ]
-            [ User.Chart.phoneChart (sharedState.windowHeight - 80) sharedState.windowWidth user
+            [ User.Chart.phoneChart (sharedState.windowHeight - 10) sharedState.windowWidth user
             ]
         ]
 
