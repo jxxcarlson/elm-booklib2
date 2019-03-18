@@ -111,29 +111,6 @@ chartPanel sharedState user =
 
 
 mainChart user =
-    let
-        summary =
-            User.Chart.summary user
-
-        avString =
-            String.fromFloat <| Utility.roundTo 1 summary.averagePagesPerMonth
-
-        lastMonthString =
-            String.fromInt summary.pagesReadLastMonth
-
-        thisMonthString =
-            String.fromInt summary.pagesReadThisMonth
-
-        infoString =
-            "Average: "
-                ++ avString
-                ++ ", "
-                ++ "last month: "
-                ++ lastMonthString
-                ++ ", "
-                ++ "this month: "
-                ++ thisMonthString
-    in
     column
         [ centerX
         , centerY
@@ -142,12 +119,11 @@ mainChart user =
         , Font.color Style.white
         ]
         [ chart user
-        , el [ Font.size 14, Font.color Style.white, moveDown 34 ] (text "Pages read per month")
-        , el [ Font.size 14, Font.color Style.white, moveDown 38 ] (text <| infoString)
+        , chartInfo Style.white user
         ]
 
 
-chartInfo user =
+chartInfo color user =
     let
         summary =
             User.Chart.summary user
@@ -173,8 +149,8 @@ chartInfo user =
     in
     column
         []
-        [ el [ Font.size 14, Font.color Style.white, moveDown 34 ] (text "Pages read per month")
-        , el [ Font.size 14, Font.color Style.white, moveDown 38 ] (text <| infoString)
+        [ el [ Font.size 14, Font.color color, moveDown 34 ] (text "Pages read per month")
+        , el [ Font.size 14, Font.color color, moveDown 38 ] (text <| infoString)
         ]
 
 
@@ -186,8 +162,9 @@ phoneChart sharedState user =
         [ column
             [ Font.size 12
             , rotate (radians -90)
+            , above (column [ moveRight 120 ] [ chartInfo Style.black user ])
             ]
-            [ User.Chart.phoneChart (sharedState.windowHeight - 40) sharedState.windowWidth user
+            [ User.Chart.phoneChart (sharedState.windowHeight - 80) sharedState.windowWidth user
             ]
         ]
 

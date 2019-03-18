@@ -2,6 +2,7 @@ module Common.Style exposing
     ( activeButton
     , activeButtonDarkRed
     , activeButtonRed
+    , black
     , blue
     , button
     , buttonWithWidth
