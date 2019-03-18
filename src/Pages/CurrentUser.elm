@@ -75,6 +75,7 @@ update sharedState msg model =
                 , email = ""
                 , password = ""
                 , state = NotSignedIn
+                , errorResponse = NoErrorResponse
               }
             , OutsideInfo.sendInfoOutside (DisconnectUser Json.Encode.null)
             , InvalidateCurrentUser
