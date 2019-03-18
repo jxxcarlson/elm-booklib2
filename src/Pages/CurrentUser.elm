@@ -33,6 +33,7 @@ type alias Model =
     , username : String
     , tagString : String
     , state : State
+    , errorResponse : ErrorResponse
     }
 
 
@@ -44,6 +45,7 @@ initModel =
     , password = ""
     , tagString = ""
     , state = NotSignedIn
+    , errorResponse = NoErrorResponse
     }
 
 
@@ -85,7 +87,7 @@ update sharedState msg model =
             ( { model | message = "", state = NotSignedIn }, Cmd.none, NoUpdate )
 
         CancelSignin ->
-            ( { model | message = "", state = NotSignedIn }, Cmd.none, NoUpdate )
+            ( { model | message = "", state = NotSignedIn, errorResponse = NoErrorResponse }, Cmd.none, NoUpdate )
 
         SubmitRegistration ->
             ( { model | message = "", state = Registering }, Session.registerUser model.username model.email model.password, NoUpdate )
@@ -107,7 +109,14 @@ update sharedState msg model =
             )
 
         ProcessAuthentication (Err err) ->
-            ( { model | message = "Invalid password or username", state = SigningIn }, Cmd.none, UpdateCurrentUser Nothing )
+            ( { model
+                | message = "Invalid password or username"
+                , state = SigningIn
+                , errorResponse = ShowPasswordReset
+              }
+            , Cmd.none
+            , UpdateCurrentUser Nothing
+            )
 
         AcceptRegistration (Ok user) ->
             ( { model
@@ -220,7 +229,7 @@ statistics2 sharedState =
                     User.Chart.summary user
 
                 avString =
-                    String.fromFloat <| Utility.roundTo 1 summary.averagePagesPerMonth
+                    String.fromFloat <| Utility.roundTo 0 summary.averagePagesPerMonth
 
                 lastMonthString =
                     String.fromInt summary.pagesReadLastMonth
@@ -243,15 +252,7 @@ statistics2 sharedState =
 
 statistics sharedState =
     column [ Font.size 14, spacing 8 ]
-        [ -- case sharedState.stats of
-          --            Nothing ->
-          --                Element.none
-          --
-          --            Just st ->
-          --                paragraph
-          --                    []
-          --                    [ text """We are just starting out, but here are some statistics:""" ]
-          case sharedState.stats of
+        [ case sharedState.stats of
             Nothing ->
                 Element.none
 
@@ -304,6 +305,8 @@ signInColumn sharedState model =
         , showIf (model.state == SignedIn) (publicCheckbox sharedState)
         , showIf (model.state == SignedIn) (tagInput sharedState model)
         , showIf (model.state == SignedIn) tagUpdateButton
+        , showIf (model.state /= SignedIn) (resetPasswordLink model)
+        , verifyUserLink model
         , infoPanel sharedState model
         ]
 
@@ -621,3 +624,41 @@ getStats =
         { url = Configuration.backend ++ "/api/stats/last"
         , expect = Http.expectJson GotStats Stats.decoder
         }
+
+
+
+--
+-- PASSWORD RESET
+--
+
+
+type ErrorResponse
+    = ShowPasswordReset
+    | ShowVerifyAccount
+    | NoErrorResponse
+
+
+resetPasswordLink : Model -> Element Msg
+resetPasswordLink model =
+    case model.errorResponse of
+        ShowPasswordReset ->
+            newTabLink [ Font.color Style.blue ]
+                { url = Configuration.backend ++ "/api/password/request"
+                , label = text "Reset password?"
+                }
+
+        _ ->
+            Element.none
+
+
+verifyUserLink : Model -> Element Msg
+verifyUserLink model =
+    case model.errorResponse of
+        ShowVerifyAccount ->
+            newTabLink []
+                { url = Configuration.backend ++ "/api/request_verification"
+                , label = text "Request verification?"
+                }
+
+        _ ->
+            Element.none
