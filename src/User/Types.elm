@@ -1,4 +1,14 @@
-module User.Types exposing (AnnotatedUser, Msg(..), PublicUser, ReadingStat, State(..), User, UserRecord, testUser)
+module User.Types exposing
+    ( AnnotatedUser
+    , Msg(..)
+    , PublicUser
+    , ReadingStat
+    , State(..)
+    , User
+    , UserRecord
+    , testUser
+    , userFromAnnotatedUser
+    )
 
 import Http
 import Routing.Helpers exposing (Route)
@@ -43,6 +53,24 @@ type alias AnnotatedUser =
     , tags : List String
     , numberOfBooks : Int
     , readingStats : List ReadingStat
+    }
+
+
+userFromAnnotatedUser : AnnotatedUser -> User
+userFromAnnotatedUser u =
+    { username = u.username
+    , id = u.id
+    , firstname = u.firstname
+    , email = u.email
+    , token = u.token
+    , blurb = u.blurb
+    , public = u.public
+    , follow = u.follow
+    , followers = u.followers
+    , admin = u.admin
+    , beginningDate = u.beginningDate
+    , tags = u.tags
+    , readingStats = u.readingStats
     }
 
 
