@@ -127,6 +127,7 @@ type State
     = NotSignedIn
     | SigningIn
     | Registering
+    | Registered
     | SignedIn
 
 

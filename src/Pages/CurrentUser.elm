@@ -121,11 +121,11 @@ update sharedState msg model =
 
         AcceptRegistration (Ok user) ->
             ( { model
-                | message = "Success! Welcome " ++ user.username ++ "."
+                | message = "Welcome to Booklib.io, " ++ user.username ++ "!"
                 , username = ""
                 , email = ""
                 , password = ""
-                , state = SignedIn
+                , state = Registered
               }
             , Cmd.none
             , UpdateCurrentUser (Just user)
@@ -297,19 +297,38 @@ welcomeColumn sharedState model =
 signInColumn : SharedState -> Model -> Element Msg
 signInColumn sharedState model =
     column (Style.signinColumn fill fill)
-        [ showIf (model.state /= SignedIn) (inputUsername sharedState model)
-        , showIf (model.state /= SignedIn) (inputEmail sharedState model)
-        , showIf (model.state /= SignedIn) (inputPassword sharedState model)
-        , showIf (model.state /= SignedIn) (row (registrationStyle sharedState) [ signInOrCancelButton model, registerButton model ])
-        , showIf (model.state == SignedIn) (signInOrCancelButton model)
-        , showIf (model.state /= SignedIn) (el [ Font.size 18 ] (text model.message))
-        , showIf (model.state == SignedIn) (publicCheckbox sharedState)
-        , showIf (model.state == SignedIn) (tagInput sharedState model)
-        , showIf (model.state == SignedIn) tagUpdateButton
-        , showIf (model.state /= SignedIn) (resetPasswordLink model)
+        [ showIf (not <| showIfSignedInOrRegistered model) (inputUsername sharedState model)
+        , showIf (not <| showIfSignedInOrRegistered model) (inputEmail sharedState model)
+        , showIf (not <| showIfSignedInOrRegistered model) (inputPassword sharedState model)
+        , showIf (not <| showIfSignedInOrRegistered model) (row (registrationStyle sharedState) [ signInOrCancelButton model, registerButton model ])
+        , showIf (showIfSignedInOrRegistered model) (signInOrCancelButton model)
+        , messagePanel model
+        , showIf (showIfSignedInOrRegistered model) (publicCheckbox sharedState)
+        , showIf (showIfSignedInOrRegistered model) (tagInput sharedState model)
+        , showIf (showIfSignedInOrRegistered model) tagUpdateButton
+        , showIf (not <| showIfSignedInOrRegistered model) (resetPasswordLink model)
         , verifyUserLink model
         , infoPanel sharedState model
         ]
+
+
+messagePanel model =
+    case model.state of
+        Registered ->
+            column [ Font.size 16, paddingXY 0 24, spacing 8 ]
+                [ el [] (text model.message)
+                , el [] (text <| "We've sent you an email with a verification link.")
+                , el [] (text <| "To add a new book, click on the BOOK tab,")
+                , el [] (text <| "then choose NEW.")
+                ]
+
+        _ ->
+            el [ Font.size 16 ] (text model.message)
+
+
+showIfSignedInOrRegistered : Model -> Bool
+showIfSignedInOrRegistered model =
+    List.member model.state [ SignedIn, Registered ]
 
 
 infoPanel sharedState model =
@@ -479,6 +498,9 @@ signInOrCancelButton model =
         Registering ->
             cancelRegistrationButton
 
+        Registered ->
+            signOutButton
+
         SignedIn ->
             signOutButton
 
@@ -522,6 +544,9 @@ registerButton model =
         Registering ->
             submitRegistrationButton
 
+        Registered ->
+            Element.none
+
         SignedIn ->
             Element.none
 
@@ -564,6 +589,9 @@ stateAsString sharedState state =
 
         SigningIn ->
             "Signing in"
+
+        Registered ->
+            "Registered"
 
         Registering ->
             "Registering"
