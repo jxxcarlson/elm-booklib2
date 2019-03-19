@@ -15,7 +15,7 @@ send : String -> String -> String -> User -> Cmd Msg
 send tokenString subject text user =
     Http.request
         { method = "Post"
-        , headers = [ Http.header "APIVersion" "V2", Http.header "Authorization" ("Bearer " ++ tokenString) ]
+        , headers = [ Http.header "Authorization" ("Bearer " ++ tokenString) ]
         , url = Configuration.backend ++ "/api/mail"
         , body = Http.jsonBody (encodeEmail user.email subject text)
         , expect = Http.expectJson AcknowledgeEmailSent replyDecoder
