@@ -62,7 +62,7 @@ update sharedState msg model =
             ( { model | message = "Error decoding user list" }, Cmd.none, SharedState.NoUpdate )
 
         SetUser user ->
-            ( { model | selectedUser = Just user }, Cmd.none, SharedState.NoUpdate )
+            ( { model | selectedUser = Just user, message = "Selected: " ++ user.username }, Cmd.none, SharedState.NoUpdate )
 
         GotEmailSubject str ->
             ( { model | emailSubject = str }, Cmd.none, SharedState.NoUpdate )
@@ -80,18 +80,26 @@ update sharedState msg model =
                         Just user ->
                             user.token
 
-                cmd =
+                ( username, cmd ) =
                     case model.selectedUser of
                         Nothing ->
-                            Cmd.none
+                            ( "nobody", Cmd.none )
 
                         Just user ->
-                            Cmd.map MailMsg (User.Mail.send tokenString model.emailSubject model.emailText (userFromAnnotatedUser user))
+                            ( user.username
+                            , Cmd.map MailMsg
+                                (User.Mail.send
+                                    tokenString
+                                    model.emailSubject
+                                    (personalize user model.emailText)
+                                    (userFromAnnotatedUser user)
+                                )
+                            )
             in
-            ( model, cmd, SharedState.NoUpdate )
+            ( { model | message = "Sending mail to " ++ username }, cmd, SharedState.NoUpdate )
 
         MailMsg (AcknowledgeEmailSent (Ok str)) ->
-            ( { model | message = str }, Cmd.none, SharedState.NoUpdate )
+            ( { model | message = "Message sent" }, Cmd.none, SharedState.NoUpdate )
 
         MailMsg (AcknowledgeEmailSent (Err _)) ->
             ( { model | message = "Error sending email" }, Cmd.none, SharedState.NoUpdate )
@@ -103,6 +111,11 @@ view sharedState model =
         [ statusPanel sharedState model
         , emailPanel sharedState model
         ]
+
+
+personalize : AnnotatedUser -> String -> String
+personalize user message =
+    String.replace "[user]" user.username message
 
 
 statusPanel : SharedState -> Model -> Element Msg
@@ -122,8 +135,27 @@ emailPanel sharedState model =
         [ el [] (text <| "EMAIL PANEL")
         , inputEmailSubject model
         , inputEmailText model
+        , el [ Font.size 14 ] (text <| stringStats model.emailText)
         , mailUserButton model
+        , el [ Font.size 14 ] (text model.message)
         ]
+
+
+stringStats : String -> String
+stringStats str =
+    let
+        w =
+            wordCount str |> String.fromInt
+
+        c =
+            String.length str |> String.fromInt
+    in
+    c ++ " characters, " ++ w ++ " words"
+
+
+wordCount : String -> Int
+wordCount str =
+    String.words str |> List.length
 
 
 inputEmailSubject model =
@@ -138,7 +170,7 @@ inputEmailSubject model =
 inputEmailText model =
     Input.multiline
         [ width (px 400)
-        , height (px 250)
+        , height (px 350)
         , paddingXY 10 10
         , scrollbarY
         , Background.color (Style.makeGrey 0.3)
