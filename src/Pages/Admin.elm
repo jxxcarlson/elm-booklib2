@@ -11,12 +11,16 @@ import Http
 import SharedState exposing (SharedState, SharedStateUpdate(..))
 import Stats exposing (Stats)
 import User.Coders
+import User.Mail exposing (Msg(..))
 import User.Session
-import User.Types exposing (AnnotatedUser)
+import User.Types exposing (AnnotatedUser, userFromAnnotatedUser)
 
 
 type alias Model =
     { users : List AnnotatedUser
+    , selectedUser : Maybe AnnotatedUser
+    , emailText : String
+    , emailSubject : String
     , message : String
     }
 
@@ -25,11 +29,19 @@ type Msg
     = NoOp
     | GetUsers
     | GotUsers (Result Http.Error (List AnnotatedUser))
+    | SetUser AnnotatedUser
+    | GotEmailSubject String
+    | GotEmailText String
+    | SendEmail
+    | MailMsg User.Mail.Msg
 
 
 init : Model
 init =
     { users = []
+    , selectedUser = Nothing
+    , emailText = ""
+    , emailSubject = ""
     , message = ""
     }
 
@@ -49,16 +61,100 @@ update sharedState msg model =
         GotUsers (Err err) ->
             ( { model | message = "Error decoding user list" }, Cmd.none, SharedState.NoUpdate )
 
+        SetUser user ->
+            ( { model | selectedUser = Just user }, Cmd.none, SharedState.NoUpdate )
+
+        GotEmailSubject str ->
+            ( { model | emailSubject = str }, Cmd.none, SharedState.NoUpdate )
+
+        GotEmailText str ->
+            ( { model | emailText = str }, Cmd.none, SharedState.NoUpdate )
+
+        SendEmail ->
+            let
+                tokenString =
+                    case sharedState.currentUser of
+                        Nothing ->
+                            "invalidToken"
+
+                        Just user ->
+                            user.token
+
+                cmd =
+                    case model.selectedUser of
+                        Nothing ->
+                            Cmd.none
+
+                        Just user ->
+                            Cmd.map MailMsg (User.Mail.send tokenString model.emailSubject model.emailText (userFromAnnotatedUser user))
+            in
+            ( model, cmd, SharedState.NoUpdate )
+
+        MailMsg (AcknowledgeEmailSent (Ok str)) ->
+            ( { model | message = str }, Cmd.none, SharedState.NoUpdate )
+
+        MailMsg (AcknowledgeEmailSent (Err _)) ->
+            ( { model | message = "Error sending email" }, Cmd.none, SharedState.NoUpdate )
+
 
 view : SharedState -> Model -> Element Msg
 view sharedState model =
-    column (Style.mainColumn fill fill ++ [ padding 40 ])
+    row (Style.mainColumn fill fill ++ [ padding 40, spacing 24 ])
+        [ statusPanel sharedState model
+        , emailPanel sharedState model
+        ]
+
+
+statusPanel : SharedState -> Model -> Element Msg
+statusPanel sharedState model =
+    column [ spacing 12 ]
         [ row [ spacing 8 ] [ getUsersButton ]
         , column [ spacing 12 ]
             [ displayStats sharedState.stats
             , userList sharedState model
             ]
         ]
+
+
+emailPanel : SharedState -> Model -> Element Msg
+emailPanel sharedState model =
+    column (Style.mainColumn fill fill)
+        [ el [] (text <| "EMAIL PANEL")
+        , inputEmailSubject model
+        , inputEmailText model
+        , mailUserButton model
+        ]
+
+
+inputEmailSubject model =
+    Input.text inputStyle
+        { onChange = GotEmailSubject
+        , text = model.emailSubject
+        , placeholder = Nothing
+        , label = Input.labelAbove [ Font.size 16 ] (text "Subject")
+        }
+
+
+inputEmailText model =
+    Input.multiline
+        [ width (px 400)
+        , height (px 250)
+        , paddingXY 10 10
+        , scrollbarY
+        , Background.color (Style.makeGrey 0.3)
+        , Font.color Style.white
+        , Font.size 16
+        ]
+        { onChange = GotEmailText
+        , text = model.emailText
+        , label = Input.labelAbove [ Font.size 16 ] (text "Message")
+        , placeholder = Nothing
+        , spellcheck = False
+        }
+
+
+inputStyle =
+    [ width (px 300), Background.color (Style.makeGrey 0.3), Font.color Style.white ]
 
 
 totalNumberOfUsers : Model -> Int
@@ -99,7 +195,7 @@ userList sharedState model =
               , width = px 140
               , view =
                     \user ->
-                        text user.username
+                        setUserButton model user
               }
             , { header = Element.el (Style.tableHeading ++ [ moveLeft 30 ]) (Element.text "Tags")
               , width = px 100
@@ -126,6 +222,22 @@ userList sharedState model =
                         text user.beginningDate
               }
             ]
+        }
+
+
+setUserButton : Model -> AnnotatedUser -> Element Msg
+setUserButton model user =
+    Input.button (Style.titleButton (Just user == model.selectedUser))
+        { onPress = Just (SetUser user)
+        , label = Element.text user.username
+        }
+
+
+mailUserButton : Model -> Element Msg
+mailUserButton model =
+    Input.button (Style.activeButton (model.selectedUser /= Nothing))
+        { onPress = Just SendEmail
+        , label = Element.text "Send email"
         }
 
 

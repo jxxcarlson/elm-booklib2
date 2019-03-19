@@ -83,7 +83,6 @@ type Msg
     | RequestBookList Int String
     | SetCurrentBook Book
     | GetSharedBooks String
-      -- | ReceiveSharedBlurb (Result Http.Error String)
     | GetCurrentUserBookList
     | NoOp
 
