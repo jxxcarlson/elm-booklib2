@@ -81,6 +81,7 @@ userDecoderForOutside =
         |> required "beginningDate" Decode.string
         |> required "tags" (Decode.string |> Decode.map (String.split ","))
         |> required "reading_stats" (Decode.string |> Decode.map statListStringToReadingStatList)
+        |> required "verified" (Decode.map stringToBool Decode.string)
 
 
 statListStringToReadingStatList : String -> List ReadingStat
@@ -133,6 +134,7 @@ userEncoder user =
         , ( "beginningDate", Encode.string user.beginningDate )
         , ( "tags", Encode.string (user.tags |> String.join ",") )
         , ( "reading_stats", Encode.string (statListStringValue user.readingStats) )
+        , ( "verified", Encode.string (boolToString user.verified) )
         ]
 
 

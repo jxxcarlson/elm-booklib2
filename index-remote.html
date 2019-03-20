@@ -1,12 +1,12 @@
 
 <!DOCTYPE html>
 <html>
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, minimal-ui">
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="google-site-verification" content="z2mLtsaAx2smLS7F69St8zfNqeCcdbkpvib0vmTPb2Q" />
-  </head>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, minimal-ui">
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="google-site-verification" content="z2mLtsaAx2smLS7F69St8zfNqeCcdbkpvib0vmTPb2Q" />
+</head>
 
 
 <title>BookLib</title>
@@ -64,7 +64,8 @@
                "admin": localStorage.getItem("admin"),
                "beginningDate": localStorage.getItem("beginningDate"),
                "tags": localStorage.getItem("tags"),
-               "reading_stats": localStorage.getItem("reading_stats")
+               "reading_stats": localStorage.getItem("reading_stats"),
+               "verified": localStorage.getItem("verified"),
 
 
 
@@ -90,6 +91,7 @@
            localStorage.setItem("beginningDate", userSettings.beginningDate);
            localStorage.setItem("tags", userSettings.tags);
            localStorage.setItem("reading_stats", userSettings.reading_stats);
+           localStorage.setItem("verified", userSettings.verified);
        }
 
 

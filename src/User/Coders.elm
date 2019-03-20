@@ -46,6 +46,7 @@ userEncoder user =
         , ( "beginningDate", Encode.string user.beginningDate )
         , ( "tags", Encode.list Encode.string user.tags )
         , ( "reading_stats", Encode.list encodeStat user.readingStats )
+        , ( "verified", Encode.bool user.verified )
         ]
 
 
@@ -109,6 +110,7 @@ annotatedUserDecoder =
         |> required "tags" (Decode.list Decode.string)
         |> required "numberOfBooks" Decode.int
         |> required "reading_stats" (Decode.list readingStatDecoder)
+        |> required "verified" Decode.bool
 
 
 readingStatDecoder : Decoder ReadingStat
@@ -182,31 +184,12 @@ userDecoder =
         |> required "inserted_at" (Decode.map Utility.usDateStringFromElixirDateString Decode.string)
         |> required "tags" (Decode.list Decode.string)
         |> required "reading_stats" (Decode.list readingStatDecoder)
-
-
-
---readingStatDecoder : Decoder ReadingStat
---readingStatDecoder =
---    Decode.succeed ReadingStat
---        |> required "date" Decode.string
---        |> required "pages_read" Decode.int
+        |> required "verified" Decode.bool
 
 
 userListDecoder : Decoder (List User)
 userListDecoder =
     Decode.field "data" (Decode.list userDecoder)
-
-
-
---publicUserDecoder : Decoder PublicUser
---publicUserDecoder =
---    Decode.succeed PublicUser
---        |> required "username" Decode.string
---
---
---followEncoder : List PublicUser -> Encode.Value
---followEncoder publicUserList =
---    Encode.list publicUserEncoder publicUserList
 
 
 publicUserEncoder : PublicUser -> Encode.Value

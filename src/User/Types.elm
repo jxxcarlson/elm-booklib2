@@ -29,6 +29,7 @@ type alias User =
     , beginningDate : String
     , tags : List String
     , readingStats : List ReadingStat
+    , verified : Bool
     }
 
 
@@ -53,6 +54,7 @@ type alias AnnotatedUser =
     , tags : List String
     , numberOfBooks : Int
     , readingStats : List ReadingStat
+    , verified : Bool
     }
 
 
@@ -71,6 +73,7 @@ userFromAnnotatedUser u =
     , beginningDate = u.beginningDate
     , tags = u.tags
     , readingStats = u.readingStats
+    , verified = u.verified
     }
 
 
@@ -99,6 +102,7 @@ testUser =
         , { dateString = "2019-04-30", pagesRead = 1100 }
         , { dateString = "2019-05-31", pagesRead = 1600 }
         ]
+    , verified = True
     }
 
 

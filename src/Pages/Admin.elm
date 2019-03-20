@@ -222,6 +222,21 @@ userList sharedState model =
                     \user ->
                         text (String.fromInt user.id)
               }
+            , { header = Element.el Style.tableHeading (Element.text "V")
+              , width = px 50
+              , view =
+                    \user ->
+                        text
+                            ((\tv ->
+                                if tv then
+                                    "Y"
+
+                                else
+                                    "-"
+                             )
+                                user.verified
+                            )
+              }
             , { header = Element.el Style.tableHeading (Element.text "Username")
               , width = px 140
               , view =
