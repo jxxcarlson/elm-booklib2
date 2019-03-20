@@ -56,7 +56,7 @@ init =
 type Msg
     = NoOp
     | ReceiveGroupList (Result Http.Error (List Group))
-    | GroupCreated (Result Http.Error String)
+    | GroupCreated (Result Http.Error Group)
     | SetCurrentGroup Group
 
 
@@ -171,6 +171,7 @@ groupEncoder group =
         , ( "name", Encode.string group.name )
         , ( "chair", Encode.string group.chair )
         , ( "cochair", Encode.string group.cochair )
+        , ( "blurb", Encode.string group.blurb )
         , ( "members", Encode.list Encode.string group.members )
         ]
 
@@ -180,15 +181,14 @@ groupListDecoder =
     Decode.field "data" (Decode.list groupDecoder)
 
 
-
---createGroup : Int -> Group -> String -> Cmd Msg
---createGroup userid group token =
---    Http.request
---        { method = "Post"
---        , headers = [ Http.header "Authorization" ("Bearer " ++ token) ]
---        , url = Configuration.backend ++ "/api/books"
---        , body = Http.jsonBody (groupEncoder userid group)
---        , expect = Http.expectJson GroupCreated statusDecoder
---        , timeout = Nothing
---        , tracker = Nothing
---        }
+createGroup : Int -> Group -> String -> Cmd Msg
+createGroup userid group token =
+    Http.request
+        { method = "Post"
+        , headers = [ Http.header "Authorization" ("Bearer " ++ token) ]
+        , url = Configuration.backend ++ "/api/groups"
+        , body = Http.jsonBody (groupEncoder group)
+        , expect = Http.expectJson GroupCreated groupDecoder
+        , timeout = Nothing
+        , tracker = Nothing
+        }
