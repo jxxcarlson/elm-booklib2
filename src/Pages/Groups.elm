@@ -9,6 +9,7 @@ module Pages.Groups exposing
 
 import Common.Book
 import Common.Style as Style
+import Common.Utility as Utility
 import Configuration
 import Element exposing (..)
 import Element.Background as Background
@@ -46,6 +47,8 @@ type alias Group =
 
 type AppState
     = Default
+    | CreatingGroup
+    | EditingGroup
 
 
 init : Model
@@ -61,6 +64,12 @@ init =
     }
 
 
+
+--
+-- MSG
+--
+
+
 type Msg
     = NoOp
     | ReceiveGroupList (Result Http.Error (List Group))
@@ -70,7 +79,13 @@ type Msg
     | InputCochairName String
     | InputBlurb String
     | InputMembers String
+    | NewGroup
     | CreateGroup
+    | CancelCreateGroup
+    | EditGroup
+    | CancelEditGroup
+    | UpdateGroup
+    | GroupUpdated (Result Http.Error Group)
 
 
 update : SharedState -> Msg -> Model -> ( Model, Cmd Msg, SharedStateUpdate )
@@ -86,7 +101,11 @@ update sharedState msg model =
             ( { model | message = "Error getting group" }, Cmd.none, NoUpdate )
 
         GroupCreated (Ok group) ->
-            ( model, Cmd.none, NoUpdate )
+            let
+                newGroupList =
+                    group :: model.groupList
+            in
+            ( { model | appState = Default, groupList = newGroupList, currentGroup = Just group }, Cmd.none, NoUpdate )
 
         GroupCreated (Err err) ->
             ( model, Cmd.none, NoUpdate )
@@ -106,6 +125,12 @@ update sharedState msg model =
         InputBlurb str ->
             ( { model | blurb = str }, Cmd.none, NoUpdate )
 
+        NewGroup ->
+            ( { model | appState = CreatingGroup }, Cmd.none, NoUpdate )
+
+        CancelCreateGroup ->
+            ( { model | appState = Default }, Cmd.none, NoUpdate )
+
         CreateGroup ->
             case sharedState.currentUser of
                 Nothing ->
@@ -113,23 +138,86 @@ update sharedState msg model =
 
                 Just user ->
                     let
+                        members =
+                            itemsFromString model.membersString
+                                |> addToList user.username
+                                |> addToList model.cochairName
+
                         group =
                             { id = -1
                             , name = model.groupName
                             , chair = user.username
                             , cochair = model.cochairName
                             , blurb = model.blurb
-                            , members = itemsFromString model.membersString
+                            , members = members
                             }
                     in
                     ( model, createGroup group user.token, NoUpdate )
+
+        EditGroup ->
+            ( setGroupParams { model | appState = EditingGroup }, Cmd.none, NoUpdate )
+
+        CancelEditGroup ->
+            ( { model | appState = Default }, Cmd.none, NoUpdate )
+
+        UpdateGroup ->
+            case ( getGroup model, sharedState.currentUser ) of
+                ( Just group, Just user ) ->
+                    ( model, updateGroup group user.token, NoUpdate )
+
+                ( _, _ ) ->
+                    ( model, Cmd.none, NoUpdate )
+
+        GroupUpdated (Ok group) ->
+            let
+                newGroupList =
+                    Utility.listUpdateIf (\g -> g.id == group.id) (\g -> group) model.groupList
+            in
+            ( { model | appState = Default, groupList = newGroupList, currentGroup = Just group }, Cmd.none, NoUpdate )
+
+        GroupUpdated (Err _) ->
+            ( { model | appState = Default, message = "Error updating group" }, Cmd.none, NoUpdate )
+
+
+setGroupParams : Model -> Model
+setGroupParams model =
+    case model.currentGroup of
+        Nothing ->
+            model
+
+        Just group ->
+            { model
+                | groupName = group.name
+                , cochairName = group.cochair
+                , blurb = group.blurb
+                , membersString = stringOfItems <| group.members
+            }
+
+
+getGroup : Model -> Maybe Group
+getGroup model =
+    case model.currentGroup of
+        Nothing ->
+            Nothing
+
+        Just group ->
+            Just
+                { group
+                    | name = model.groupName
+                    , cochair = model.cochairName
+                    , blurb = model.blurb
+                    , members = itemsFromString model.membersString
+                }
 
 
 view : SharedState -> Model -> Element Msg
 view sharedState model =
     case Maybe.map .admin sharedState.currentUser of
         Just True ->
-            mainView sharedState model
+            column [ width (px <| sharedState.windowWidth), height (px <| sharedState.windowHeight - 45) ]
+                [ mainView sharedState model
+                , footer sharedState model
+                ]
 
         _ ->
             altView sharedState model
@@ -138,8 +226,9 @@ view sharedState model =
 mainView sharedState model =
     row [ spacing 12 ]
         [ groupListView sharedState model
-        , viewGroup model.currentGroup
-        , createGroupPanel model
+        , Utility.showIf (model.appState == EditingGroup) (editGroupPanel model)
+        , Utility.showIf (model.appState == Default) (viewGroup model.currentGroup)
+        , Utility.showIf (model.appState == CreatingGroup) (createGroupPanel model)
         ]
 
 
@@ -180,8 +269,11 @@ viewGroup group_ =
         Just group ->
             column [ width (px 300), height (px 400), spacing 8, Border.width 1, padding 20, moveDown 20 ]
                 [ el [ Font.bold ] (text group.name)
+                , el [ Font.size 14 ] (text <| "Chair: " ++ group.chair)
+                , el [ Font.size 14 ] (text <| "Co-chair: " ++ group.cochair)
                 , el [ Font.size 14 ] (text <| "Members: " ++ String.join ", " group.members)
-                , paragraph [ Font.size 14 ] [ text group.blurb ]
+                , el [ Font.size 14, Font.bold ] (text <| "Blurb")
+                , paragraph [ Font.size 14, Font.italic ] [ text group.blurb ]
                 ]
 
 
@@ -197,6 +289,14 @@ getGroupList =
         }
 
 
+footer : SharedState -> Model -> Element Msg
+footer sharedState model =
+    row Style.footer
+        [ newGroupButton
+        , Utility.showIf (model.currentGroup /= Nothing) editGroupButton
+        ]
+
+
 
 --
 -- INPUT
@@ -204,29 +304,104 @@ getGroupList =
 
 
 createGroupPanel model =
-    column [ spacing 12 ]
+    column createPanelStyle
         [ inputGroupName model
         , inputCochairName model
         , inputMembers model
         , inputBlurb model
-        , createGroupButton
+        , row [ spacing 12 ] [ createGroupButton, cancelCreateGroupButton ]
         ]
+
+
+editPanelStyle =
+    [ spacing 12, Border.width 1, paddingXY 18 18, moveDown 61.5 ]
+
+
+createPanelStyle =
+    [ spacing 12, Border.width 1, paddingXY 18 18, moveDown 48 ]
+
+
+editGroupPanel model =
+    column editPanelStyle
+        [ el [ Font.size inputFontSize ] (text <| "Chair: " ++ chairName model)
+        , inputGroupName model
+        , inputCochairName model
+        , inputMembers model
+        , inputBlurb model
+        , row [ spacing 12 ] [ updateGroupButton, cancelEditGroupButton ]
+        ]
+
+
+chairName : Model -> String
+chairName model =
+    case model.currentGroup of
+        Nothing ->
+            "No group defined"
+
+        Just group ->
+            group.chair
+
+
+newGroupButton : Element Msg
+newGroupButton =
+    Input.button Style.button
+        { onPress = Just NewGroup
+        , label = el [ centerX ] (Element.text "New Group")
+        }
 
 
 createGroupButton : Element Msg
 createGroupButton =
     Input.button Style.button
         { onPress = Just CreateGroup
-        , label = el [ centerX ] (Element.text "Creaate")
+        , label = el [ centerX ] (Element.text "Create")
+        }
+
+
+cancelCreateGroupButton : Element Msg
+cancelCreateGroupButton =
+    Input.button Style.button
+        { onPress = Just CancelCreateGroup
+        , label = el [ centerX ] (Element.text "Cancel")
+        }
+
+
+editGroupButton : Element Msg
+editGroupButton =
+    Input.button Style.button
+        { onPress = Just EditGroup
+        , label = el [ centerX ] (Element.text "Edit Group")
+        }
+
+
+updateGroupButton : Element Msg
+updateGroupButton =
+    Input.button Style.button
+        { onPress = Just UpdateGroup
+        , label = el [ centerX ] (Element.text "Update")
+        }
+
+
+cancelEditGroupButton : Element Msg
+cancelEditGroupButton =
+    Input.button Style.button
+        { onPress = Just CancelEditGroup
+        , label = el [ centerX ] (Element.text "Cancel")
         }
 
 
 inputStyle =
-    [ width (px 200), height (px 35) ]
+    [ width (px 200)
+    , height (px 35)
+    , Font.size inputFontSize
+    ]
 
 
-inputTextAreaStyle =
-    [ width (px 300), height (px 200) ]
+inputTextAreaStyle h =
+    [ width (px 300)
+    , height (px h)
+    , Font.size inputFontSize
+    ]
 
 
 inputGroupName model =
@@ -234,7 +409,7 @@ inputGroupName model =
         { text = model.groupName
         , placeholder = Nothing
         , onChange = InputGroupName
-        , label = Input.labelAbove [ Font.size 16 ] (text "Group name ")
+        , label = Input.labelAbove [ Font.size inputFontSize ] (text "Group name ")
         }
 
 
@@ -243,33 +418,56 @@ inputCochairName model =
         { text = model.cochairName
         , placeholder = Nothing
         , onChange = InputCochairName
-        , label = Input.labelAbove [ Font.size 16 ] (text "Cochair ")
+        , label = Input.labelAbove [ Font.size inputFontSize ] (text "Cochair ")
         }
 
 
-inputMembers model =
+inputMembers1 model =
     Input.text inputStyle
         { text = model.membersString
         , placeholder = Nothing
         , onChange = InputMembers
-        , label = Input.labelAbove [ Font.size 16 ] (text "Members ")
+        , label = Input.labelAbove [ Font.size inputFontSize ] (text "Members ")
+        }
+
+
+inputMembers model =
+    Input.multiline (inputTextAreaStyle 100)
+        { onChange = InputMembers
+        , text = model.membersString
+        , placeholder = Nothing
+        , label = Input.labelAbove [ Font.size inputFontSize ] (text "Members")
+        , spellcheck = False
         }
 
 
 inputBlurb model =
-    Input.multiline inputTextAreaStyle
+    Input.multiline (inputTextAreaStyle 100)
         { onChange = InputBlurb
         , text = model.blurb
         , placeholder = Nothing
-        , label = Input.labelAbove [ Font.size 16 ] (text "Blurb")
+        , label = Input.labelAbove [ Font.size inputFontSize ] (text "Blurb")
         , spellcheck = False
         }
+
+
+inputFontSize =
+    15
 
 
 
 --
 -- DECODERS AND ENCODERS
 --
+
+
+type alias GroupRecord =
+    { group : Group }
+
+
+groupRecordDecoder : Decoder Group
+groupRecordDecoder =
+    Decode.field "data" groupDecoder
 
 
 groupDecoder : Decoder Group
@@ -311,7 +509,20 @@ createGroup group token =
         , headers = [ Http.header "Authorization" ("Bearer " ++ token) ]
         , url = Configuration.backend ++ "/api/groups"
         , body = Http.jsonBody (groupEncoder group)
-        , expect = Http.expectJson GroupCreated groupDecoder
+        , expect = Http.expectJson GroupCreated groupRecordDecoder
+        , timeout = Nothing
+        , tracker = Nothing
+        }
+
+
+updateGroup : Group -> String -> Cmd Msg
+updateGroup group token =
+    Http.request
+        { method = "Put"
+        , headers = [ Http.header "Authorization" ("Bearer " ++ token) ]
+        , url = Configuration.backend ++ "/api/groups/" ++ String.fromInt group.id
+        , body = Http.jsonBody (groupEncoder group)
+        , expect = Http.expectJson GroupUpdated groupRecordDecoder
         , timeout = Nothing
         , tracker = Nothing
         }
@@ -328,3 +539,18 @@ itemsFromString str =
     str
         |> String.split ","
         |> List.map String.trim
+
+
+stringOfItems : List String -> String
+stringOfItems list =
+    String.join ", " list
+
+
+addToList : a -> List a -> List a
+addToList item list =
+    case List.member item list of
+        True ->
+            list
+
+        False ->
+            item :: list

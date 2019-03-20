@@ -1,10 +1,12 @@
 module Common.Utility exposing
     ( intListFromElixirDateString
+    , listUpdateIf
     , maybeExtraValues
     , removeLeadingString
     , removeLeadingZeros
     , replaceIf
     , roundTo
+    , showIf
     , softBreakAlt
     , stringFromIntWithCommas
     , toUtcDateString
@@ -14,6 +16,7 @@ module Common.Utility exposing
     )
 
 import Common.Days as Days
+import Element exposing (Element)
 import Regex
 import Time exposing (Month(..), Posix)
 
@@ -289,3 +292,27 @@ foldrValues item list =
 
         Just v ->
             v :: list
+
+
+showIf : Bool -> Element msg -> Element msg
+showIf flag element =
+    if flag then
+        element
+
+    else
+        Element.none
+
+
+{-| from elm-community/list-extra
+-}
+listUpdateIf : (a -> Bool) -> (a -> a) -> List a -> List a
+listUpdateIf predicate update list =
+    List.map
+        (\item ->
+            if predicate item then
+                update item
+
+            else
+                item
+        )
+        list
