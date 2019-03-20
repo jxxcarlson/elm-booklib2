@@ -12,6 +12,8 @@ echo "${red}----------------------${reset}"
 echo "${red}DEPLOY BookLib App${reset}"
 echo "${red}----------------------${reset}"
 
+sed  's/URL/https:\/\/arcane-cliffs-95237.herokuapp.com\//' ./robot/files/config.txt  > src/Configuration.elm
+
 echo
 echo "${color}Compiling .src/Main.elm with --optimize${reset}"
 start=`date +%s`

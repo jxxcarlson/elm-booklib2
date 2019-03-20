@@ -1328,7 +1328,7 @@ inputStyle sharedState =
             [ width (px (sharedState.windowWidth - 80)), height (px 25), Font.size 14 ]
 
         False ->
-            [ width (px 400), height (px 30) ]
+            [ width (px 400), height (px 30), Font.size 14 ]
 
 
 inputStyleSmall sharedState =
@@ -1337,7 +1337,7 @@ inputStyleSmall sharedState =
             [ width (px 100), height (px 25), Font.size 14 ]
 
         False ->
-            [ width (px 120), height (px 30) ]
+            [ width (px 120), height (px 30), Font.size 14 ]
 
 
 inputTitle sharedState =
