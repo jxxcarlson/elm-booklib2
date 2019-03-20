@@ -24,7 +24,6 @@ import Element.Input as Input
 import Http
 import SharedState exposing (SharedState, SharedStateUpdate(..))
 import User.Coders
-import User.Session
 import User.Types exposing (AnnotatedUser, PublicUser, User)
 
 
@@ -713,7 +712,7 @@ getBookList userid token =
         { method = "Get"
         , headers = []
         , url = Configuration.backend ++ "/api/books?userid=" ++ String.fromInt userid
-        , body = Http.jsonBody (User.Session.tokenEncoder token)
+        , body = Http.jsonBody (User.Coders.tokenEncoder token)
         , expect = Http.expectJson ReceiveBookList Book.Coders.bookListDecoder
         , timeout = Nothing
         , tracker = Nothing
@@ -739,7 +738,7 @@ getAnnotatedUsers token =
         { method = "Get"
         , headers = []
         , url = Configuration.backend ++ "/api/users?all=annotated"
-        , body = Http.jsonBody (User.Session.tokenEncoder token)
+        , body = Http.jsonBody (User.Coders.tokenEncoder token)
         , expect = Http.expectJson ReceiveAnnotatedUserList User.Coders.annotatedUserListDecoder
         , timeout = Nothing
         , tracker = Nothing
@@ -758,7 +757,7 @@ computePagesRead userid token =
         { method = "Get"
         , headers = []
         , url = Configuration.backend ++ "/api/books?userid=" ++ String.fromInt userid
-        , body = Http.jsonBody (User.Session.tokenEncoder token)
+        , body = Http.jsonBody (User.Coders.tokenEncoder token)
         , expect = Http.expectJson ComputePagesRead Book.Coders.bookListDecoder
         , timeout = Nothing
         , tracker = Nothing
@@ -773,7 +772,7 @@ getSharedBooks username token =
         { method = "Get"
         , headers = []
         , url = Configuration.backend ++ "/api/books?shared=" ++ username
-        , body = Http.jsonBody (User.Session.tokenEncoder token)
+        , body = Http.jsonBody (User.Coders.tokenEncoder token)
         , expect = Http.expectJson ReceiveBookList Book.Coders.bookListDecoder
         , timeout = Nothing
         , tracker = Nothing
@@ -791,7 +790,7 @@ getPublicUsers sharedState =
                 { method = "Get"
                 , headers = []
                 , url = Configuration.backend ++ "/api/users?public=yes"
-                , body = Http.jsonBody (User.Session.tokenEncoder user.token)
+                , body = Http.jsonBody (User.Coders.tokenEncoder user.token)
                 , expect = Http.expectJson ReceivePublicUsers User.Coders.publicUserListDecoder
                 , timeout = Nothing
                 , tracker = Nothing

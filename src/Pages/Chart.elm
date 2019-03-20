@@ -9,7 +9,7 @@ import Element.Font as Font
 import Http
 import SharedState exposing (SharedState, SharedStateUpdate(..))
 import User.Chart exposing (chart)
-import User.Session
+import User.Coders
 import User.Types exposing (Msg(..), ReadingStat, State(..), User)
 
 
@@ -192,8 +192,8 @@ getUser sharedState =
                 { method = "Get"
                 , headers = []
                 , url = Configuration.backend ++ "/api/users/" ++ String.fromInt user.id
-                , body = Http.jsonBody (User.Session.tokenEncoder user.token)
-                , expect = Http.expectJson GotUser User.Session.userDecoder
+                , body = Http.jsonBody (User.Coders.tokenEncoder user.token)
+                , expect = Http.expectJson GotUser User.Coders.userDecoder
                 , timeout = Nothing
                 , tracker = Nothing
                 }

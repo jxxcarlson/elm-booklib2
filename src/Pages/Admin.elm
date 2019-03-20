@@ -12,7 +12,6 @@ import SharedState exposing (SharedState, SharedStateUpdate(..))
 import Stats exposing (Stats)
 import User.Coders
 import User.Mail exposing (Msg(..))
-import User.Session
 import User.Types exposing (AnnotatedUser, userFromAnnotatedUser)
 
 
@@ -305,7 +304,7 @@ getAnnotatedUsers sharedState =
                 { method = "Get"
                 , headers = []
                 , url = Configuration.backend ++ "/api/users?all=annotated"
-                , body = Http.jsonBody (User.Session.tokenEncoder user.token)
+                , body = Http.jsonBody (User.Coders.tokenEncoder user.token)
                 , expect = Http.expectJson GotUsers User.Coders.annotatedUserListDecoder
                 , timeout = Nothing
                 , tracker = Nothing

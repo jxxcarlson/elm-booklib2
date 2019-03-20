@@ -24,7 +24,7 @@ import Element.Font as Font
 import Element.Input as Input
 import Http
 import SharedState exposing (SharedState, SharedStateUpdate(..))
-import User.Session
+import User.Coders
 import User.Types exposing (User)
 
 
@@ -624,7 +624,7 @@ getBookList userid token =
         { method = "Get"
         , headers = []
         , url = Configuration.backend ++ "/api/books?userid=" ++ String.fromInt userid
-        , body = Http.jsonBody (User.Session.tokenEncoder token)
+        , body = Http.jsonBody (User.Coders.tokenEncoder token)
         , expect = Http.expectJson ReceiveBookList Book.Coders.bookListDecoder
         , timeout = Nothing
         , tracker = Nothing
@@ -637,7 +637,7 @@ computePagesRead userid token =
         { method = "Get"
         , headers = []
         , url = Configuration.backend ++ "/api/books?userid=" ++ String.fromInt userid
-        , body = Http.jsonBody (User.Session.tokenEncoder token)
+        , body = Http.jsonBody (User.Coders.tokenEncoder token)
         , expect = Http.expectJson ComputePagesRead Book.Coders.bookListDecoder
         , timeout = Nothing
         , tracker = Nothing
@@ -650,7 +650,7 @@ getSharedBooks username token =
         { method = "Get"
         , headers = []
         , url = Configuration.backend ++ "/api/books?shared=" ++ username
-        , body = Http.jsonBody (User.Session.tokenEncoder token)
+        , body = Http.jsonBody (User.Coders.tokenEncoder token)
         , expect = Http.expectJson ReceiveBookList Book.Coders.bookListDecoder
         , timeout = Nothing
         , tracker = Nothing
@@ -664,7 +664,7 @@ getSharedBooks username token =
 --        { method = "Get"
 --        , headers = []
 --        , url = Configuration.backend ++ "/api/blurb/" ++ username
---        , body = Http.jsonBody (User.Session.tokenEncoder token)
+--        , body = Http.jsonBody (User.Coders.tokenEncoder token)
 --        , expect = Http.expectJson ReceiveSharedBlurb Book.Coders.blurbDecoder
 --        , timeout = Nothing
 --        , tracker = Nothing
