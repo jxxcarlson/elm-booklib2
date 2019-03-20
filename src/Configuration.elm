@@ -7,4 +7,4 @@ module Configuration exposing (backend)
 
 
 backend =
-    "https:/ /arcane-cliffs-95237.herokuapp.com"
+    "https://arcane-cliffs-95237.herokuapp.com"

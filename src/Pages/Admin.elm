@@ -217,13 +217,13 @@ userList sharedState model =
         { data = model.users |> List.sortBy (\user -> -(dateStringToInt user.beginningDate))
         , columns =
             [ { header = Element.el Style.tableHeading (Element.text "id")
-              , width = px 50
+              , width = px 30
               , view =
                     \user ->
                         text (String.fromInt user.id)
               }
             , { header = Element.el Style.tableHeading (Element.text "V")
-              , width = px 50
+              , width = px 20
               , view =
                     \user ->
                         text
