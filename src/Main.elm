@@ -2,17 +2,15 @@ module Main exposing (main)
 
 import Browser exposing (UrlRequest(..))
 import Browser.Navigation exposing (pushUrl)
+import Configuration
 import Html exposing (..)
 import Json.Encode
 import OutsideInfo exposing (InfoForElm(..), InfoForOutside(..))
 import Pages.Books
-import Pages.CurrentUser
 import Routing.Router as Router
 import SharedState exposing (SharedState, SharedStateUpdate(..), initialSharedState)
 import Time exposing (Posix)
 import Url exposing (Url)
-import User.Session
-import User.Types
 
 
 main : Program Flags Model Msg
@@ -30,7 +28,12 @@ main =
 subscriptions model =
     Sub.batch
         [ OutsideInfo.getInfoFromOutside Outside LogErr
-        , Time.every 1000 TimeChange
+        , case Configuration.site == "LOCAL" of
+            True ->
+                Time.every 100000 TimeChange
+
+            False ->
+                Time.every 1000 TimeChange
         ]
 
 

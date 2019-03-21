@@ -127,7 +127,11 @@ update sharedState msg model =
             ( { model | blurb = str }, Cmd.none, NoUpdate )
 
         NewGroup ->
-            ( { model | appState = CreatingGroup }, Cmd.none, NoUpdate )
+            let
+                newModel =
+                    clearGroupParams model
+            in
+            ( { newModel | appState = CreatingGroup, currentGroup = Nothing, message = "" }, Cmd.none, NoUpdate )
 
         CancelCreateGroup ->
             ( { model | appState = Default }, Cmd.none, NoUpdate )
@@ -153,18 +157,28 @@ update sharedState msg model =
                             , members = members
                             }
                     in
-                    ( model, createGroup group user.token, NoUpdate )
+                    case validateGroup group of
+                        Invalid errorMessageList ->
+                            ( { model | message = errorMessageList |> String.join ", " }, Cmd.none, NoUpdate )
+
+                        Valid group_ ->
+                            ( model, createGroup group_ user.token, NoUpdate )
 
         EditGroup ->
             ( setGroupParams { model | appState = EditingGroup }, Cmd.none, NoUpdate )
 
         CancelEditGroup ->
-            ( { model | appState = Default }, Cmd.none, NoUpdate )
+            ( { model | appState = Default, message = "Cancel Edit" }, Cmd.none, NoUpdate )
 
         UpdateGroup ->
             case ( getGroup model, sharedState.currentUser ) of
                 ( Just group, Just user ) ->
-                    ( model, updateGroup group user.token, NoUpdate )
+                    case validateGroup group of
+                        Invalid errorMessageList ->
+                            ( { model | message = errorMessageList |> String.join ", " }, Cmd.none, NoUpdate )
+
+                        Valid group_ ->
+                            ( model, updateGroup group_ user.token, NoUpdate )
 
                 ( _, _ ) ->
                     ( model, Cmd.none, NoUpdate )
@@ -180,6 +194,59 @@ update sharedState msg model =
             ( { model | appState = Default, message = "Error updating group" }, Cmd.none, NoUpdate )
 
 
+type ResultGroup
+    = Invalid (List String)
+    | Valid Group
+
+
+validateGroup : Group -> ResultGroup
+validateGroup group =
+    let
+        errorList =
+            validateGroupErrorList group
+    in
+    case errorList == [] of
+        True ->
+            Valid group
+
+        False ->
+            Invalid errorList
+
+
+validateGroupErrorList : Group -> List String
+validateGroupErrorList group =
+    validateName group []
+        |> validateCochair group
+        |> validateBlurb group
+
+
+validateName : Group -> List String -> List String
+validateName group errorList =
+    if String.length group.cochair > 3 then
+        errorList
+
+    else
+        "Group name too short - need at least 3 characters" :: errorList
+
+
+validateCochair : Group -> List String -> List String
+validateCochair group errorList =
+    if String.length group.cochair > 2 then
+        errorList
+
+    else
+        "Co chair too short - need at least 2 characters" :: errorList
+
+
+validateBlurb : Group -> List String -> List String
+validateBlurb group errorList =
+    if String.length group.blurb > 2 then
+        errorList
+
+    else
+        "Blurb too short - need at least 2 characters" :: errorList
+
+
 setGroupParams : Model -> Model
 setGroupParams model =
     case model.currentGroup of
@@ -193,6 +260,16 @@ setGroupParams model =
                 , blurb = group.blurb
                 , membersString = stringOfItems <| group.members
             }
+
+
+clearGroupParams : Model -> Model
+clearGroupParams model =
+    { model
+        | groupName = ""
+        , cochairName = ""
+        , blurb = ""
+        , membersString = ""
+    }
 
 
 getGroup : Model -> Maybe Group
@@ -213,7 +290,7 @@ getGroup model =
 
 view : SharedState -> Model -> Element Msg
 view sharedState model =
-    column [ width (px <| sharedState.windowWidth), height (px <| sharedState.windowHeight - 45) ]
+    column [ width (px <| sharedState.windowWidth), height (px <| sharedState.windowHeight - 45), centerY ]
         [ mainView sharedState model
         , footer sharedState model
         ]
@@ -237,7 +314,15 @@ groupListView sharedState model =
 
 viewGroups : Maybe Group -> List Group -> Element Msg
 viewGroups currentGroup groupList =
-    column [ width (px 300), height (px 400), spacing 10, padding 20, Background.color (Style.makeGrey 0.4) ] (List.map (groupNameButton currentGroup) groupList)
+    column
+        [ width (px 300)
+        , height (px 400)
+        , spacing 10
+        , padding 20
+        , Background.color (Style.makeGrey 0.4)
+        , Font.size inputFontSize
+        ]
+        (List.map (groupNameButton currentGroup) groupList)
 
 
 groupNameButton currentGroup_ group =
@@ -265,11 +350,11 @@ viewGroup group_ =
         Just group ->
             column [ width (px 300), height (px 400), spacing 8, Border.width 1, padding 20, moveDown 20 ]
                 [ el [ Font.bold ] (text group.name)
-                , el [ Font.size 14 ] (text <| "Chair: " ++ group.chair)
-                , el [ Font.size 14 ] (text <| "Co-chair: " ++ group.cochair)
-                , el [ Font.size 14 ] (text <| "Members: " ++ String.join ", " group.members)
-                , el [ Font.size 14, Font.bold ] (text <| "Blurb")
-                , paragraph [ Font.size 14, Font.italic ] [ text group.blurb ]
+                , el [ Font.size inputFontSize ] (text <| "Chair: " ++ group.chair)
+                , el [ Font.size inputFontSize ] (text <| "Co-chair: " ++ group.cochair)
+                , el [ Font.size inputFontSize ] (text <| "Members: " ++ String.join ", " group.members)
+                , el [ Font.size inputFontSize, Font.bold ] (text <| "Blurb")
+                , paragraph [ Font.size inputFontSize, Font.italic ] [ text group.blurb ]
                 ]
 
 
@@ -298,11 +383,12 @@ createGroupPanel model =
         , inputMembers model
         , inputBlurb model
         , row [ spacing 12 ] [ createGroupButton, cancelCreateGroupButton ]
+        , el [ Font.size inputFontSize, Font.color Style.blue ] (text model.message)
         ]
 
 
 editPanelStyle =
-    [ spacing 12, Border.width 1, paddingXY 18 18, moveDown 61.5 ]
+    [ spacing 12, Border.width 1, paddingXY 18 18 ]
 
 
 createPanelStyle =
@@ -311,7 +397,7 @@ createPanelStyle =
 
 editGroupPanel model =
     column editPanelStyle
-        [ el [ Font.size inputFontSize ] (text <| "Chair: " ++ chairName model)
+        [ el [ Font.size inputFontSize ] (text <| "Chair:: " ++ chairName model)
         , inputGroupName model
         , inputCochairName model
         , inputMembers model
