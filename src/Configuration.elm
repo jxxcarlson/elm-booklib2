@@ -1,4 +1,4 @@
-module Configuration exposing (backend)
+module Configuration exposing (backend, site)
 
 --
 --backend =
@@ -12,3 +12,7 @@ module Configuration exposing (backend)
 
 backend =
     "http://localhost:4000"
+
+
+site =
+    "LOCAL"

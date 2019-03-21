@@ -22,6 +22,7 @@ import SharedState exposing (SharedState, SharedStateUpdate(..))
 import Url exposing (Url)
 import User.Types exposing (State(..))
 import User.Utility
+import Configuration
 
 
 type alias Model =
@@ -163,7 +164,9 @@ update sharedState msg model =
                             Chart.getUser sharedState |> Cmd.map ChartMsg
 
                         GroupsRoute ->
-                            Groups.getGroupList |> Cmd.map GroupsMsg
+                            case sharedState.currentUser of
+                                Nothing -> Cmd.none
+                                Just user ->  Groups.getGroupListForUser user.username |> Cmd.map GroupsMsg
 
                         AdminRoute ->
                             Cmd.batch [
@@ -446,7 +449,7 @@ mainView msgMapper sharedState model =
                             , label = el [] (text "Shared Books")
                             }
                         )
-                    , showIf (currentUserIsMe sharedState)
+                    , showIf (Configuration.site == "LOCAL")
                         (Input.button (Style.activeButton (model.route == GroupsRoute))
                             { onPress = Just (NavigateTo GroupsRoute)
                             , label = el [] (text "Groups")

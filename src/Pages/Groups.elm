@@ -2,6 +2,7 @@ module Pages.Groups exposing
     ( Model
     , Msg(..)
     , getGroupList
+    , getGroupListForUser
     , init
     , update
     , view
@@ -212,15 +213,10 @@ getGroup model =
 
 view : SharedState -> Model -> Element Msg
 view sharedState model =
-    case Maybe.map .admin sharedState.currentUser of
-        Just True ->
-            column [ width (px <| sharedState.windowWidth), height (px <| sharedState.windowHeight - 45) ]
-                [ mainView sharedState model
-                , footer sharedState model
-                ]
-
-        _ ->
-            altView sharedState model
+    column [ width (px <| sharedState.windowWidth), height (px <| sharedState.windowHeight - 45) ]
+        [ mainView sharedState model
+        , footer sharedState model
+        ]
 
 
 mainView sharedState model =
@@ -279,14 +275,6 @@ viewGroup group_ =
 
 altView sharedState model =
     column [ padding 40 ] [ el [] (text "Under construction ..") ]
-
-
-getGroupList : Cmd Msg
-getGroupList =
-    Http.get
-        { url = Configuration.backend ++ "/api/groups"
-        , expect = Http.expectJson ReceiveGroupList groupListDecoder
-        }
 
 
 footer : SharedState -> Model -> Element Msg
@@ -500,6 +488,28 @@ groupEncoder_ group =
 groupListDecoder : Decoder (List Group)
 groupListDecoder =
     Decode.field "data" (Decode.list groupDecoder)
+
+
+
+--
+-- REQUESTS
+--
+
+
+getGroupList : Cmd Msg
+getGroupList =
+    Http.get
+        { url = Configuration.backend ++ "/api/groups"
+        , expect = Http.expectJson ReceiveGroupList groupListDecoder
+        }
+
+
+getGroupListForUser : String -> Cmd Msg
+getGroupListForUser username =
+    Http.get
+        { url = Configuration.backend ++ "/api/groups?user=" ++ username
+        , expect = Http.expectJson ReceiveGroupList groupListDecoder
+        }
 
 
 createGroup : Group -> String -> Cmd Msg
