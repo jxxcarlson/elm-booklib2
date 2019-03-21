@@ -634,6 +634,7 @@ itemsFromString : String -> List String
 itemsFromString str =
     str
         |> String.split ","
+        |> List.filter (\item -> item /= "")
         |> List.map String.trim
 
 

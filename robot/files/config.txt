@@ -1,4 +1,4 @@
-module Configuration exposing (backend)
+module Configuration exposing (backend, site)
 
 --
 --backend =
