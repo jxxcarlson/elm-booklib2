@@ -657,21 +657,6 @@ getSharedBooks username token =
         }
 
 
-
---getSharedBlurb : String -> String -> Cmd Msg
---getSharedBlurb username token =
---    Http.request
---        { method = "Get"
---        , headers = []
---        , url = Configuration.backend ++ "/api/blurb/" ++ username
---        , body = Http.jsonBody (User.Coders.tokenEncoder token)
---        , expect = Http.expectJson ReceiveSharedBlurb Book.Coders.blurbDecoder
---        , timeout = Nothing
---        , tracker = Nothing
---        }
---- NN
-
-
 doRequestBookList : Maybe User -> Msg
 doRequestBookList user_ =
     case user_ of

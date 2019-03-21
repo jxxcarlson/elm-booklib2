@@ -8,6 +8,8 @@ module Pages.Groups exposing
     , view
     )
 
+import Book.Coders
+import Book.Types exposing (Book)
 import Common.Book
 import Common.Style as Style
 import Common.Utility as Utility
@@ -22,12 +24,16 @@ import Json.Decode as Decode exposing (Decoder)
 import Json.Decode.Pipeline exposing (required)
 import Json.Encode as Encode
 import SharedState exposing (SharedState, SharedStateUpdate(..))
+import User.Coders
 
 
 type alias Model =
     { appState : AppState
     , currentGroup : Maybe Group
     , groupList : List Group
+    , bookList : List Book
+    , currentUserName : Maybe String
+    , currentBook : Maybe Book
     , message : String
     , groupName : String
     , cochairName : String
@@ -57,6 +63,9 @@ init =
     { appState = Default
     , currentGroup = Nothing
     , groupList = []
+    , bookList = []
+    , currentUserName = Nothing
+    , currentBook = Nothing
     , message = ""
     , groupName = ""
     , cochairName = ""
@@ -87,6 +96,9 @@ type Msg
     | CancelEditGroup
     | UpdateGroup
     | GroupUpdated (Result Http.Error Group)
+    | ViewUserBookList String
+    | ReceiveBookList (Result Http.Error (List Book))
+    | SetCurrentBook Book
 
 
 update : SharedState -> Msg -> Model -> ( Model, Cmd Msg, SharedStateUpdate )
@@ -193,6 +205,51 @@ update sharedState msg model =
         GroupUpdated (Err _) ->
             ( { model | appState = Default, message = "Error updating group" }, Cmd.none, NoUpdate )
 
+        ViewUserBookList userName ->
+            ( { model | currentUserName = Just userName }
+            , getSharedBooks userName (getToken sharedState)
+            , NoUpdate
+            )
+
+        ReceiveBookList (Ok bookList) ->
+            let
+                currentBook =
+                    List.head bookList
+
+                notes =
+                    case currentBook of
+                        Nothing ->
+                            ""
+
+                        Just book ->
+                            book.notes
+            in
+            ( { model
+                | bookList = bookList
+              }
+            , Cmd.none
+            , SharedState.UpdateCurrentBook currentBook
+            )
+
+        ReceiveBookList (Err err) ->
+            ( { model | message = "Error receiving book list" }, Cmd.none, SharedState.UpdateCurrentBook Nothing )
+
+        SetCurrentBook book ->
+            ( { model | currentBook = Just book }
+            , Cmd.none
+            , NoUpdate
+            )
+
+
+getToken : SharedState -> String
+getToken sharedState =
+    case sharedState.currentUser of
+        Nothing ->
+            "Invalid"
+
+        Just user ->
+            user.token
+
 
 type ResultGroup
     = Invalid (List String)
@@ -290,24 +347,123 @@ getGroup model =
 
 view : SharedState -> Model -> Element Msg
 view sharedState model =
-    column [ width (px <| sharedState.windowWidth), height (px <| sharedState.windowHeight - 45), centerY ]
+    column [ width (px <| sharedState.windowWidth), height (px <| sharedState.windowHeight - 45) ]
         [ mainView sharedState model
         , footer sharedState model
         ]
 
 
 mainView sharedState model =
-    row [ spacing 12 ]
+    row [ spacing 12, padding 40 ]
         [ groupListView sharedState model
         , Utility.showIf (model.appState == EditingGroup) (editGroupPanel model)
-        , Utility.showIf (model.appState == Default) (viewGroup model.currentGroup)
+        , Utility.showIf (model.appState == Default) (viewGroup model model.currentGroup)
         , Utility.showIf (model.appState == CreatingGroup) (createGroupPanel model)
+        , Utility.showIf (model.currentUserName /= Nothing && model.appState == Default) (bookListDisplay sharedState model)
+        , Utility.showIf (model.currentUserName /= Nothing && model.appState == Default) (row [ padding 20, Border.width 1 ] [ Common.Book.notesViewedAsMarkdown 70 "400px" (notesHeight sharedState) model.currentBook ])
         ]
 
 
+bookListDisplay : SharedState -> Model -> Element Msg
+bookListDisplay sharedState model =
+    Element.row [ spacing 20, alignTop ]
+        [ bookListTable sharedState model
+        ]
+
+
+notesHeight sharedState =
+    String.fromInt (sharedState.windowHeight - verticalMargin - 250) ++ "px"
+
+
+verticalMargin : Int
+verticalMargin =
+    100
+
+
+bookListTable : SharedState -> Model -> Element Msg
+bookListTable sharedState model =
+    Element.column
+        [ width fill
+        , clipY
+        , height (px (sharedState.windowHeight - verticalMargin - 190))
+        , spacing 10
+        , padding 10
+        , Background.color Style.charcoal
+        , Font.color Style.white
+        ]
+        [ bookListTableHeader sharedState model
+        , listBooks sharedState model
+        ]
+
+
+bookListTableHeader : SharedState -> Model -> Element Msg
+bookListTableHeader sharedState model =
+    Element.row [ spacing 15, Background.color Style.charcoal, Font.color Style.white ]
+        [--Element.el [ Font.bold, Font.color Style.white ] (text <| bookInfo model)
+         -- , Element.el [ Font.size 14, Font.color Style.orange ] (text <| totalsString sharedState model)
+        ]
+
+
+listBooks : SharedState -> Model -> Element Msg
+listBooks sharedState model =
+    Element.table
+        [ Element.centerX
+        , Font.size 13
+        , Element.spacing 10
+        , scrollbarY
+        , height (px (sharedState.windowHeight - verticalMargin - 270))
+        , Background.color Style.charcoal
+        , Font.color Style.white
+        , clipX
+        ]
+        { data = model.bookList
+        , columns =
+            [ { header = Element.el Style.tableHeading (Element.text "Title")
+              , width = px 200
+              , view =
+                    \book ->
+                        titleButton book model.currentBook
+              }
+            ]
+        }
+
+
+titleButton book maybeCurrentBook =
+    let
+        highlighted =
+            case maybeCurrentBook of
+                Nothing ->
+                    False
+
+                Just currentBook ->
+                    currentBook.id == book.id
+    in
+    Input.button (Style.titleButton highlighted ++ [ clipX ])
+        { onPress = Just (SetCurrentBook book)
+        , label = Element.text book.title
+        }
+
+
+matchBookAndUserIds : SharedState -> Bool
+matchBookAndUserIds sharedState =
+    let
+        uid =
+            Maybe.map .id sharedState.currentUser
+
+        bookUid =
+            Maybe.map .userId sharedState.currentBook
+    in
+    case ( uid, bookUid ) of
+        ( Just id1, Just id2 ) ->
+            id1 /= id2
+
+        ( _, _ ) ->
+            False
+
+
 groupListView sharedState model =
-    column [ padding 40, spacing 12 ]
-        [ el [ Font.bold ] (text "Groups")
+    column [ spacing 12 ]
+        [ el [ Font.bold, paddingXY 0 0 ] (text "Groups")
         , viewGroups model.currentGroup model.groupList
         ]
 
@@ -318,14 +474,21 @@ viewGroups currentGroup groupList =
         [ width (px 300)
         , height (px 400)
         , spacing 10
-        , padding 20
         , Background.color (Style.makeGrey 0.4)
         , Font.size inputFontSize
+        , padding 12
         ]
-        (List.map (groupNameButton currentGroup) groupList)
+        (List.map (displayGroup currentGroup) groupList)
 
 
-groupNameButton currentGroup_ group =
+displayGroup : Maybe Group -> Group -> Element Msg
+displayGroup currentGroup_ group =
+    row [ Font.size inputFontSize ]
+        [ el [] (groupInfoButton currentGroup_ group)
+        ]
+
+
+groupInfoButton currentGroup_ group =
     let
         highlighted =
             case currentGroup_ of
@@ -341,25 +504,52 @@ groupNameButton currentGroup_ group =
         }
 
 
-viewGroup : Maybe Group -> Element Msg
-viewGroup group_ =
+viewGroup : Model -> Maybe Group -> Element Msg
+viewGroup model group_ =
     case group_ of
         Nothing ->
             Element.none
 
         Just group ->
-            column [ width (px 300), height (px 400), spacing 8, Border.width 1, padding 20, moveDown 20 ]
+            column [ width (px 300), height (px 435), spacing 12, Border.width 1, Background.color (Style.makeGrey 0.9), paddingXY 12 12, alignTop ]
                 [ el [ Font.bold ] (text group.name)
                 , el [ Font.size inputFontSize ] (text <| "Chair: " ++ group.chair)
                 , el [ Font.size inputFontSize ] (text <| "Co-chair: " ++ group.cochair)
-                , el [ Font.size inputFontSize ] (text <| "Members: " ++ String.join ", " group.members)
                 , el [ Font.size inputFontSize, Font.bold ] (text <| "Blurb")
                 , paragraph [ Font.size inputFontSize, Font.italic ] [ text group.blurb ]
+                , el [ Font.size inputFontSize, Font.bold ] (text <| "Members")
+                , column
+                    [ spacing 8
+                    , height (px 230)
+                    , width (px 250)
+                    , centerX
+                    , scrollbarY
+                    , Border.width 1
+                    , padding 8
+                    ]
+                    (List.map (memberButton model) group.members)
                 ]
 
 
-altView sharedState model =
-    column [ padding 40 ] [ el [] (text "Under construction ..") ]
+showMember : String -> Element Msg
+showMember username =
+    el [ Font.size inputFontSize ] (text username)
+
+
+memberButton : Model -> String -> Element Msg
+memberButton model username =
+    Input.button (highlightColor (model.currentUserName == Just username) ++ [ width (px 145) ])
+        { onPress = Just (ViewUserBookList username)
+        , label = el [ Font.size 14 ] (Element.text username)
+        }
+
+
+highlightColor flag =
+    if flag then
+        [ Font.bold, Font.color Style.darkRed ]
+
+    else
+        [ Font.color Style.blue ]
 
 
 footer : SharedState -> Model -> Element Msg
@@ -392,7 +582,7 @@ editPanelStyle =
 
 
 createPanelStyle =
-    [ spacing 12, Border.width 1, paddingXY 18 18, moveDown 48 ]
+    [ spacing 12, Border.width 1, paddingXY 18 18 ]
 
 
 editGroupPanel model =
@@ -619,6 +809,19 @@ updateGroup group token =
         , url = Configuration.backend ++ "/api/groups/" ++ String.fromInt group.id
         , body = Http.jsonBody (groupEncoder group)
         , expect = Http.expectJson GroupUpdated groupRecordDecoder
+        , timeout = Nothing
+        , tracker = Nothing
+        }
+
+
+getSharedBooks : String -> String -> Cmd Msg
+getSharedBooks username token =
+    Http.request
+        { method = "Get"
+        , headers = []
+        , url = Configuration.backend ++ "/api/books?shared=" ++ username
+        , body = Http.jsonBody (User.Coders.tokenEncoder token)
+        , expect = Http.expectJson ReceiveBookList Book.Coders.bookListDecoder
         , timeout = Nothing
         , tracker = Nothing
         }

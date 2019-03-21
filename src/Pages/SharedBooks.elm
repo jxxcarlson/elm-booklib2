@@ -4,6 +4,7 @@ module Pages.SharedBooks exposing
     , getBookList
     , getBookListViaSharedState
     , getPublicUsers
+    , getSharedBooks
     , init
     , update
     , view
@@ -12,7 +13,6 @@ module Pages.SharedBooks exposing
 import Book.Coders
 import Book.Types exposing (Book)
 import Common.Book
-import Common.Days as Days
 import Common.Style as Style
 import Common.Utility as Utility
 import Configuration
