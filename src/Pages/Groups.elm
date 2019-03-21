@@ -354,14 +354,18 @@ view sharedState model =
 
 
 mainView sharedState model =
-    row [ spacing 12, padding 40 ]
+    row [ spacing 12, padding 20 ]
         [ groupListView sharedState model
         , Utility.showIf (model.appState == EditingGroup) (editGroupPanel model)
-        , Utility.showIf (model.appState == Default) (viewGroup model model.currentGroup)
+        , Utility.showIf (model.appState == Default) (viewGroup sharedState model model.currentGroup)
         , Utility.showIf (model.appState == CreatingGroup) (createGroupPanel model)
         , Utility.showIf (model.currentUserName /= Nothing && model.appState == Default) (bookListDisplay sharedState model)
-        , Utility.showIf (model.currentUserName /= Nothing && model.appState == Default) (row [ padding 20, Border.width 1 ] [ Common.Book.notesViewedAsMarkdown 70 "400px" (notesHeight sharedState) model.currentBook ])
+        , Utility.showIf (model.currentUserName /= Nothing && model.appState == Default && model.currentBook /= Nothing) (row [ padding 20, Border.width 1 ] [ Common.Book.notesViewedAsMarkdown 70 "380px" (notesHeight sharedState) model.currentBook ])
         ]
+
+
+inset =
+    20
 
 
 bookListDisplay : SharedState -> Model -> Element Msg
@@ -372,12 +376,7 @@ bookListDisplay sharedState model =
 
 
 notesHeight sharedState =
-    String.fromInt (sharedState.windowHeight - verticalMargin - 250) ++ "px"
-
-
-verticalMargin : Int
-verticalMargin =
-    100
+    String.fromInt (sharedState.windowHeight - 178) ++ "px"
 
 
 bookListTable : SharedState -> Model -> Element Msg
@@ -385,7 +384,7 @@ bookListTable sharedState model =
     Element.column
         [ width fill
         , clipY
-        , height (px (sharedState.windowHeight - verticalMargin - 190))
+        , height (px (sharedState.windowHeight - 115))
         , spacing 10
         , padding 10
         , Background.color Style.charcoal
@@ -411,7 +410,7 @@ listBooks sharedState model =
         , Font.size 13
         , Element.spacing 10
         , scrollbarY
-        , height (px (sharedState.windowHeight - verticalMargin - 270))
+        , height (px (sharedState.windowHeight - 150))
         , Background.color Style.charcoal
         , Font.color Style.white
         , clipX
@@ -464,15 +463,15 @@ matchBookAndUserIds sharedState =
 groupListView sharedState model =
     column [ spacing 12 ]
         [ el [ Font.bold, paddingXY 0 0 ] (text "Groups")
-        , viewGroups model.currentGroup model.groupList
+        , viewGroups sharedState model.currentGroup model.groupList
         ]
 
 
-viewGroups : Maybe Group -> List Group -> Element Msg
-viewGroups currentGroup groupList =
+viewGroups : SharedState -> Maybe Group -> List Group -> Element Msg
+viewGroups sharedState currentGroup groupList =
     column
-        [ width (px 300)
-        , height (px 400)
+        [ width (px 200)
+        , height (px (sharedState.windowHeight - 150))
         , spacing 10
         , Background.color (Style.makeGrey 0.4)
         , Font.size inputFontSize
@@ -504,14 +503,14 @@ groupInfoButton currentGroup_ group =
         }
 
 
-viewGroup : Model -> Maybe Group -> Element Msg
-viewGroup model group_ =
+viewGroup : SharedState -> Model -> Maybe Group -> Element Msg
+viewGroup sharedState model group_ =
     case group_ of
         Nothing ->
             Element.none
 
         Just group ->
-            column [ width (px 300), height (px 435), spacing 12, Border.width 1, Background.color (Style.makeGrey 0.9), paddingXY 12 12, alignTop ]
+            column [ width (px 300), height (px (sharedState.windowHeight - 115)), spacing 12, Border.width 1, Background.color (Style.makeGrey 0.9), paddingXY 12 12, alignTop ]
                 [ el [ Font.bold ] (text group.name)
                 , el [ Font.size inputFontSize ] (text <| "Chair: " ++ group.chair)
                 , el [ Font.size inputFontSize ] (text <| "Co-chair: " ++ group.cochair)
@@ -520,7 +519,7 @@ viewGroup model group_ =
                 , el [ Font.size inputFontSize, Font.bold ] (text <| "Members")
                 , column
                     [ spacing 8
-                    , height (px 230)
+                    , height (px (sharedState.windowHeight - 190))
                     , width (px 250)
                     , centerX
                     , scrollbarY
