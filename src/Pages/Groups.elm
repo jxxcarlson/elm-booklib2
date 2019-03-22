@@ -25,6 +25,7 @@ import Json.Decode.Pipeline exposing (required)
 import Json.Encode as Encode
 import SharedState exposing (SharedState, SharedStateUpdate(..))
 import User.Coders
+import User.Invitation exposing(Invitation, encodeInvitation, invitationDecoder, Status(..))
 
 
 type alias Model =
@@ -39,6 +40,7 @@ type alias Model =
     , cochairName : String
     , blurb : String
     , membersString : String
+    , memberName : String
     }
 
 
@@ -56,6 +58,7 @@ type AppState
     = Default
     | CreatingGroup
     | EditingGroup
+    | MakingInvitation
 
 
 init : Model
@@ -71,6 +74,7 @@ init =
     , cochairName = ""
     , blurb = ""
     , membersString = ""
+    , memberName = ""
     }
 
 
@@ -99,6 +103,11 @@ type Msg
     | ViewUserBookList String
     | ReceiveBookList (Result Http.Error (List Book))
     | SetCurrentBook Book
+    | GotInvitation (Result Http.Error Invitation)
+    | InputMemberName String
+    | Cancel
+    | SendInvitation
+    | MakeInvitation
 
 
 update : SharedState -> Msg -> Model -> ( Model, Cmd Msg, SharedStateUpdate )
@@ -240,6 +249,33 @@ update sharedState msg model =
             , NoUpdate
             )
 
+        GotInvitation (Ok _) ->
+            ( {model | message = "Processing invitation"}, Cmd.none, NoUpdate )
+
+        GotInvitation (Err _) ->
+                    ( {model | message = "Error processing invitation"}, Cmd.none, NoUpdate )
+
+        InputMemberName str ->
+            ( {model | memberName = str}, Cmd.none, NoUpdate)
+
+        Cancel ->
+            ( {model | appState = Default}, Cmd.none, NoUpdate)
+
+        SendInvitation ->
+            let
+                cmd = case (sharedState.currentUser, model.currentGroup) of
+                              (Just user, Just group) ->
+                                  case  makeInvitation model of
+                                      Nothing -> Cmd.none
+                                      Just invitation -> createInvitation invitation user.token
+                              (_, _) -> Cmd.none
+
+
+            in
+              ( {model | message = "Sending invitation"}, cmd, NoUpdate)
+
+        MakeInvitation ->
+            ( {model | appState = MakingInvitation}, Cmd.none, NoUpdate)
 
 getToken : SharedState -> String
 getToken sharedState =
@@ -359,6 +395,7 @@ mainView sharedState model =
         , Utility.showIf (model.appState == EditingGroup) (editGroupPanel model)
         , Utility.showIf (model.appState == Default) (viewGroup sharedState model model.currentGroup)
         , Utility.showIf (model.appState == CreatingGroup) (createGroupPanel model)
+        , Utility.showIf (model.appState == MakingInvitation) (invitationPanel model)
         , Utility.showIf (model.currentUserName /= Nothing && model.appState == Default) (bookListDisplay sharedState model)
         , Utility.showIf (model.currentUserName /= Nothing && model.appState == Default && model.currentBook /= Nothing) (row [ padding 20, Border.width 1 ] [ Common.Book.notesViewedAsMarkdown 70 "380px" (notesHeight sharedState) model.currentBook ])
         ]
@@ -441,6 +478,20 @@ titleButton book maybeCurrentBook =
         { onPress = Just (SetCurrentBook book)
         , label = Element.text book.title
         }
+
+
+sendInvitationButton  =
+    Input.button Style.button
+            { onPress = Just SendInvitation
+            , label = (text "Send invitation")
+            }
+
+makeInvitationButton  =
+    Input.button Style.button
+            { onPress = Just MakeInvitation
+            , label = (text "New invitation")
+            }
+
 
 
 matchBookAndUserIds : SharedState -> Bool
@@ -556,6 +607,7 @@ footer sharedState model =
     row Style.footer
         [ newGroupButton
         , Utility.showIf (model.currentGroup /= Nothing) editGroupButton
+        , Utility.showIf (model.currentGroup /= Nothing) makeInvitationButton
         ]
 
 
@@ -594,6 +646,19 @@ editGroupPanel model =
         , row [ spacing 12 ] [ updateGroupButton, cancelEditGroupButton ]
         ]
 
+invitationPanel : Model -> Element Msg
+invitationPanel model =
+    case model.currentGroup of
+        Nothing -> Element.none
+        Just group ->
+          column (editPanelStyle ++ [alignTop])
+            [ el [ Font.size inputFontSize ] (text <| "Group: " ++ group.name)
+            , inputMemberName model
+            , row [ spacing 12 ] [ sendInvitationButton, cancelButton ]
+            , el [Font.size 14] (text model.message)
+            ]
+
+
 
 chairName : Model -> String
 chairName model =
@@ -628,6 +693,12 @@ cancelCreateGroupButton =
         , label = el [ centerX ] (Element.text "Cancel")
         }
 
+cancelButton : Element Msg
+cancelButton =
+    Input.button Style.button
+        { onPress = Just Cancel
+        , label = el [ centerX ] (Element.text "Cancel")
+        }
 
 editGroupButton : Element Msg
 editGroupButton =
@@ -675,6 +746,13 @@ inputGroupName model =
         , label = Input.labelAbove [ Font.size inputFontSize ] (text "Group name ")
         }
 
+inputMemberName model =
+   Input.text inputStyle
+           { text = model.memberName
+           , placeholder = Nothing
+           , onChange = InputMemberName
+           , label = Input.labelAbove [ Font.size inputFontSize ] (text "New member")
+           }
 
 inputCochairName model =
     Input.text inputStyle
@@ -824,6 +902,33 @@ getSharedBooks username token =
         , timeout = Nothing
         , tracker = Nothing
         }
+
+
+createInvitation : Invitation -> String -> Cmd Msg
+createInvitation invitation token =
+    Http.request
+        { method = "Post"
+        , headers = [ Http.header "Authorization" ("Bearer " ++ token) ]
+        , url = Configuration.backend ++ "/api/groups/invite"
+        , body = Http.jsonBody (encodeInvitation invitation)
+        , expect = Http.expectJson GotInvitation invitationDecoder
+        , timeout = Nothing
+        , tracker = Nothing
+        }
+
+
+makeInvitation : Model -> Maybe Invitation
+makeInvitation model =
+    case model.currentGroup of
+        Nothing -> Nothing
+        Just group ->
+            Just {
+               invitee = model.memberName
+               , inviter = group.chair
+               , groupName = group.name
+               , groupId = group.id
+               , status = Waiting
+            }
 
 
 

@@ -59,12 +59,6 @@ encodeStat st =
 
 
 
---followEncoder : List PublicUser -> Encode.Value
---followEncoder publicUserList =
---    Encode.list encodePublicUser publicUserList
---
---
-
 
 followEncoder : List PublicUser -> Encode.Value
 followEncoder publicUserList =
