@@ -12,6 +12,7 @@ type Route
     | ChartRoute
     | AboutRoute
     | GroupsRoute
+    | InvitationsRoute
     | AdminRoute
     | NotFoundRoute
 
@@ -40,6 +41,9 @@ reverseRoute route =
         GroupsRoute ->
             "#/groups"
 
+        InvitationsRoute ->
+            "#/invitations"
+
         AdminRoute ->
             "#/admin"
 
@@ -56,6 +60,7 @@ routeParser =
         , Url.Parser.map SharedBooksRoute (Url.Parser.s "sharedbooks")
         , Url.Parser.map AboutRoute (Url.Parser.s "about")
         , Url.Parser.map GroupsRoute (Url.Parser.s "groups")
+        , Url.Parser.map InvitationsRoute (Url.Parser.s "invitations")
         , Url.Parser.map AdminRoute (Url.Parser.s "admin")
         ]
 

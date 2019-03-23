@@ -5,6 +5,7 @@ import Browser.Navigation
 import Stats exposing (Stats)
 import Time exposing (Posix)
 import User.Types exposing (User)
+import User.Invitation exposing(Invitation)
 
 
 type alias SharedState =
@@ -15,6 +16,7 @@ type alias SharedState =
     , windowWidth : Int
     , windowHeight : Int
     , stats : Maybe Stats
+    , invitations : List Invitation
     }
 
 
@@ -25,6 +27,7 @@ type SharedStateUpdate
     | InvalidateCurrentUser
     | UpdateCurrentBook (Maybe Book)
     | UpdateStats (Maybe Stats)
+    | UpdateInvitations (List Invitation)
 
 
 initialSharedState : Browser.Navigation.Key -> Posix -> Int -> Int -> Maybe User -> SharedState
@@ -36,6 +39,7 @@ initialSharedState navKey time w h currentUser =
     , windowWidth = w
     , windowHeight = h
     , stats = Nothing
+    , invitations = []
     }
 
 
@@ -56,6 +60,9 @@ update sharedState sharedStateUpdate =
 
         UpdateStats stats ->
             { sharedState | stats = stats }
+
+        UpdateInvitations invitations ->
+            { sharedState | invitations = invitations}
 
         NoUpdate ->
             sharedState

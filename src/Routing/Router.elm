@@ -16,6 +16,7 @@ import Pages.Chart as Chart
 import Pages.CurrentBook as CurrentBook exposing (AppState(..))
 import Pages.CurrentUser as CurrentUser
 import Pages.Groups as Groups
+import Pages.Invitations as Invitations
 import Pages.SharedBooks as SharedBooks
 import Routing.Helpers exposing (Route(..), parseUrl, reverseRoute)
 import SharedState exposing (SharedState, SharedStateUpdate(..))
@@ -33,6 +34,7 @@ type alias Model =
     , currentUserModel : CurrentUser.Model
     , aboutModel : About.Model
     , groupsModel : Groups.Model
+    , invitationsModel : Invitations.Model
     , adminModel : Admin.Model
     , route : Route
     }
@@ -47,6 +49,7 @@ type Msg
     | ChartMsg Chart.Msg
     | AboutMsg About.Msg
     | GroupsMsg Groups.Msg
+    | InvitationsMsg Invitations.Msg
     | AdminMsg Admin.Msg
     | NavigateTo Route
     | SignOut
@@ -76,6 +79,8 @@ initialModel url =
         groupsModel =
             Groups.init
 
+        invitationsModel = Invitations.init
+
         adminModel =
             Admin.init
     in
@@ -86,6 +91,7 @@ initialModel url =
     , currentUserModel = currentUserModel
     , aboutModel = aboutModel
     , groupsModel = groupsModel
+    , invitationsModel = invitationsModel
     , adminModel = adminModel
     , route = parseUrl url
     }
@@ -114,6 +120,9 @@ init url =
         groupsModel =
             Groups.init
 
+        invitationsModel =
+                    Invitations.init
+
         adminModel =
             Admin.init
     in
@@ -124,6 +133,7 @@ init url =
       , currentUserModel = currentUserModel
       , aboutModel = aboutModel
       , groupsModel = groupsModel
+      , invitationsModel = invitationsModel
       , adminModel = adminModel
       , route = parseUrl url
       }
@@ -161,12 +171,24 @@ update sharedState msg model =
                             Chart.getUser sharedState |> Cmd.map ChartMsg
 
                         CurrentUserRoute ->
-                            Chart.getUser sharedState |> Cmd.map ChartMsg
+                            case sharedState.currentUser of
+                                Nothing -> Cmd.none
+                                Just user ->
+                                    Cmd.batch [
+                                       Chart.getUser sharedState |> Cmd.map ChartMsg
+                                       , CurrentUser.getInvitations user.username  |> Cmd.map CurrentUserMsg
+                                    ]
+
 
                         GroupsRoute ->
                             case sharedState.currentUser of
                                 Nothing -> Cmd.none
                                 Just user ->   Groups.getGroupListForUser user.username |> Cmd.map GroupsMsg
+
+                        InvitationsRoute ->
+                            case sharedState.currentUser of
+                                Nothing -> Cmd.none
+                                Just user -> CurrentUser.getInvitations user.username  |> Cmd.map CurrentUserMsg
 
 
                         AdminRoute ->
@@ -262,6 +284,9 @@ update sharedState msg model =
 
         GroupsMsg groupsMsg ->
             updateGroups sharedState model groupsMsg
+
+        InvitationsMsg invitationsMsg ->
+                    updateInvitations sharedState model invitationsMsg
 
         AdminMsg adminMsg ->
             updateAdmin sharedState model adminMsg
@@ -367,6 +392,17 @@ updateGroups sharedState model groupsMsg =
     )
 
 
+updateInvitations : SharedState -> Model -> Invitations.Msg -> ( Model, Cmd Msg, SharedStateUpdate )
+updateInvitations sharedState model invitationsMsg =
+    let
+        ( nextInvitationsModel, invitationsCmd, sharedStateUpdate ) =
+            Invitations.update sharedState invitationsMsg model.invitationsModel
+    in
+    ( { model | invitationsModel = nextInvitationsModel }
+    , Cmd.map InvitationsMsg invitationsCmd
+    , sharedStateUpdate
+    )
+
 updateAdmin : SharedState -> Model -> Admin.Msg -> ( Model, Cmd Msg, SharedStateUpdate )
 updateAdmin sharedState model adminMsg =
     let
@@ -413,6 +449,9 @@ mainView msgMapper sharedState model =
                 GroupsRoute ->
                     "Groups"
 
+                InvitationsRoute ->
+                                    "Invitations"
+
                 AdminRoute ->
                     "Admin"
 
@@ -456,6 +495,14 @@ mainView msgMapper sharedState model =
                             , label = el [] (text "Groups")
                             }
                         )
+
+                    , showIf (Configuration.site == "LOCAL" && sharedState.invitations /= [])
+                                            (Input.button (Style.activeButton (model.route == InvitationsRoute))
+                                                { onPress = Just (NavigateTo InvitationsRoute)
+                                                , label = el [] (text "Invitations")
+                                                }
+                                            )
+
                     , Input.button (Style.activeButton (model.route == CurrentUserRoute))
                         { onPress = Just (NavigateTo CurrentUserRoute)
                         , label = el [] (text "User")
@@ -515,6 +562,9 @@ phoneView msgMapper sharedState model =
 
                 GroupsRoute ->
                     "Groups"
+
+                InvitationsRoute ->
+                                    "Invitations"
 
                 AdminRoute ->
                     "Admin"
@@ -621,6 +671,10 @@ pageView sharedState model =
             GroupsRoute ->
                 Groups.view sharedState model.groupsModel
                     |> Element.map GroupsMsg
+
+            InvitationsRoute ->
+                            Invitations.view sharedState model.invitationsModel
+                                |> Element.map InvitationsMsg
 
             AdminRoute ->
                 Admin.view sharedState model.adminModel

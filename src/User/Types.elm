@@ -13,6 +13,7 @@ module User.Types exposing
 import Http
 import Routing.Helpers exposing (Route)
 import Stats exposing (Stats)
+import User.Invitation as Invitation exposing(Invitation)
 
 
 type alias User =
@@ -125,6 +126,8 @@ type Msg
     | InputTagString String
     | UpdateUserTags
     | GotStats (Result Http.Error Stats)
+    | GotInvitations (Result Http.Error (List Invitation))
+    | GoToInvitations
 
 
 type State

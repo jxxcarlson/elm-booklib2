@@ -13,6 +13,7 @@ module Common.Utility exposing
     , toUtcString
     , toggleList
     , usDateStringFromElixirDateString
+    , scale
     )
 
 import Common.Days as Days
@@ -316,3 +317,8 @@ listUpdateIf predicate update list =
                 item
         )
         list
+
+
+scale : Float -> Int -> Int
+scale factor k =
+    round <| factor * (toFloat k)

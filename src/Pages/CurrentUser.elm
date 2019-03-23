@@ -2,6 +2,7 @@ module Pages.CurrentUser exposing
     ( Model
     , currentSharedStateView
     , getStats
+    , getInvitations
     , initModel
     , update
     , view
@@ -24,6 +25,7 @@ import Stats exposing (Stats)
 import User.Chart
 import User.Session as Session
 import User.Types exposing (Msg(..), ReadingStat, State(..), User)
+import User.Invitation as Invitation exposing(Invitation)
 
 
 type alias Model =
@@ -105,6 +107,7 @@ update sharedState msg model =
                 [ pushUrl sharedState.navKey "#books"
                 , OutsideInfo.sendInfoOutside (UserData (OutsideInfo.userEncoder user))
                 , getStats
+                , getInvitations user.username
                 ]
             , UpdateCurrentUser (Just user)
             )
@@ -186,6 +189,15 @@ update sharedState msg model =
         GotStats (Err err) ->
             ( { model | message = httpErrorExplanation err }, Cmd.none, NoUpdate )
 
+        GotInvitations (Ok invitations) ->
+            ( model, Cmd.none, SharedState.UpdateInvitations invitations)
+
+        GotInvitations (Err _) ->
+            ( {model | message = "Error getting invitations"}, Cmd.none, NoUpdate)
+
+        GoToInvitations ->
+            ( model, pushUrl sharedState.navKey "#invitations", NoUpdate)
+
 
 view : SharedState -> Model -> Element Msg
 view sharedState model =
@@ -212,6 +224,15 @@ view sharedState model =
                     ]
                 , footer sharedState model
                 ]
+
+
+invitationsLine sharedState =
+    case sharedState.invitations == [] of
+        True -> Element.none
+        False -> row [spacing 12]
+           [ el [Font.size 16, Font.bold, Font.color Style.darkRed] (text "You have an invitation to join a group!")
+           , goToInvitationsButton
+           ]
 
 
 infoLine =
@@ -309,6 +330,8 @@ signInColumn sharedState model =
         , showIf (not <| showIfSignedInOrRegistered model) (resetPasswordLink model)
         , verifyUserLink model
         , infoPanel sharedState model
+        , invitationsLine sharedState
+
         ]
 
 
@@ -378,6 +401,11 @@ tagUpdateButton =
         , label = el [ Font.size 14 ] (text "Update tags ")
         }
 
+goToInvitationsButton =
+    Input.button Style.button
+        { onPress = Just GoToInvitations
+        , label = el [ Font.size 14 ] (text "Look at invitations")
+        }
 
 footer : SharedState -> Model -> Element Msg
 footer sharedState model =
@@ -647,6 +675,10 @@ cleanupErrorMessage str =
         |> String.dropLeft 1
 
 
+--
+-- REQUESTS
+--
+
 getStats : Cmd Msg
 getStats =
     Http.get
@@ -654,6 +686,12 @@ getStats =
         , expect = Http.expectJson GotStats Stats.decoder
         }
 
+getInvitations :  String -> Cmd Msg
+getInvitations invitee  =
+      Http.get
+        { url = Configuration.backend ++ "/api/invitations?invitee=" ++ invitee
+        , expect = Http.expectJson GotInvitations Invitation.invitationsDecoder
+        }
 
 
 --

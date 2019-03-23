@@ -589,7 +589,7 @@ viewGroup sharedState model group_ =
                 , el [ Font.size inputFontSize, Font.bold ] (text <| "Members")
                 , column
                     [ spacing 8
-                    , height (px (scale 0.5 (sharedState.windowHeight - 190 - windowInset)))
+                    , height (px (Utility.scale 0.5 (sharedState.windowHeight - 190 - windowInset)))
                     , width (px 250)
                     , centerX
                     , scrollbarY
@@ -600,7 +600,7 @@ viewGroup sharedState model group_ =
                 , el [ Font.size inputFontSize, Font.bold ] (text <| "Invitations")
                 , column
                     [ spacing 8
-                    , height (px (scale 0.4 (sharedState.windowHeight - 190 - windowInset)))
+                    , height (px (Utility.scale 0.4 (sharedState.windowHeight - 190 - windowInset)))
                     , width (px 250)
                     , centerX
                     , scrollbarY
@@ -614,9 +614,7 @@ viewInvitation : Invitation -> Element Msg
 viewInvitation invitation =
     el [ Font.size 14] (text invitation.invitee)
 
-scale : Float -> Int -> Int
-scale factor k =
-    round <| factor * (toFloat k)
+
 
 showMember : String -> Element Msg
 showMember username =
