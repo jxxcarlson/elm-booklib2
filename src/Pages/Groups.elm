@@ -398,7 +398,10 @@ getGroup model =
 
 view : SharedState -> Model -> Element Msg
 view sharedState model =
-    column [ width (px <| sharedState.windowWidth), height (px <| sharedState.windowHeight - 45  - windowInset) ]
+    column [ width (px <| sharedState.windowWidth)
+      , height (px <| sharedState.windowHeight - 45  - windowInset)
+      , Background.color (Style.makeGrey 0.8)
+      ]
         [ mainView sharedState model
         , footer sharedState model
         ]
@@ -412,7 +415,7 @@ mainView sharedState model =
         , Utility.showIf (model.appState == CreatingGroup) (createGroupPanel model)
         , Utility.showIf (model.appState == MakingInvitation) (invitationPanel model)
         , Utility.showIf (model.currentUserName /= Nothing && List.member model.appState [ViewingBookList, ViewingBook]) (bookListDisplay sharedState model)
-        , Utility.showIf (model.currentUserName /= Nothing && model.currentBook /= Nothing && model.appState == ViewingBook) (row [ padding 20, Border.width 1 ] [ Common.Book.notesViewedAsMarkdown 70 "380px" (notesHeight sharedState) model.currentBook ])
+        , Utility.showIf (model.currentUserName /= Nothing && model.currentBook /= Nothing && model.appState == ViewingBook) (row [ padding 20, Border.width 1,  Background.color (Style.makeGrey 1.0) ] [ Common.Book.notesViewedAsMarkdown 70 "380px" (notesHeight sharedState) model.currentBook ])
         ]
 
 
@@ -663,11 +666,11 @@ createGroupPanel model =
 
 
 editPanelStyle =
-    [ spacing 12, Border.width 1, paddingXY 18 18 ]
+    [ spacing 12, Border.width 1, paddingXY 18 18, Background.color (Style.makeGrey 0.9), alignTop ]
 
 
 createPanelStyle =
-    [ spacing 12, Border.width 1, paddingXY 18 18 ]
+    [ spacing 12, Border.width 1, paddingXY 18 18, Background.color (Style.makeGrey 0.9), alignTop ]
 
 
 editGroupPanel model =
@@ -685,7 +688,7 @@ invitationPanel model =
     case model.currentGroup of
         Nothing -> Element.none
         Just group ->
-          column (editPanelStyle ++ [alignTop])
+          column (editPanelStyle ++ [alignTop,  Background.color (Style.makeGrey 0.9)])
             [ el [ Font.size inputFontSize ] (text <| "Group: " ++ group.name)
             , inputMemberName model
             , row [ spacing 12 ] [ sendInvitationButton, cancelInvitationButton ]
