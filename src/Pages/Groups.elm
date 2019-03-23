@@ -676,7 +676,7 @@ editGroupPanel model =
         [ el [ Font.size inputFontSize ] (text <| "Chair:: " ++ chairName model)
         , inputGroupName model
         , inputCochairName model
-        , inputMembers model
+        -- , inputMembers model
         , inputBlurb model
         , row [ spacing 12 ] [ updateGroupButton, cancelEditGroupButton ]
         ]
