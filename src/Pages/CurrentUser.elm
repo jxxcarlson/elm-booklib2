@@ -25,7 +25,7 @@ import Stats exposing (Stats)
 import User.Chart
 import User.Session as Session
 import User.Types exposing (Msg(..), ReadingStat, State(..), User)
-import User.Invitation as Invitation exposing(Invitation)
+import User.Invitation as Invitation exposing(Invitation, Status(..))
 
 
 type alias Model =
@@ -104,7 +104,9 @@ update sharedState msg model =
                 , state = SignedIn
               }
             , Cmd.batch
-                [ pushUrl sharedState.navKey "#books"
+                [ case sharedState.invitations == [] of
+                     True -> pushUrl sharedState.navKey "#books"
+                     False -> Cmd.none
                 , OutsideInfo.sendInfoOutside (UserData (OutsideInfo.userEncoder user))
                 , getStats
                 , getInvitations user.username
@@ -190,7 +192,10 @@ update sharedState msg model =
             ( { model | message = httpErrorExplanation err }, Cmd.none, NoUpdate )
 
         GotInvitations (Ok invitations) ->
-            ( model, Cmd.none, SharedState.UpdateInvitations invitations)
+            let
+                activeInvitations = List.filter (\i -> i.status == Waiting) invitations
+            in
+            ( model, Cmd.none, SharedState.UpdateInvitations activeInvitations)
 
         GotInvitations (Err _) ->
             ( {model | message = "Error getting invitations"}, Cmd.none, NoUpdate)

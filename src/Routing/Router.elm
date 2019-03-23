@@ -489,14 +489,14 @@ mainView msgMapper sharedState model =
                             , label = el [] (text "Shared Books")
                             }
                         )
-                    , showIf (Configuration.site == "LOCAL")
+                    ,
                         (Input.button (Style.activeButton (model.route == GroupsRoute))
                             { onPress = Just (NavigateTo GroupsRoute)
                             , label = el [] (text "Groups")
                             }
                         )
 
-                    , showIf (Configuration.site == "LOCAL" && sharedState.invitations /= [])
+                    , showIf (sharedState.invitations /= [])
                                             (Input.button (Style.activeButton (model.route == InvitationsRoute))
                                                 { onPress = Just (NavigateTo InvitationsRoute)
                                                 , label = el [] (text "Invitations")

@@ -112,7 +112,7 @@ invitationListView sharedState model =
 viewInvitation : Invitation -> Element Msg
 viewInvitation invitation =
     row [spacing 12] [
-      el [ Font.size 14] (text <| invitation.inviter ++ ": " ++ invitation.groupName)
+      el [ Font.size 14] (text <| invitation.inviter ++ "," ++ User.Invitation.statusAsString invitation.status ++ ": " ++ invitation.groupName)
       , acceptButton invitation
       , rejectButton invitation
      ]

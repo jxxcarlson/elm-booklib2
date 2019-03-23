@@ -27,8 +27,8 @@ type Status = Waiting | Accepted | Rejected | Undefined
 -- CODERS
 --
 
-statusAstring : Status -> String
-statusAstring status =
+statusAsString : Status -> String
+statusAsString status =
     case status of
         Waiting -> "Waiting"
         Accepted -> "Accepted"
@@ -52,7 +52,7 @@ encodeInvitation invitation =
       , ("inviter", Encode.string invitation.inviter)
       , ("group_name", Encode.string invitation.groupName)
       , ("group_id", Encode.int invitation.groupId)
-      , ("status", Encode.string (statusAstring invitation.status))
+      , ("status", Encode.string (statusAsString invitation.status))
       ]
 
 invitationDecoder : Decoder Invitation
