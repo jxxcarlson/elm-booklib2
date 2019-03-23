@@ -3,9 +3,6 @@ module User.Session exposing (authenticate, registerUser, updateUser)
 import Common.Utility as Utility
 import Configuration
 import Http
-import Json.Decode as Decode exposing (Decoder)
-import Json.Decode.Pipeline exposing (required)
-import Json.Encode as Encode
 import User.Coders
 import User.Types exposing (Msg(..), PublicUser, ReadingStat, User, UserRecord)
 

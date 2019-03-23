@@ -26,7 +26,14 @@ import Json.Decode.Pipeline exposing (required)
 import Json.Encode as Encode
 import SharedState exposing (SharedState, SharedStateUpdate(..))
 import User.Coders
-import User.Invitation exposing(Invitation, encodeInvitation, invitationDecoder, invitationsDecoder, Status(..))
+import User.Invitation exposing (Invitation, Status(..), encodeInvitation, invitationDecoder, invitationsDecoder)
+import User.Post as Post exposing (Post, PostRecord, encodePost, postListDecoder, postRecordDecoder)
+
+
+
+--
+-- MODEL
+--
 
 
 type alias Model =
@@ -43,6 +50,9 @@ type alias Model =
     , membersString : String
     , memberName : String
     , invitations : List Invitation
+    , posts : List Post
+    , newPostTitle : String
+    , newPostContent : String
     }
 
 
@@ -64,6 +74,16 @@ type AppState
     | ViewingGroup
     | ViewingBookList
     | ViewingBook
+    | InBlog BlogState
+
+
+type BlogState
+    = ViewingPosts
+    | MakingNewPost
+
+
+blogStates =
+    [ InBlog ViewingPosts, InBlog MakingNewPost ]
 
 
 init : Model
@@ -81,6 +101,9 @@ init =
     , membersString = ""
     , memberName = ""
     , invitations = []
+    , posts = []
+    , newPostTitle = ""
+    , newPostContent = ""
     }
 
 
@@ -115,6 +138,14 @@ type Msg
     | SendInvitation
     | MakeInvitation
     | GotInvitations (Result Http.Error (List Invitation))
+    | ReceivePosts (Result Http.Error (List Post))
+    | GetPosts
+    | NewPost
+    | InputNewPostTitle String
+    | InputNewPostContent String
+    | SubmitNewPost
+    | CancelNewPost
+    | PostCreated (Result Http.Error PostRecord)
 
 
 update : SharedState -> Msg -> Model -> ( Model, Cmd Msg, SharedStateUpdate )
@@ -257,40 +288,92 @@ update sharedState msg model =
             )
 
         GotInvitation (Ok _) ->
-            ( {model | message = "Processing invitation"}, Cmd.none, NoUpdate )
+            ( { model | message = "Processing invitation" }, Cmd.none, NoUpdate )
 
         GotInvitation (Err _) ->
-                    ( {model | message = "Error processing invitation"}, Cmd.none, NoUpdate )
+            ( { model | message = "Error processing invitation" }, Cmd.none, NoUpdate )
 
         InputMemberName str ->
-            ( {model | memberName = str}, Cmd.none, NoUpdate)
+            ( { model | memberName = str }, Cmd.none, NoUpdate )
 
         CancelInvitation ->
             case model.currentGroup of
-                Nothing -> ( {model | appState = Default}, Cmd.none, NoUpdate)
-                Just group -> ( {model | appState = Default}, getInvitations group.id, NoUpdate)
+                Nothing ->
+                    ( { model | appState = Default }, Cmd.none, NoUpdate )
+
+                Just group ->
+                    ( { model | appState = Default }, getInvitations group.id, NoUpdate )
 
         SendInvitation ->
             let
-                cmd = case (sharedState.currentUser, model.currentGroup) of
-                              (Just user, Just group) ->
-                                  case  makeInvitation model of
-                                      Nothing -> Cmd.none
-                                      Just invitation -> createInvitation invitation user.token
-                              (_, _) -> Cmd.none
+                cmd =
+                    case ( sharedState.currentUser, model.currentGroup ) of
+                        ( Just user, Just group ) ->
+                            case makeInvitation model of
+                                Nothing ->
+                                    Cmd.none
 
+                                Just invitation ->
+                                    createInvitation invitation user.token
 
+                        ( _, _ ) ->
+                            Cmd.none
             in
-              ( {model | message = "Sending invitation"}, cmd, NoUpdate)
+            ( { model | message = "Sending invitation" }, cmd, NoUpdate )
 
         MakeInvitation ->
-            ( {model | appState = MakingInvitation}, Cmd.none, NoUpdate)
+            ( { model | appState = MakingInvitation }, Cmd.none, NoUpdate )
 
         GotInvitations (Ok invitations) ->
-            ( {model | invitations  = List.filter (\i -> i.status == Waiting) invitations, message = "Got invitations"}, Cmd.none, NoUpdate)
+            ( { model | invitations = List.filter (\i -> i.status == Waiting) invitations, message = "Got invitations" }, Cmd.none, NoUpdate )
 
         GotInvitations (Err _) ->
-                    ( {model | message  = "Error getting invitations"}, Cmd.none, NoUpdate)
+            ( { model | message = "Error getting invitations" }, Cmd.none, NoUpdate )
+
+        GetPosts ->
+            case model.currentGroup of
+                Nothing ->
+                    ( model, Cmd.none, NoUpdate )
+
+                Just group ->
+                    ( model, getPosts group.id, NoUpdate )
+
+        ReceivePosts (Ok postList) ->
+            ( { model | posts = postList, appState = InBlog ViewingPosts }, Cmd.none, NoUpdate )
+
+        ReceivePosts (Err _) ->
+            ( { model | message = "Error retrieving posts" }, Cmd.none, NoUpdate )
+
+        NewPost ->
+            ( { model | appState = InBlog MakingNewPost }, Cmd.none, NoUpdate )
+
+        InputNewPostTitle str ->
+            ( { model | newPostTitle = str }, Cmd.none, NoUpdate )
+
+        InputNewPostContent str ->
+            ( { model | newPostContent = str }, Cmd.none, NoUpdate )
+
+        SubmitNewPost ->
+            case ( sharedState.currentUser, model.currentGroup ) of
+                ( Just user, Just group ) ->
+                    let
+                        newPost =
+                            { id = -1, title = model.newPostTitle, content = model.newPostContent, authorName = user.username, groupId = group.id, tags = [] }
+                    in
+                    ( { model | appState = InBlog ViewingPosts, posts = newPost :: model.posts }, createPost newPost user.token, NoUpdate )
+
+                ( _, _ ) ->
+                    ( { model | appState = InBlog ViewingPosts }, Cmd.none, NoUpdate )
+
+        CancelNewPost ->
+            ( { model | appState = InBlog ViewingPosts }, Cmd.none, NoUpdate )
+
+        PostCreated (Ok _) ->
+            ( { model | message = "Post created" }, Cmd.none, NoUpdate )
+
+        PostCreated (Err _) ->
+            ( { model | message = "Error creating post" }, Cmd.none, NoUpdate )
+
 
 getToken : SharedState -> String
 getToken sharedState =
@@ -398,10 +481,11 @@ getGroup model =
 
 view : SharedState -> Model -> Element Msg
 view sharedState model =
-    column [ width (px <| sharedState.windowWidth)
-      , height (px <| sharedState.windowHeight - 45  - windowInset)
-      , Background.color (Style.makeGrey 0.8)
-      ]
+    column
+        [ width (px <| sharedState.windowWidth)
+        , height (px <| sharedState.windowHeight - 45 - windowInset)
+        , Background.color (Style.makeGrey 0.8)
+        ]
         [ mainView sharedState model
         , footer sharedState model
         ]
@@ -410,17 +494,15 @@ view sharedState model =
 mainView sharedState model =
     row [ spacing 12, padding 20 ]
         [ groupListView sharedState model
+        , Utility.showIf (List.member model.appState blogStates) (viewPosts sharedState model)
+        , Utility.showIf (model.appState == InBlog MakingNewPost) (newPostPanel model)
         , Utility.showIf (model.appState == EditingGroup) (editGroupPanel model)
-        , Utility.showIf (List.member model.appState [Default, ViewingBookList, ViewingBook]) (viewGroup sharedState model model.currentGroup)
+        , Utility.showIf (List.member model.appState [ Default, ViewingBookList, ViewingBook ]) (viewGroup sharedState model model.currentGroup)
         , Utility.showIf (model.appState == CreatingGroup) (createGroupPanel model)
         , Utility.showIf (model.appState == MakingInvitation) (invitationPanel model)
-        , Utility.showIf (model.currentUserName /= Nothing && List.member model.appState [ViewingBookList, ViewingBook]) (bookListDisplay sharedState model)
-        , Utility.showIf (model.currentUserName /= Nothing && model.currentBook /= Nothing && model.appState == ViewingBook) (row [ padding 20, Border.width 1,  Background.color (Style.makeGrey 1.0) ] [ Common.Book.notesViewedAsMarkdown 70 "380px" (notesHeight sharedState) model.currentBook ])
+        , Utility.showIf (model.currentUserName /= Nothing && List.member model.appState [ ViewingBookList, ViewingBook ]) (bookListDisplay sharedState model)
+        , Utility.showIf (model.currentUserName /= Nothing && model.currentBook /= Nothing && model.appState == ViewingBook) (row [ padding 20, Border.width 1, Background.color (Style.makeGrey 1.0) ] [ Common.Book.notesViewedAsMarkdown 70 "380px" (notesHeight sharedState) model.currentBook ])
         ]
-
-
-inset =
-    20
 
 
 bookListDisplay : SharedState -> Model -> Element Msg
@@ -498,18 +580,18 @@ titleButton book maybeCurrentBook =
         }
 
 
-sendInvitationButton  =
+sendInvitationButton =
     Input.button Style.button
-            { onPress = Just SendInvitation
-            , label = (text "Send invitation")
-            }
+        { onPress = Just SendInvitation
+        , label = text "Send invitation"
+        }
 
-makeInvitationButton  =
+
+makeInvitationButton =
     Input.button Style.button
-            { onPress = Just MakeInvitation
-            , label = (text "New invitation")
-            }
-
+        { onPress = Just MakeInvitation
+        , label = text "New invitation"
+        }
 
 
 matchBookAndUserIds : SharedState -> Bool
@@ -531,11 +613,22 @@ matchBookAndUserIds sharedState =
 
 groupListView sharedState model =
     column [ spacing 12 ]
-        [ el [ Font.bold, paddingXY 0 0 ] (text "Groups")
+        [ row [ spacing 12 ]
+            [ el [ Font.bold, paddingXY 0 0 ] (text "Groups")
+            , case model.currentGroup of
+                Nothing ->
+                    Element.none
+
+                Just _ ->
+                    getPostsButton
+            ]
         , viewGroups sharedState model.currentGroup model.groupList
         ]
 
-windowInset = 10
+
+windowInset =
+    15
+
 
 viewGroups : SharedState -> Maybe Group -> List Group -> Element Msg
 viewGroups sharedState currentGroup groupList =
@@ -610,10 +703,10 @@ viewGroup sharedState model group_ =
                     (List.map viewInvitation model.invitations)
                 ]
 
+
 viewInvitation : Invitation -> Element Msg
 viewInvitation invitation =
-    el [ Font.size 14] (text invitation.invitee)
-
+    el [ Font.size 14 ] (text invitation.invitee)
 
 
 showMember : String -> Element Msg
@@ -640,9 +733,10 @@ highlightColor flag =
 footer : SharedState -> Model -> Element Msg
 footer sharedState model =
     row Style.footer
-        [ newGroupButton
-        , Utility.showIf (model.currentGroup /= Nothing) editGroupButton
-        , Utility.showIf (model.currentGroup /= Nothing) makeInvitationButton
+        [ Utility.showIf (not <| List.member model.appState blogStates) newGroupButton
+        , Utility.showIf (not <| List.member model.appState blogStates && model.currentGroup /= Nothing) editGroupButton
+        , Utility.showIf (not <| List.member model.appState blogStates && model.currentGroup /= Nothing) makeInvitationButton
+        , Utility.showIf (List.member model.appState blogStates) newPostButton
         ]
 
 
@@ -676,23 +770,26 @@ editGroupPanel model =
         [ el [ Font.size inputFontSize ] (text <| "Chair:: " ++ chairName model)
         , inputGroupName model
         , inputCochairName model
+
         -- , inputMembers model
         , inputBlurb model
         , row [ spacing 12 ] [ updateGroupButton, cancelEditGroupButton ]
         ]
 
+
 invitationPanel : Model -> Element Msg
 invitationPanel model =
     case model.currentGroup of
-        Nothing -> Element.none
-        Just group ->
-          column (editPanelStyle ++ [alignTop,  Background.color (Style.makeGrey 0.9)])
-            [ el [ Font.size inputFontSize ] (text <| "Group: " ++ group.name)
-            , inputMemberName model
-            , row [ spacing 12 ] [ sendInvitationButton, cancelInvitationButton ]
-            , el [Font.size 14] (text model.message)
-            ]
+        Nothing ->
+            Element.none
 
+        Just group ->
+            column (editPanelStyle ++ [ alignTop, Background.color (Style.makeGrey 0.9) ])
+                [ el [ Font.size inputFontSize ] (text <| "Group: " ++ group.name)
+                , inputMemberName model
+                , row [ spacing 12 ] [ sendInvitationButton, cancelInvitationButton ]
+                , el [ Font.size 14 ] (text model.message)
+                ]
 
 
 chairName : Model -> String
@@ -728,12 +825,14 @@ cancelCreateGroupButton =
         , label = el [ centerX ] (Element.text "Cancel")
         }
 
+
 cancelInvitationButton : Element Msg
 cancelInvitationButton =
     Input.button Style.button
         { onPress = Just CancelInvitation
         , label = el [ centerX ] (Element.text "Done")
         }
+
 
 editGroupButton : Element Msg
 editGroupButton =
@@ -781,13 +880,15 @@ inputGroupName model =
         , label = Input.labelAbove [ Font.size inputFontSize ] (text "Group name ")
         }
 
+
 inputMemberName model =
-   Input.text inputStyle
-           { text = model.memberName
-           , placeholder = Nothing
-           , onChange = InputMemberName
-           , label = Input.labelAbove [ Font.size inputFontSize ] (text "New member")
-           }
+    Input.text inputStyle
+        { text = model.memberName
+        , placeholder = Nothing
+        , onChange = InputMemberName
+        , label = Input.labelAbove [ Font.size inputFontSize ] (text "New member")
+        }
+
 
 inputCochairName model =
     Input.text inputStyle
@@ -955,23 +1056,136 @@ createInvitation invitation token =
 makeInvitation : Model -> Maybe Invitation
 makeInvitation model =
     case model.currentGroup of
-        Nothing -> Nothing
-        Just group ->
-            Just {
-               id = -1
-               , invitee = model.memberName
-               , inviter = group.chair
-               , groupName = group.name
-               , groupId = group.id
-               , status = Waiting
-            }
+        Nothing ->
+            Nothing
 
-getInvitations :  Int -> Cmd Msg
-getInvitations groupId  =
-      Http.get
+        Just group ->
+            Just
+                { id = -1
+                , invitee = model.memberName
+                , inviter = group.chair
+                , groupName = group.name
+                , groupId = group.id
+                , status = Waiting
+                }
+
+
+getInvitations : Int -> Cmd Msg
+getInvitations groupId =
+    Http.get
         { url = Configuration.backend ++ "/api/invitations?group=" ++ String.fromInt groupId
         , expect = Http.expectJson GotInvitations invitationsDecoder
         }
+
+
+
+--
+-- BLOG
+--
+
+
+getPosts : Int -> Cmd Msg
+getPosts groupId =
+    Http.get
+        { url = Configuration.backend ++ "/api/posts?group=" ++ String.fromInt groupId
+        , expect = Http.expectJson ReceivePosts postListDecoder
+        }
+
+
+createPost : Post -> String -> Cmd Msg
+createPost post token =
+    Http.request
+        { method = "Post"
+        , headers = [ Http.header "Authorization" ("Bearer " ++ token) ]
+        , url = Configuration.backend ++ "/api/posts"
+        , body = Http.jsonBody (encodePost post)
+        , expect = Http.expectJson PostCreated postRecordDecoder
+        , timeout = Nothing
+        , tracker = Nothing
+        }
+
+
+getPostsButton =
+    Input.button Style.button
+        { onPress = Just GetPosts
+        , label = Element.text "Blog"
+        }
+
+
+newPostButton =
+    Input.button Style.button
+        { onPress = Just NewPost
+        , label = Element.text "New post"
+        }
+
+
+submitPostButton =
+    Input.button Style.button
+        { onPress = Just SubmitNewPost
+        , label = Element.text "Submit"
+        }
+
+
+cancelNewPostButton =
+    Input.button Style.button
+        { onPress = Just CancelNewPost
+        , label = Element.text "Done"
+        }
+
+
+viewPosts : SharedState -> Model -> Element Msg
+viewPosts sharedState model =
+    column [ spacing 12, alignTop, height (px <| sharedState.windowHeight - 120 - windowInset) ]
+        [ el [ Font.size 18, Font.bold ] (text "Posts")
+        , column
+            [ spacing 18
+            , width (px 440)
+            , height (px <| sharedState.windowHeight - 150 - windowInset)
+            , Border.width 1
+            , paddingXY 25 10
+            , scrollbarY
+            ]
+            (List.map viewPost model.posts)
+        ]
+
+
+viewPost : Post -> Element Msg
+viewPost post =
+    column [ spacing 8, width (px 375), Border.width 1, Background.color (Style.makeGrey 0.9), padding 12 ]
+        [ el [ Font.bold, Font.size 16 ] (text post.title)
+        , el [ Font.size 14 ] (text <| "by " ++ post.authorName)
+        , row [ paddingXY 8 8 ] [ Common.Book.textViewedAsMarkdown 70 "300px" "100px" post.content ]
+        ]
+
+
+newPostPanel model =
+    column [ spacing 12, alignTop, padding 8, Border.width 1, Background.color (Style.makeGrey 0.9) ]
+        [ el [ Font.bold, Font.size 16 ] (text "New Post")
+        , inputNewPostTitle model
+        , inputNewPost model
+        , row [ spacing 12 ] [ submitPostButton, cancelNewPostButton ]
+        ]
+
+
+inputNewPostTitle model =
+    Input.text inputStyle
+        { text = model.newPostTitle
+        , placeholder = Nothing
+        , onChange = InputNewPostTitle
+        , label = Input.labelAbove [ Font.size inputFontSize ] (text "Title")
+        }
+
+
+inputNewPost model =
+    Input.multiline (inputTextAreaStyle 100)
+        { onChange = InputNewPostContent
+        , text = model.newPostContent
+        , placeholder = Nothing
+        , label = Input.labelAbove [ Font.size inputFontSize ] (text "Content")
+        , spellcheck = False
+        }
+
+
 
 --
 -- HELPERS
