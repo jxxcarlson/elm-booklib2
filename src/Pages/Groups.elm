@@ -61,6 +61,9 @@ type AppState
     | CreatingGroup
     | EditingGroup
     | MakingInvitation
+    | ViewingGroup
+    | ViewingBookList
+    | ViewingBook
 
 
 init : Model
@@ -108,7 +111,7 @@ type Msg
     | SetCurrentBook Book
     | GotInvitation (Result Http.Error Invitation)
     | InputMemberName String
-    | Cancel
+    | CancelInvitation
     | SendInvitation
     | MakeInvitation
     | GotInvitations (Result Http.Error (List Invitation))
@@ -137,7 +140,7 @@ update sharedState msg model =
             ( model, Cmd.none, NoUpdate )
 
         SetCurrentGroup group ->
-            ( { model | currentGroup = Just group }, Cmd.none, NoUpdate )
+            ( { model | currentGroup = Just group, appState = Default }, getInvitations group.id, NoUpdate )
 
         InputGroupName str ->
             ( { model | groupName = str }, Cmd.none, NoUpdate )
@@ -219,7 +222,7 @@ update sharedState msg model =
             ( { model | appState = Default, message = "Error updating group" }, Cmd.none, NoUpdate )
 
         ViewUserBookList userName ->
-            ( { model | currentUserName = Just userName }
+            ( { model | currentUserName = Just userName, appState = ViewingBookList }
             , getSharedBooks userName (getToken sharedState)
             , NoUpdate
             )
@@ -248,7 +251,7 @@ update sharedState msg model =
             ( { model | message = "Error receiving book list" }, Cmd.none, SharedState.UpdateCurrentBook Nothing )
 
         SetCurrentBook book ->
-            ( { model | currentBook = Just book }
+            ( { model | currentBook = Just book, appState = ViewingBook }
             , Cmd.none
             , NoUpdate
             )
@@ -262,8 +265,10 @@ update sharedState msg model =
         InputMemberName str ->
             ( {model | memberName = str}, Cmd.none, NoUpdate)
 
-        Cancel ->
-            ( {model | appState = Default}, Cmd.none, NoUpdate)
+        CancelInvitation ->
+            case model.currentGroup of
+                Nothing -> ( {model | appState = Default}, Cmd.none, NoUpdate)
+                Just group -> ( {model | appState = Default}, getInvitations group.id, NoUpdate)
 
         SendInvitation ->
             let
@@ -393,7 +398,7 @@ getGroup model =
 
 view : SharedState -> Model -> Element Msg
 view sharedState model =
-    column [ width (px <| sharedState.windowWidth), height (px <| sharedState.windowHeight - 45) ]
+    column [ width (px <| sharedState.windowWidth), height (px <| sharedState.windowHeight - 45  - windowInset) ]
         [ mainView sharedState model
         , footer sharedState model
         ]
@@ -403,11 +408,11 @@ mainView sharedState model =
     row [ spacing 12, padding 20 ]
         [ groupListView sharedState model
         , Utility.showIf (model.appState == EditingGroup) (editGroupPanel model)
-        , Utility.showIf (model.appState == Default) (viewGroup sharedState model model.currentGroup)
+        , Utility.showIf (List.member model.appState [Default, ViewingBookList, ViewingBook]) (viewGroup sharedState model model.currentGroup)
         , Utility.showIf (model.appState == CreatingGroup) (createGroupPanel model)
         , Utility.showIf (model.appState == MakingInvitation) (invitationPanel model)
-        , Utility.showIf (model.currentUserName /= Nothing && model.appState == Default) (bookListDisplay sharedState model)
-        , Utility.showIf (model.currentUserName /= Nothing && model.appState == Default && model.currentBook /= Nothing) (row [ padding 20, Border.width 1 ] [ Common.Book.notesViewedAsMarkdown 70 "380px" (notesHeight sharedState) model.currentBook ])
+        , Utility.showIf (model.currentUserName /= Nothing && List.member model.appState [ViewingBookList, ViewingBook]) (bookListDisplay sharedState model)
+        , Utility.showIf (model.currentUserName /= Nothing && model.currentBook /= Nothing && model.appState == ViewingBook) (row [ padding 20, Border.width 1 ] [ Common.Book.notesViewedAsMarkdown 70 "380px" (notesHeight sharedState) model.currentBook ])
         ]
 
 
@@ -423,7 +428,7 @@ bookListDisplay sharedState model =
 
 
 notesHeight sharedState =
-    String.fromInt (sharedState.windowHeight - 178) ++ "px"
+    String.fromInt (sharedState.windowHeight - 178 - windowInset) ++ "px"
 
 
 bookListTable : SharedState -> Model -> Element Msg
@@ -431,7 +436,7 @@ bookListTable sharedState model =
     Element.column
         [ width fill
         , clipY
-        , height (px (sharedState.windowHeight - 115))
+        , height (px (sharedState.windowHeight - 115 - windowInset))
         , spacing 10
         , padding 10
         , Background.color Style.charcoal
@@ -527,12 +532,13 @@ groupListView sharedState model =
         , viewGroups sharedState model.currentGroup model.groupList
         ]
 
+windowInset = 10
 
 viewGroups : SharedState -> Maybe Group -> List Group -> Element Msg
 viewGroups sharedState currentGroup groupList =
     column
         [ width (px 200)
-        , height (px (sharedState.windowHeight - 150))
+        , height (px (sharedState.windowHeight - 150 - windowInset))
         , spacing 10
         , Background.color (Style.makeGrey 0.4)
         , Font.size inputFontSize
@@ -571,7 +577,7 @@ viewGroup sharedState model group_ =
             Element.none
 
         Just group ->
-            column [ width (px 300), height (px (sharedState.windowHeight - 115)), spacing 12, Border.width 1, Background.color (Style.makeGrey 0.9), paddingXY 12 12, alignTop ]
+            column [ width (px 300), height (px (sharedState.windowHeight - 115 - windowInset)), spacing 12, Border.width 1, Background.color (Style.makeGrey 0.9), paddingXY 12 12, alignTop ]
                 [ el [ Font.bold ] (text group.name)
                 , el [ Font.size inputFontSize ] (text <| "Chair: " ++ group.chair)
                 , el [ Font.size inputFontSize ] (text <| "Co-chair: " ++ group.cochair)
@@ -580,7 +586,7 @@ viewGroup sharedState model group_ =
                 , el [ Font.size inputFontSize, Font.bold ] (text <| "Members")
                 , column
                     [ spacing 8
-                    , height (px (scale 0.5 (sharedState.windowHeight - 190)))
+                    , height (px (scale 0.5 (sharedState.windowHeight - 190 - windowInset)))
                     , width (px 250)
                     , centerX
                     , scrollbarY
@@ -591,7 +597,7 @@ viewGroup sharedState model group_ =
                 , el [ Font.size inputFontSize, Font.bold ] (text <| "Invitations")
                 , column
                     [ spacing 8
-                    , height (px (scale 0.4 (sharedState.windowHeight - 190)))
+                    , height (px (scale 0.4 (sharedState.windowHeight - 190 - windowInset)))
                     , width (px 250)
                     , centerX
                     , scrollbarY
@@ -682,7 +688,7 @@ invitationPanel model =
           column (editPanelStyle ++ [alignTop])
             [ el [ Font.size inputFontSize ] (text <| "Group: " ++ group.name)
             , inputMemberName model
-            , row [ spacing 12 ] [ sendInvitationButton, cancelButton ]
+            , row [ spacing 12 ] [ sendInvitationButton, cancelInvitationButton ]
             , el [Font.size 14] (text model.message)
             ]
 
@@ -721,11 +727,11 @@ cancelCreateGroupButton =
         , label = el [ centerX ] (Element.text "Cancel")
         }
 
-cancelButton : Element Msg
-cancelButton =
+cancelInvitationButton : Element Msg
+cancelInvitationButton =
     Input.button Style.button
-        { onPress = Just Cancel
-        , label = el [ centerX ] (Element.text "Cancel")
+        { onPress = Just CancelInvitation
+        , label = el [ centerX ] (Element.text "Done")
         }
 
 editGroupButton : Element Msg
@@ -958,10 +964,10 @@ makeInvitation model =
                , status = Waiting
             }
 
-getInvitations :  Cmd Msg
-getInvitations  =
+getInvitations :  Int -> Cmd Msg
+getInvitations groupId  =
       Http.get
-        { url = Configuration.backend ++ "/api/invitations"
+        { url = Configuration.backend ++ "/api/invitations?group=" ++ String.fromInt groupId
         , expect = Http.expectJson GotInvitations invitationsDecoder
         }
 

@@ -166,10 +166,8 @@ update sharedState msg model =
                         GroupsRoute ->
                             case sharedState.currentUser of
                                 Nothing -> Cmd.none
-                                Just user ->  Cmd.batch [
-                                     Groups.getGroupListForUser user.username |> Cmd.map GroupsMsg
-                                     ,  Groups.getInvitations |> Cmd.map GroupsMsg
-                                  ]
+                                Just user ->   Groups.getGroupListForUser user.username |> Cmd.map GroupsMsg
+
 
                         AdminRoute ->
                             Cmd.batch [
