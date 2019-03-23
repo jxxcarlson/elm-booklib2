@@ -694,18 +694,6 @@ getInvitations invitee  =
         }
 
 
---rejectInvitation : Invitation -> String -> Cmd Msg
---rejectInvitation invitation token =
---    Http.request
---        { method = "Postt"
---        , headers = [ Http.header "Authorization" ("Bearer " ++ token) ]
---        , url = Configuration.backend ++ "/api/rejectinvitation/" ++ String.fromInt invitation.id
---        , body = Http.jsonBody (User.Coders.userRecordEncoder user)
---        , expect = Http.expectJson ReceiveUpdateUser User.Coders.statusDecoder
---        , timeout = Nothing
---        , tracker = Nothing
---        }
-
 --
 -- PASSWORD RESET
 --

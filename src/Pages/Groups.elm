@@ -958,7 +958,8 @@ makeInvitation model =
         Nothing -> Nothing
         Just group ->
             Just {
-               invitee = model.memberName
+               id = -1
+               , invitee = model.memberName
                , inviter = group.chair
                , groupName = group.name
                , groupId = group.id

@@ -7,7 +7,8 @@ import Http
 import Configuration
 
 type alias Invitation = {
-    invitee : String
+    id : Int
+    , invitee : String
     , inviter : String
     , groupName : String
     , groupId : Int
@@ -46,7 +47,8 @@ stringToStatus str =
 encodeInvitation : Invitation -> Encode.Value
 encodeInvitation invitation =
     Encode.object
-      [ ("invitee", Encode.string invitation.invitee)
+      [ ("id", Encode.int invitation.id)
+      , ("invitee", Encode.string invitation.invitee)
       , ("inviter", Encode.string invitation.inviter)
       , ("group_name", Encode.string invitation.groupName)
       , ("group_id", Encode.int invitation.groupId)
@@ -56,6 +58,7 @@ encodeInvitation invitation =
 invitationDecoder : Decoder Invitation
 invitationDecoder =
     Decode.succeed Invitation
+      |> required "id" Decode.int
       |> required "invitee" Decode.string
       |> required "inviter" Decode.string
       |> required "group_name" Decode.string
@@ -67,3 +70,7 @@ invitationDecoder =
 invitationsDecoder : Decoder (List Invitation)
 invitationsDecoder =
     Decode.field "data" (Decode.list invitationDecoder)
+
+replyDecoder : Decoder String
+replyDecoder =
+    Decode.field "reply" Decode.string
