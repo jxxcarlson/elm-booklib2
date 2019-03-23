@@ -64,3 +64,6 @@ invitationDecoder =
 
 
 
+invitationsDecoder : Decoder (List Invitation)
+invitationsDecoder =
+    Decode.field "data" (Decode.list invitationDecoder)

@@ -3,6 +3,7 @@ module Pages.Groups exposing
     , Msg(..)
     , getGroupList
     , getGroupListForUser
+    , getInvitations
     , init
     , update
     , view
@@ -25,7 +26,7 @@ import Json.Decode.Pipeline exposing (required)
 import Json.Encode as Encode
 import SharedState exposing (SharedState, SharedStateUpdate(..))
 import User.Coders
-import User.Invitation exposing(Invitation, encodeInvitation, invitationDecoder, Status(..))
+import User.Invitation exposing(Invitation, encodeInvitation, invitationDecoder, invitationsDecoder, Status(..))
 
 
 type alias Model =
@@ -41,6 +42,7 @@ type alias Model =
     , blurb : String
     , membersString : String
     , memberName : String
+    , invitations : List Invitation
     }
 
 
@@ -75,6 +77,7 @@ init =
     , blurb = ""
     , membersString = ""
     , memberName = ""
+    , invitations = []
     }
 
 
@@ -108,6 +111,7 @@ type Msg
     | Cancel
     | SendInvitation
     | MakeInvitation
+    | GotInvitations (Result Http.Error (List Invitation))
 
 
 update : SharedState -> Msg -> Model -> ( Model, Cmd Msg, SharedStateUpdate )
@@ -276,6 +280,12 @@ update sharedState msg model =
 
         MakeInvitation ->
             ( {model | appState = MakingInvitation}, Cmd.none, NoUpdate)
+
+        GotInvitations (Ok invitations) ->
+            ( {model | invitations  = invitations, message = "Got invitations"}, Cmd.none, NoUpdate)
+
+        GotInvitations (Err _) ->
+                    ( {model | message  = "Error getting invitations"}, Cmd.none, NoUpdate)
 
 getToken : SharedState -> String
 getToken sharedState =
@@ -570,7 +580,7 @@ viewGroup sharedState model group_ =
                 , el [ Font.size inputFontSize, Font.bold ] (text <| "Members")
                 , column
                     [ spacing 8
-                    , height (px (sharedState.windowHeight - 190))
+                    , height (px (scale 0.5 (sharedState.windowHeight - 190)))
                     , width (px 250)
                     , centerX
                     , scrollbarY
@@ -578,8 +588,26 @@ viewGroup sharedState model group_ =
                     , padding 8
                     ]
                     (List.map (memberButton model) group.members)
+                , el [ Font.size inputFontSize, Font.bold ] (text <| "Invitations")
+                , column
+                    [ spacing 8
+                    , height (px (scale 0.4 (sharedState.windowHeight - 190)))
+                    , width (px 250)
+                    , centerX
+                    , scrollbarY
+                    , Border.width 1
+                    , padding 8
+                    ]
+                    (List.map viewInvitation model.invitations)
                 ]
 
+viewInvitation : Invitation -> Element Msg
+viewInvitation invitation =
+    el [ Font.size 14] (text invitation.invitee)
+
+scale : Float -> Int -> Int
+scale factor k =
+    round <| factor * (toFloat k)
 
 showMember : String -> Element Msg
 showMember username =
@@ -909,7 +937,7 @@ createInvitation invitation token =
     Http.request
         { method = "Post"
         , headers = [ Http.header "Authorization" ("Bearer " ++ token) ]
-        , url = Configuration.backend ++ "/api/groups/invite"
+        , url = Configuration.backend ++ "/api/invite"
         , body = Http.jsonBody (encodeInvitation invitation)
         , expect = Http.expectJson GotInvitation invitationDecoder
         , timeout = Nothing
@@ -930,7 +958,12 @@ makeInvitation model =
                , status = Waiting
             }
 
-
+getInvitations :  Cmd Msg
+getInvitations  =
+      Http.get
+        { url = Configuration.backend ++ "/api/invitations"
+        , expect = Http.expectJson GotInvitations invitationsDecoder
+        }
 
 --
 -- HELPERS
