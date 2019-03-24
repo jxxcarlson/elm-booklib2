@@ -12,6 +12,7 @@ type alias Post =
     , authorName : String
     , groupId : Int
     , tags : List String
+    , creationDate : String
     }
 
 
@@ -33,6 +34,7 @@ postDecoder =
         |> required "author_name" Decode.string
         |> required "group_id" Decode.int
         |> required "tags" (Decode.list Decode.string)
+        |> required "creation_date" Decode.string
 
 
 postRecordDecoder : Decoder PostRecord

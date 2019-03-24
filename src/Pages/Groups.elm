@@ -51,6 +51,7 @@ type alias Model =
     , memberName : String
     , invitations : List Invitation
     , posts : List Post
+    , currentPost : Maybe Post
     , newPostTitle : String
     , newPostContent : String
     }
@@ -64,6 +65,10 @@ type alias Group =
     , blurb : String
     , members : List String
     }
+
+
+
+-- APPSTATE
 
 
 type AppState
@@ -80,10 +85,12 @@ type AppState
 type BlogState
     = ViewingPosts
     | MakingNewPost
+    | PostSelected
+    | EditingPost
 
 
 blogStates =
-    [ InBlog ViewingPosts, InBlog MakingNewPost ]
+    [ InBlog ViewingPosts, InBlog MakingNewPost, InBlog PostSelected, InBlog EditingPost ]
 
 
 init : Model
@@ -102,6 +109,7 @@ init =
     , memberName = ""
     , invitations = []
     , posts = []
+    , currentPost = Nothing
     , newPostTitle = ""
     , newPostContent = ""
     }
@@ -146,6 +154,12 @@ type Msg
     | SubmitNewPost
     | CancelNewPost
     | PostCreated (Result Http.Error PostRecord)
+    | EditCurrentPost Post
+    | DeleteCurrentPost Post
+    | SelectPost Post
+    | UpdatePost
+    | CancelEditingPost
+    | PostUpdated (Result Http.Error PostRecord)
 
 
 update : SharedState -> Msg -> Model -> ( Model, Cmd Msg, SharedStateUpdate )
@@ -358,7 +372,7 @@ update sharedState msg model =
                 ( Just user, Just group ) ->
                     let
                         newPost =
-                            { id = -1, title = model.newPostTitle, content = model.newPostContent, authorName = user.username, groupId = group.id, tags = [] }
+                            { id = -1, title = model.newPostTitle, content = model.newPostContent, authorName = user.username, groupId = group.id, tags = [], creationDate = "null" }
                     in
                     ( { model | appState = InBlog ViewingPosts, posts = newPost :: model.posts }, createPost newPost user.token, NoUpdate )
 
@@ -373,6 +387,43 @@ update sharedState msg model =
 
         PostCreated (Err _) ->
             ( { model | message = "Error creating post" }, Cmd.none, NoUpdate )
+
+        EditCurrentPost post ->
+            ( { model | appState = InBlog EditingPost, newPostTitle = post.title, newPostContent = post.content }, Cmd.none, NoUpdate )
+
+        DeleteCurrentPost post ->
+            ( model, Cmd.none, NoUpdate )
+
+        SelectPost post ->
+            ( { model | currentPost = Just post, appState = InBlog PostSelected }, Cmd.none, NoUpdate )
+
+        UpdatePost ->
+            case model.currentPost of
+                Nothing ->
+                    ( model, Cmd.none, NoUpdate )
+
+                Just post ->
+                    let
+                        updatedPost =
+                            { post | title = model.newPostTitle, content = model.newPostContent }
+                    in
+                    ( { model
+                        | appState = InBlog PostSelected
+                        , currentPost = Just updatedPost
+                        , posts = Utility.listUpdateIf (\p -> p.id == updatedPost.id) (\p -> updatedPost) model.posts
+                      }
+                    , updatePost updatedPost "token"
+                    , NoUpdate
+                    )
+
+        CancelEditingPost ->
+            ( { model | appState = InBlog PostSelected }, Cmd.none, NoUpdate )
+
+        PostUpdated (Ok post) ->
+            ( { model | message = "Post updatedated" }, Cmd.none, NoUpdate )
+
+        PostUpdated (Err err) ->
+            ( { model | message = "Error updating post" }, Cmd.none, NoUpdate )
 
 
 getToken : SharedState -> String
@@ -495,13 +546,18 @@ mainView sharedState model =
     row [ spacing 12, padding 20 ]
         [ groupListView sharedState model
         , Utility.showIf (List.member model.appState blogStates) (viewPosts sharedState model)
+        , Utility.showIf (model.appState == InBlog PostSelected) (viewPostContent sharedState model.currentPost)
+        , Utility.showIf (model.appState == InBlog EditingPost) (editPostPanel model)
         , Utility.showIf (model.appState == InBlog MakingNewPost) (newPostPanel model)
         , Utility.showIf (model.appState == EditingGroup) (editGroupPanel model)
         , Utility.showIf (List.member model.appState [ Default, ViewingBookList, ViewingBook ]) (viewGroup sharedState model model.currentGroup)
         , Utility.showIf (model.appState == CreatingGroup) (createGroupPanel model)
         , Utility.showIf (model.appState == MakingInvitation) (invitationPanel model)
         , Utility.showIf (model.currentUserName /= Nothing && List.member model.appState [ ViewingBookList, ViewingBook ]) (bookListDisplay sharedState model)
-        , Utility.showIf (model.currentUserName /= Nothing && model.currentBook /= Nothing && model.appState == ViewingBook) (row [ padding 20, Border.width 1, Background.color (Style.makeGrey 1.0) ] [ Common.Book.notesViewedAsMarkdown 70 "380px" (notesHeight sharedState) model.currentBook ])
+        , Utility.showIf (model.currentUserName /= Nothing && model.currentBook /= Nothing && model.appState == ViewingBook)
+            (row [ padding 20, Border.width 1, Background.color (Style.makeGrey 1.0) ]
+                [ Common.Book.notesViewedAsMarkdown 70 "380px" (notesHeight sharedState) model.currentBook ]
+            )
         ]
 
 
@@ -865,10 +921,10 @@ inputStyle =
     ]
 
 
-inputTextAreaStyle h =
-    [ width (px 300)
+inputTextAreaStyle w h f =
+    [ width (px w)
     , height (px h)
-    , Font.size inputFontSize
+    , Font.size f
     ]
 
 
@@ -909,7 +965,7 @@ inputMembers1 model =
 
 
 inputMembers model =
-    Input.multiline (inputTextAreaStyle 100)
+    Input.multiline (inputTextAreaStyle 300 100 14)
         { onChange = InputMembers
         , text = model.membersString
         , placeholder = Nothing
@@ -919,7 +975,7 @@ inputMembers model =
 
 
 inputBlurb model =
-    Input.multiline (inputTextAreaStyle 100)
+    Input.multiline (inputTextAreaStyle 300 100 14)
         { onChange = InputBlurb
         , text = model.blurb
         , placeholder = Nothing
@@ -1105,6 +1161,18 @@ createPost post token =
         }
 
 
+updatePost post token =
+    Http.request
+        { method = "Put"
+        , headers = [ Http.header "Authorization" ("Bearer " ++ token) ]
+        , url = Configuration.backend ++ "/api/posts/" ++ String.fromInt post.id
+        , body = Http.jsonBody (encodePost post)
+        , expect = Http.expectJson PostUpdated postRecordDecoder
+        , timeout = Nothing
+        , tracker = Nothing
+        }
+
+
 getPostsButton =
     Input.button Style.button
         { onPress = Just GetPosts
@@ -1115,19 +1183,43 @@ getPostsButton =
 newPostButton =
     Input.button Style.button
         { onPress = Just NewPost
-        , label = Element.text "New post"
+        , label = Element.text "New"
+        }
+
+
+editPostButton : Post -> Element Msg
+editPostButton post =
+    Input.button Style.smallButton
+        { onPress = Just (EditCurrentPost post)
+        , label = el [ Font.size 12 ] (Element.text "Edit")
+        }
+
+
+deletetPostButton : Post -> Element Msg
+deletetPostButton post =
+    Input.button Style.smallButton
+        { onPress = Just (DeleteCurrentPost post)
+        , label = el [ Font.size 12 ] (Element.text "Delete")
+        }
+
+
+selectPostButton : Post -> Element Msg
+selectPostButton post =
+    Input.button (Style.smallButton ++ [ alignRight ])
+        { onPress = Just (SelectPost post)
+        , label = el [ Font.size 12 ] (Element.text "Read")
         }
 
 
 submitPostButton =
-    Input.button Style.button
+    Input.button (Style.smallButton ++ [ Font.size 12 ])
         { onPress = Just SubmitNewPost
         , label = Element.text "Submit"
         }
 
 
 cancelNewPostButton =
-    Input.button Style.button
+    Input.button (Style.smallButton ++ [ Font.size 12 ])
         { onPress = Just CancelNewPost
         , label = Element.text "Done"
         }
@@ -1135,27 +1227,56 @@ cancelNewPostButton =
 
 viewPosts : SharedState -> Model -> Element Msg
 viewPosts sharedState model =
-    column [ spacing 12, alignTop, height (px <| sharedState.windowHeight - 120 - windowInset) ]
-        [ el [ Font.size 18, Font.bold ] (text "Posts")
+    column [ spacing 12, alignTop, height (px <| sharedState.windowHeight - 110 - windowInset) ]
+        [ row [ spacing 12 ]
+            [ el [ Font.size 18, Font.bold ] (text "Posts")
+            , newPostButton
+            ]
         , column
             [ spacing 18
-            , width (px 440)
+            , width (px 300)
             , height (px <| sharedState.windowHeight - 150 - windowInset)
             , Border.width 1
-            , paddingXY 25 10
+            , paddingXY 10 10
+            , Background.color (Style.makeGrey 0.4)
             , scrollbarY
             ]
-            (List.map viewPost model.posts)
+            (List.map (viewPost sharedState) model.posts)
         ]
 
 
-viewPost : Post -> Element Msg
-viewPost post =
-    column [ spacing 8, width (px 375), Border.width 1, Background.color (Style.makeGrey 0.9), padding 12 ]
-        [ el [ Font.bold, Font.size 16 ] (text post.title)
-        , el [ Font.size 14 ] (text <| "by " ++ post.authorName)
-        , row [ paddingXY 8 8 ] [ Common.Book.textViewedAsMarkdown 70 "300px" "100px" post.content ]
+viewPost : SharedState -> Post -> Element Msg
+viewPost sharedState post =
+    column [ spacing 8, width (px 280), Border.width 1, Background.color (Style.makeGrey 0.9), padding 12 ]
+        [ row [ spacing 12 ]
+            [ el [ Font.bold, Font.size 16 ] (text post.title)
+            , selectPostButton post
+            ]
+        , el [ Font.size 14 ] (text <| "posted by " ++ post.authorName ++ " on " ++ post.creationDate)
         ]
+
+
+viewPostContent : SharedState -> Maybe Post -> Element Msg
+viewPostContent sharedState maybePost =
+    case maybePost of
+        Nothing ->
+            Element.none
+
+        Just post ->
+            column [ alignTop, spacing 8, width (px 470), Border.width 1, Background.color (Style.makeGrey 0.9), paddingXY 24 12 ]
+                [ row [ spacing 12 ]
+                    [ el [ Font.bold, Font.size 16 ] (text post.title)
+                    ]
+                , el [ Font.size 14 ] (text <| "posted by " ++ post.authorName)
+                , row [ Border.width 1 ] [ Common.Book.textViewedAsMarkdown 70 "400px" "515px" post.content ]
+                , Utility.showIf (Just post.authorName == Maybe.map .username sharedState.currentUser)
+                    (row [ spacing 12 ]
+                        [ editPostButton post
+
+                        -- , deletetPostButton post
+                        ]
+                    )
+                ]
 
 
 newPostPanel model =
@@ -1165,6 +1286,35 @@ newPostPanel model =
         , inputNewPost model
         , row [ spacing 12 ] [ submitPostButton, cancelNewPostButton ]
         ]
+
+
+editPostPanel model =
+    case model.currentPost of
+        Nothing ->
+            Element.none
+
+        Just post ->
+            column [ alignTop, spacing 8, width (px 470), Border.width 1, Background.color (Style.makeGrey 0.9), paddingXY 24 12 ]
+                [ el [ Font.bold, Font.size 16 ] (text "Edit Post")
+                , inputNewPostTitle model
+                , inputNewPost model
+                , row [ spacing 12 ] [ submitEditedPostButton, cancelEditPostButton ]
+                ]
+
+
+submitEditedPostButton : Element Msg
+submitEditedPostButton =
+    Input.button (Style.smallButton ++ [ Font.size 12 ])
+        { onPress = Just UpdatePost
+        , label = Element.text "Update"
+        }
+
+
+cancelEditPostButton =
+    Input.button (Style.smallButton ++ [ Font.size 12 ])
+        { onPress = Just CancelEditingPost
+        , label = Element.text "Cancel"
+        }
 
 
 inputNewPostTitle model =
@@ -1177,7 +1327,7 @@ inputNewPostTitle model =
 
 
 inputNewPost model =
-    Input.multiline (inputTextAreaStyle 100)
+    Input.multiline (inputTextAreaStyle 400 480 12)
         { onChange = InputNewPostContent
         , text = model.newPostContent
         , placeholder = Nothing
