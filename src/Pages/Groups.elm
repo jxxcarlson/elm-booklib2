@@ -54,6 +54,7 @@ type alias Model =
     , currentPost : Maybe Post
     , newPostTitle : String
     , newPostContent : String
+    , deletePostState : DeletePostState
     }
 
 
@@ -89,6 +90,11 @@ type BlogState
     | EditingPost
 
 
+type DeletePostState
+    = ReadyToDeletePost
+    | ArmedToDeletePost
+
+
 blogStates =
     [ InBlog ViewingPosts, InBlog MakingNewPost, InBlog PostSelected, InBlog EditingPost ]
 
@@ -112,6 +118,7 @@ init =
     , currentPost = Nothing
     , newPostTitle = ""
     , newPostContent = ""
+    , deletePostState = ReadyToDeletePost
     }
 
 
@@ -160,6 +167,7 @@ type Msg
     | UpdatePost
     | CancelEditingPost
     | PostUpdated (Result Http.Error PostRecord)
+    | ArmeToDeletePost
 
 
 update : SharedState -> Msg -> Model -> ( Model, Cmd Msg, SharedStateUpdate )
@@ -392,7 +400,19 @@ update sharedState msg model =
             ( { model | appState = InBlog EditingPost, newPostTitle = post.title, newPostContent = post.content }, Cmd.none, NoUpdate )
 
         DeleteCurrentPost post ->
-            ( model, Cmd.none, NoUpdate )
+            case sharedState.currentUser of
+                Nothing ->
+                    ( model, Cmd.none, NoUpdate )
+
+                Just user ->
+                    ( { model
+                        | appState = InBlog ViewingPosts
+                        , posts = List.filter (\p -> p.id /= post.id) model.posts
+                        , currentPost = Nothing
+                      }
+                    , deletePost post user.token
+                    , NoUpdate
+                    )
 
         SelectPost post ->
             ( { model | currentPost = Just post, appState = InBlog PostSelected }, Cmd.none, NoUpdate )
@@ -424,6 +444,9 @@ update sharedState msg model =
 
         PostUpdated (Err err) ->
             ( { model | message = "Error updating post" }, Cmd.none, NoUpdate )
+
+        ArmeToDeletePost ->
+            ( { model | deletePostState = ArmedToDeletePost }, Cmd.none, NoUpdate )
 
 
 getToken : SharedState -> String
@@ -546,7 +569,7 @@ mainView sharedState model =
     row [ spacing 12, padding 20 ]
         [ groupListView sharedState model
         , Utility.showIf (List.member model.appState blogStates) (viewPosts sharedState model)
-        , Utility.showIf (model.appState == InBlog PostSelected) (viewPostContent sharedState model.currentPost)
+        , Utility.showIf (model.appState == InBlog PostSelected) (viewPostContent sharedState model model.currentPost)
         , Utility.showIf (model.appState == InBlog EditingPost) (editPostPanel sharedState model)
         , Utility.showIf (model.appState == InBlog MakingNewPost) (newPostPanel sharedState model)
         , Utility.showIf (model.appState == EditingGroup) (editGroupPanel model)
@@ -1173,6 +1196,18 @@ updatePost post token =
         }
 
 
+deletePost post token =
+    Http.request
+        { method = "Delete"
+        , headers = [ Http.header "Authorization" ("Bearer " ++ token) ]
+        , url = Configuration.backend ++ "/api/posts/" ++ String.fromInt post.id
+        , body = Http.jsonBody (encodePost post)
+        , expect = Http.expectJson PostUpdated postRecordDecoder
+        , timeout = Nothing
+        , tracker = Nothing
+        }
+
+
 getPostsButton =
     Input.button Style.button
         { onPress = Just GetPosts
@@ -1195,12 +1230,20 @@ editPostButton post =
         }
 
 
-deletetPostButton : Post -> Element Msg
-deletetPostButton post =
-    Input.button Style.smallButton
-        { onPress = Just (DeleteCurrentPost post)
-        , label = el [ Font.size 12 ] (Element.text "Delete")
-        }
+deletePostButton : Model -> Post -> Element Msg
+deletePostButton model post =
+    case model.deletePostState of
+        ReadyToDeletePost ->
+            Input.button Style.smallButton
+                { onPress = Just ArmeToDeletePost
+                , label = el [ Font.size 12 ] (Element.text "Delete")
+                }
+
+        ArmedToDeletePost ->
+            Input.button Style.smallButtonRed
+                { onPress = Just (DeleteCurrentPost post)
+                , label = el [ Font.size 12 ] (Element.text "Really Delete?")
+                }
 
 
 selectPostButton : Post -> Element Msg
@@ -1256,8 +1299,8 @@ viewPost sharedState post =
         ]
 
 
-viewPostContent : SharedState -> Maybe Post -> Element Msg
-viewPostContent sharedState maybePost =
+viewPostContent : SharedState -> Model -> Maybe Post -> Element Msg
+viewPostContent sharedState model maybePost =
     case maybePost of
         Nothing ->
             Element.none
@@ -1272,8 +1315,7 @@ viewPostContent sharedState maybePost =
                 , Utility.showIf (Just post.authorName == Maybe.map .username sharedState.currentUser)
                     (row [ spacing 12 ]
                         [ editPostButton post
-
-                        -- , deletetPostButton post
+                        , deletePostButton model post
                         ]
                     )
                 ]

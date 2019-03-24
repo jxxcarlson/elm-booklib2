@@ -30,6 +30,7 @@ module Common.Style exposing
     , shadedColumn
     , signinColumn
     , smallButton
+    , smallButtonRed
     , tableHeading
     , titleButton
     , white
@@ -110,6 +111,10 @@ activeButtonDarkRed active =
 
 smallButton =
     [ Background.color black, Font.color grey, Font.size 12, Element.paddingXY 6 4, alignRight ] ++ basicButtonsStyle
+
+
+smallButtonRed =
+    [ Background.color (Element.rgb 0.9 0.0 0.0), Font.color grey, Font.size 12, Element.paddingXY 6 4, alignRight ] ++ basicButtonsStyle
 
 
 mainColumn w h =
@@ -252,6 +257,10 @@ lightGrey =
 
 darkRed =
     Element.rgb 0.5 0.0 0.0
+
+
+red =
+    Element.rgb 1.0 0.0 0.0
 
 
 white =
