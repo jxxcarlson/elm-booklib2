@@ -359,7 +359,7 @@ update sharedState msg model =
             ( { model | message = "Error retrieving posts" }, Cmd.none, NoUpdate )
 
         NewPost ->
-            ( { model | appState = InBlog MakingNewPost }, Cmd.none, NoUpdate )
+            ( { model | appState = InBlog MakingNewPost, newPostTitle = "", newPostContent = "" }, Cmd.none, NoUpdate )
 
         InputNewPostTitle str ->
             ( { model | newPostTitle = str }, Cmd.none, NoUpdate )
@@ -372,7 +372,7 @@ update sharedState msg model =
                 ( Just user, Just group ) ->
                     let
                         newPost =
-                            { id = -1, title = model.newPostTitle, content = model.newPostContent, authorName = user.username, groupId = group.id, tags = [], creationDate = "null" }
+                            { id = -1, title = model.newPostTitle, content = model.newPostContent, authorName = user.username, groupId = group.id, tags = [], creationDate = "this day" }
                     in
                     ( { model | appState = InBlog ViewingPosts, posts = newPost :: model.posts }, createPost newPost user.token, NoUpdate )
 
@@ -547,8 +547,8 @@ mainView sharedState model =
         [ groupListView sharedState model
         , Utility.showIf (List.member model.appState blogStates) (viewPosts sharedState model)
         , Utility.showIf (model.appState == InBlog PostSelected) (viewPostContent sharedState model.currentPost)
-        , Utility.showIf (model.appState == InBlog EditingPost) (editPostPanel model)
-        , Utility.showIf (model.appState == InBlog MakingNewPost) (newPostPanel model)
+        , Utility.showIf (model.appState == InBlog EditingPost) (editPostPanel sharedState model)
+        , Utility.showIf (model.appState == InBlog MakingNewPost) (newPostPanel sharedState model)
         , Utility.showIf (model.appState == EditingGroup) (editGroupPanel model)
         , Utility.showIf (List.member model.appState [ Default, ViewingBookList, ViewingBook ]) (viewGroup sharedState model model.currentGroup)
         , Utility.showIf (model.appState == CreatingGroup) (createGroupPanel model)
@@ -806,7 +806,8 @@ createGroupPanel model =
     column createPanelStyle
         [ inputGroupName model
         , inputCochairName model
-        , inputMembers model
+
+        -- , inputMembers model
         , inputBlurb model
         , row [ spacing 12 ] [ createGroupButton, cancelCreateGroupButton ]
         , el [ Font.size inputFontSize, Font.color Style.blue ] (text model.message)
@@ -1268,7 +1269,7 @@ viewPostContent sharedState maybePost =
                     [ el [ Font.bold, Font.size 16 ] (text post.title)
                     ]
                 , el [ Font.size 14 ] (text <| "posted by " ++ post.authorName ++ " on " ++ post.creationDate)
-                , row [ Border.width 1 ] [ Common.Book.textViewedAsMarkdown 70 "400px" "515px" post.content ]
+                , row [ Border.width 1 ] [ Common.Book.textViewedAsMarkdown 70 "400px" (postContentHeight sharedState) post.content ]
                 , Utility.showIf (Just post.authorName == Maybe.map .username sharedState.currentUser)
                     (row [ spacing 12 ]
                         [ editPostButton post
@@ -1279,16 +1280,20 @@ viewPostContent sharedState maybePost =
                 ]
 
 
-newPostPanel model =
+postContentHeight sharedState =
+    String.fromInt (sharedState.windowHeight - 245) ++ "px"
+
+
+newPostPanel sharedState model =
     column [ spacing 12, alignTop, padding 8, Border.width 1, Background.color (Style.makeGrey 0.9) ]
         [ el [ Font.bold, Font.size 16 ] (text "New Post")
         , inputNewPostTitle model
-        , inputNewPost model
+        , inputNewPost sharedState model
         , row [ spacing 12 ] [ submitPostButton, cancelNewPostButton ]
         ]
 
 
-editPostPanel model =
+editPostPanel sharedState model =
     case model.currentPost of
         Nothing ->
             Element.none
@@ -1297,7 +1302,7 @@ editPostPanel model =
             column [ alignTop, spacing 8, width (px 470), Border.width 1, Background.color (Style.makeGrey 0.9), paddingXY 24 12 ]
                 [ el [ Font.bold, Font.size 16 ] (text "Edit Post")
                 , inputNewPostTitle model
-                , inputNewPost model
+                , inputNewPost sharedState model
                 , row [ spacing 12 ] [ submitEditedPostButton, cancelEditPostButton ]
                 ]
 
@@ -1326,8 +1331,8 @@ inputNewPostTitle model =
         }
 
 
-inputNewPost model =
-    Input.multiline (inputTextAreaStyle 400 480 12)
+inputNewPost sharedState model =
+    Input.multiline (inputTextAreaStyle 400 (sharedState.windowHeight - 280) 12)
         { onChange = InputNewPostContent
         , text = model.newPostContent
         , placeholder = Nothing
