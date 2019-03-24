@@ -1267,7 +1267,7 @@ viewPostContent sharedState maybePost =
                 [ row [ spacing 12 ]
                     [ el [ Font.bold, Font.size 16 ] (text post.title)
                     ]
-                , el [ Font.size 14 ] (text <| "posted by " ++ post.authorName)
+                , el [ Font.size 14 ] (text <| "posted by " ++ post.authorName ++ " on " ++ post.creationDate)
                 , row [ Border.width 1 ] [ Common.Book.textViewedAsMarkdown 70 "400px" "515px" post.content ]
                 , Utility.showIf (Just post.authorName == Maybe.map .username sharedState.currentUser)
                     (row [ spacing 12 ]
