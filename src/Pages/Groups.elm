@@ -733,8 +733,7 @@ viewGroup sharedState model group_ =
                 [ el [ Font.bold ] (text group.name)
                 , el [ Font.size inputFontSize ] (text <| "Chair: " ++ group.chair)
                 , el [ Font.size inputFontSize ] (text <| "Co-chair: " ++ group.cochair)
-                , el [ Font.size inputFontSize, Font.bold ] (text <| "Blurb")
-                , paragraph [ Font.size inputFontSize, Font.italic ] [ text group.blurb ]
+                , paragraph [ Font.size inputFontSize, Font.italic, Font.color Style.darkBlue ] [ text group.blurb ]
                 , el [ Font.size inputFontSize, Font.bold ] (text <| "Members")
                 , column
                     [ spacing 8
