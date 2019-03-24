@@ -168,6 +168,7 @@ type Msg
     | CancelEditingPost
     | PostUpdated (Result Http.Error PostRecord)
     | ArmeToDeletePost
+    | CancelDeletePost
 
 
 update : SharedState -> Msg -> Model -> ( Model, Cmd Msg, SharedStateUpdate )
@@ -447,6 +448,9 @@ update sharedState msg model =
 
         ArmeToDeletePost ->
             ( { model | deletePostState = ArmedToDeletePost }, Cmd.none, NoUpdate )
+
+        CancelDeletePost ->
+            ( { model | deletePostState = ReadyToDeletePost }, Cmd.none, NoUpdate )
 
 
 getToken : SharedState -> String
@@ -1268,6 +1272,13 @@ cancelNewPostButton =
         }
 
 
+cancelDeletePostButton =
+    Input.button (Style.smallButton ++ [ Font.size 12 ])
+        { onPress = Just CancelDeletePost
+        , label = Element.text "Cancel"
+        }
+
+
 viewPosts : SharedState -> Model -> Element Msg
 viewPosts sharedState model =
     column [ spacing 12, alignTop, height (px <| sharedState.windowHeight - 110 - windowInset) ]
@@ -1316,6 +1327,7 @@ viewPostContent sharedState model maybePost =
                     (row [ spacing 12 ]
                         [ editPostButton post
                         , deletePostButton model post
+                        , cancelDeletePostButton
                         ]
                     )
                 ]
