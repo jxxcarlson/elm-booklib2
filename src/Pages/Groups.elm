@@ -619,6 +619,7 @@ mainView sharedState model =
         , Utility.showIf (model.appState == InBlog PostSelected) (viewPostContent sharedState model model.currentPost)
         , Utility.showIf (model.appState == InBlog EditingPost) (editPostPanel sharedState model)
         , Utility.showIf (model.appState == InBlog MakingNewPost) (newPostPanel sharedState model)
+        , Utility.showIf (model.appState == InBlog MakingNewPost) (markdownInfoPanel sharedState model)
         , Utility.showIf (model.appState == EditingGroup) (editGroupPanel model)
         , Utility.showIf (List.member model.appState [ Default, ViewingBookList, ViewingBook ]) (viewGroup sharedState model model.currentGroup)
         , Utility.showIf (model.appState == CreatingGroup) (createGroupPanel model)
@@ -1467,6 +1468,49 @@ editPostPanel sharedState model =
                 , inputNewPost sharedState model
                 , row [ spacing 12 ] [ submitEditedPostButton, cancelEditPostButton ]
                 ]
+
+
+markdownInfoPanel sharedState model =
+    column [ width (px 300), Background.color (Style.makeGrey 1.0), Font.size 12, alignTop, padding 20, spacing 12 ]
+        [ el [ Font.bold, Font.size 16 ] (text "About Markdown")
+        , paragraph []
+            [ text
+                """If you wish, you can use Markdown in your posts — but only if you wish!
+                   """
+            ]
+        , paragraph []
+            [ text
+                """For italic text, imitate this: *italic*; for bold text, imitate **bold**.
+                           """
+            ]
+        , paragraph []
+            [ text
+                """To make a section heading, write # SECTION.  For subsections, 
+                            do ## SUBSECTION, etc.  
+                           """
+            ]
+        , paragraph []
+            [ text
+                """For links to web pages, imitate this example:
+                   [New York Times](http://nytimes.com).
+                                   """
+            ]
+        , paragraph []
+            [ text
+                """For a list, put a dash, then a space before each item.
+                                           """
+            ]
+        , paragraph []
+            [ text
+                """For images, follow this example: ![Glacier](link-to-glacier-image).
+                                                    """
+            ]
+        , paragraph []
+            [ text
+                """The markdown will be rendered after you press "Submit".
+                                                            """
+            ]
+        ]
 
 
 
