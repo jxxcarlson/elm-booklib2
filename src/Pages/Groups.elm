@@ -1510,6 +1510,11 @@ markdownInfoPanel sharedState model =
                 """The markdown will be rendered after you press "Submit".
                                                             """
             ]
+        , paragraph []
+            [ text
+                """You can also use markdown in your book notes.
+                                                                    """
+            ]
         ]
 
 
