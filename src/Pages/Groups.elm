@@ -121,7 +121,7 @@ init =
     , newPostTitle = ""
     , newPostContent = ""
     , deletePostState = ReadyToDeletePost
-    , sortDirection = SortAscending
+    , sortDirection = SortDescending
     }
 
 
