@@ -55,6 +55,7 @@ type alias Model =
     , newPostTitle : String
     , newPostContent : String
     , deletePostState : DeletePostState
+    , sortDirection : SortDirection
     }
 
 
@@ -119,6 +120,7 @@ init =
     , newPostTitle = ""
     , newPostContent = ""
     , deletePostState = ReadyToDeletePost
+    , sortDirection = SortAscending
     }
 
 
@@ -167,8 +169,14 @@ type Msg
     | UpdatePost
     | CancelEditingPost
     | PostUpdated (Result Http.Error PostRecord)
-    | ArmeToDeletePost
+    | ArmToDeletePost
     | CancelDeletePost
+    | SortPosts SortDirection
+
+
+type SortDirection
+    = SortAscending
+    | SortDescending
 
 
 update : SharedState -> Msg -> Model -> ( Model, Cmd Msg, SharedStateUpdate )
@@ -446,11 +454,19 @@ update sharedState msg model =
         PostUpdated (Err err) ->
             ( { model | message = "Error updating post" }, Cmd.none, NoUpdate )
 
-        ArmeToDeletePost ->
+        ArmToDeletePost ->
             ( { model | deletePostState = ArmedToDeletePost }, Cmd.none, NoUpdate )
 
         CancelDeletePost ->
             ( { model | deletePostState = ReadyToDeletePost }, Cmd.none, NoUpdate )
+
+        SortPosts sortDirection ->
+            case sortDirection of
+                SortAscending ->
+                    ( { model | posts = List.sortBy .id model.posts, sortDirection = SortAscending }, Cmd.none, NoUpdate )
+
+                SortDescending ->
+                    ( { model | posts = List.sortBy (\p -> -p.id) model.posts, sortDirection = SortDescending }, Cmd.none, NoUpdate )
 
 
 getToken : SharedState -> String
@@ -1212,6 +1228,12 @@ deletePost post token =
         }
 
 
+
+--
+-- BLOG BUTTONS
+--
+
+
 getPostsButton =
     Input.button Style.button
         { onPress = Just GetPosts
@@ -1239,7 +1261,7 @@ deletePostButton model post =
     case model.deletePostState of
         ReadyToDeletePost ->
             Input.button Style.smallButton
-                { onPress = Just ArmeToDeletePost
+                { onPress = Just ArmToDeletePost
                 , label = el [ Font.size 12 ] (Element.text "Delete")
                 }
 
@@ -1279,12 +1301,47 @@ cancelDeletePostButton =
         }
 
 
+submitEditedPostButton : Element Msg
+submitEditedPostButton =
+    Input.button (Style.smallButton ++ [ Font.size 12 ])
+        { onPress = Just UpdatePost
+        , label = Element.text "Update"
+        }
+
+
+cancelEditPostButton =
+    Input.button (Style.smallButton ++ [ Font.size 12 ])
+        { onPress = Just CancelEditingPost
+        , label = Element.text "Cancel"
+        }
+
+
+sortPostAscendingButton model =
+    Input.button (Style.activeButton (model.sortDirection == SortAscending))
+        { onPress = Just (SortPosts SortAscending)
+        , label = Element.text "Oldest"
+        }
+
+
+sortPostDescendingButton model =
+    Input.button (Style.activeButton (model.sortDirection == SortDescending))
+        { onPress = Just (SortPosts SortDescending)
+        , label = Element.text "Newest"
+        }
+
+
+
+-- BLOG VIEW
+
+
 viewPosts : SharedState -> Model -> Element Msg
 viewPosts sharedState model =
     column [ spacing 12, alignTop, height (px <| sharedState.windowHeight - 110 - windowInset) ]
         [ row [ spacing 12 ]
             [ el [ Font.size 18, Font.bold ] (text "Posts")
             , newPostButton
+            , sortPostAscendingButton model
+            , sortPostDescendingButton model
             ]
         , column
             [ spacing 18
@@ -1360,19 +1417,10 @@ editPostPanel sharedState model =
                 ]
 
 
-submitEditedPostButton : Element Msg
-submitEditedPostButton =
-    Input.button (Style.smallButton ++ [ Font.size 12 ])
-        { onPress = Just UpdatePost
-        , label = Element.text "Update"
-        }
 
-
-cancelEditPostButton =
-    Input.button (Style.smallButton ++ [ Font.size 12 ])
-        { onPress = Just CancelEditingPost
-        , label = Element.text "Cancel"
-        }
+--
+-- BLOG INPUT
+--
 
 
 inputNewPostTitle model =
