@@ -183,7 +183,7 @@ update sharedState msg model =
                         GroupsRoute ->
                             case sharedState.currentUser of
                                 Nothing -> Cmd.none
-                                Just user ->   Groups.getGroupListForUser user.username |> Cmd.map GroupsMsg
+                                Just user -> Groups.getGroupListForUser user.username |> Cmd.map GroupsMsg
 
                         InvitationsRoute ->
                             case sharedState.currentUser of

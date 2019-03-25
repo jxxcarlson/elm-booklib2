@@ -555,7 +555,7 @@ footer sharedState model =
         [ el Style.footerItem (text <| "UTC: " ++ Utility.toUtcString (Just sharedState.currentTime))
         , el Style.footerItem (text <| userStatus sharedState.currentUser)
         , wordCountOfCurrentNotes sharedState
-        , userBegginingDate sharedState
+        , userBeginningDate sharedState
         ]
 
 
@@ -563,12 +563,12 @@ footerForPhone : SharedState -> Model -> Element Msg
 footerForPhone sharedState model =
     row (fstyle sharedState)
         [ el Style.footerItem (text <| userStatus sharedState.currentUser)
-        , userBegginingDate sharedState
+        , userBeginningDate sharedState
         ]
 
 
-userBegginingDate : SharedState -> Element Msg
-userBegginingDate sharedState =
+userBeginningDate : SharedState -> Element Msg
+userBeginningDate sharedState =
     case sharedState.currentUser of
         Nothing ->
             Element.none

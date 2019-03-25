@@ -28,6 +28,7 @@ import SharedState exposing (SharedState, SharedStateUpdate(..))
 import User.Coders
 import User.Invitation exposing (Invitation, Status(..), encodeInvitation, invitationDecoder, invitationsDecoder)
 import User.Post as Post exposing (Post, PostRecord, encodePost, postListDecoder, postRecordDecoder)
+import User.Types exposing (User)
 
 
 
@@ -172,6 +173,7 @@ type Msg
     | ArmToDeletePost
     | CancelDeletePost
     | SortPosts SortDirection
+    | ViewMembers
 
 
 type SortDirection
@@ -186,7 +188,20 @@ update sharedState msg model =
             ( model, Cmd.none, NoUpdate )
 
         ReceiveGroupList (Ok groupList) ->
-            ( { model | groupList = groupList }, Cmd.none, NoUpdate )
+            let
+                ( appState, cmd ) =
+                    case groupList == [] of
+                        True ->
+                            ( Default, Cmd.none )
+
+                        False ->
+                            let
+                                id =
+                                    Maybe.map .id (List.head groupList) |> Maybe.withDefault 0
+                            in
+                            ( InBlog ViewingPosts, getPosts id )
+            in
+            ( { model | groupList = groupList, currentGroup = List.head groupList, appState = appState }, cmd, NoUpdate )
 
         ReceiveGroupList (Err err) ->
             ( { model | message = "Error getting group" }, Cmd.none, NoUpdate )
@@ -202,7 +217,16 @@ update sharedState msg model =
             ( model, Cmd.none, NoUpdate )
 
         SetCurrentGroup group ->
-            ( { model | currentGroup = Just group, appState = Default }, getInvitations group.id, NoUpdate )
+            let
+                ( appState, cmd ) =
+                    case List.member model.appState blogStates of
+                        True ->
+                            ( InBlog ViewingPosts, getPosts group.id )
+
+                        False ->
+                            ( Default, getInvitations group.id )
+            in
+            ( { model | currentGroup = Just group, appState = appState }, cmd, NoUpdate )
 
         InputGroupName str ->
             ( { model | groupName = str }, Cmd.none, NoUpdate )
@@ -468,6 +492,9 @@ update sharedState msg model =
                 SortDescending ->
                     ( { model | posts = List.sortBy (\p -> -p.id) model.posts, sortDirection = SortDescending }, Cmd.none, NoUpdate )
 
+        ViewMembers ->
+            ( { model | appState = Default }, Cmd.none, NoUpdate )
+
 
 getToken : SharedState -> String
 getToken sharedState =
@@ -713,13 +740,10 @@ matchBookAndUserIds sharedState =
 groupListView sharedState model =
     column [ spacing 12 ]
         [ row [ spacing 12 ]
-            [ el [ Font.bold, paddingXY 0 0 ] (text "Groups")
-            , case model.currentGroup of
-                Nothing ->
-                    Element.none
-
-                Just _ ->
-                    getPostsButton
+            [ row [ spacing 12 ]
+                [ viewMembersButton model
+                , getPostsButton model
+                ]
             ]
         , viewGroups sharedState model.currentGroup model.groupList
         ]
@@ -830,12 +854,33 @@ highlightColor flag =
 
 footer : SharedState -> Model -> Element Msg
 footer sharedState model =
-    row Style.footer
+    row (Style.footer ++ [ height (px 41) ])
         [ Utility.showIf (not <| List.member model.appState blogStates) newGroupButton
         , Utility.showIf (not <| List.member model.appState blogStates && model.currentGroup /= Nothing) editGroupButton
         , Utility.showIf (not <| List.member model.appState blogStates && model.currentGroup /= Nothing) makeInvitationButton
-        , Utility.showIf (List.member model.appState blogStates) newPostButton
+        , Utility.showIf (List.member model.appState blogStates) (el Style.footerItem (text <| userStatus sharedState.currentUser))
+        , Utility.showIf (List.member model.appState blogStates) (userBeginningDate sharedState)
         ]
+
+
+userStatus : Maybe User -> String
+userStatus user_ =
+    case user_ of
+        Nothing ->
+            "Not signed in."
+
+        Just user ->
+            "Signed in as " ++ user.username
+
+
+userBeginningDate : SharedState -> Element Msg
+userBeginningDate sharedState =
+    case sharedState.currentUser of
+        Nothing ->
+            Element.none
+
+        Just user ->
+            el Style.footerItem (text <| "Joined: " ++ user.beginningDate)
 
 
 
@@ -1234,10 +1279,17 @@ deletePost post token =
 --
 
 
-getPostsButton =
-    Input.button Style.button
+getPostsButton model =
+    Input.button (Style.activeButton (List.member model.appState blogStates))
         { onPress = Just GetPosts
         , label = Element.text "Blog"
+        }
+
+
+viewMembersButton model =
+    Input.button (Style.activeButton (not <| List.member model.appState blogStates))
+        { onPress = Just ViewMembers
+        , label = Element.text "Members"
         }
 
 
