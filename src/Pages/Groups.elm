@@ -380,7 +380,7 @@ update sharedState msg model =
             ( { model | appState = MakingInvitation }, Cmd.none, NoUpdate )
 
         GotInvitations (Ok invitations) ->
-            ( { model | invitations = Debug.log "INVITATIONS (F)" <| List.filter (\i -> i.status == Waiting) (Debug.log "INVITATIONS (R)" invitations), message = "Got invitations" }, Cmd.none, NoUpdate )
+            ( { model | invitations = List.filter (\i -> i.status == Waiting) invitations, message = "Got invitations" }, Cmd.none, NoUpdate )
 
         GotInvitations (Err _) ->
             ( { model | message = "Error getting invitations" }, Cmd.none, NoUpdate )
