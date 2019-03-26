@@ -15,6 +15,8 @@ type alias Book =
     , category : String
     , startDateString : String
     , finishDateString : String
+    , pagesReadToday : Int
+    , averageReadingRate : Float
     }
 
 
@@ -32,4 +34,6 @@ blankBook =
     , category = ""
     , startDateString = ""
     , finishDateString = ""
+    , pagesReadToday = 0
+    , averageReadingRate = 0
     }

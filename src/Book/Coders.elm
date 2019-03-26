@@ -29,6 +29,8 @@ bookEncoder book =
         , ( "category", Encode.string book.category )
         , ( "start_date_string", Encode.string book.startDateString )
         , ( "finish_date_string", Encode.string book.finishDateString )
+        , ( "pages_read_today", Encode.int book.pagesReadToday )
+        , ( "average_reading_rate", Encode.float book.averageReadingRate )
         ]
 
 
@@ -54,6 +56,8 @@ newBookEncoder userid book =
         , ( "public", Encode.bool book.public )
         , ( "category", Encode.string book.category )
         , ( "start_date_string", Encode.string book.startDateString )
+        , ( "pages_read_today", Encode.int book.pagesReadToday )
+        , ( "average_reading_rate", Encode.float book.averageReadingRate )
         ]
 
 
@@ -73,6 +77,8 @@ bookDecoder =
         |> required "category" Decode.string
         |> required "startDateString" Decode.string
         |> required "finishDateString" Decode.string
+        |> required "pagesReadToday" Decode.int
+        |> required "averageReadingRate" Decode.float
 
 
 blurbDecoder : Decode.Decoder String

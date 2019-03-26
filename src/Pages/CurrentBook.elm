@@ -99,7 +99,7 @@ type Msg
     | CancelDeleteBook
     | UpdateBook
     | BookIsCreated (Result Http.Error String)
-    | BookIsUpdated (Result Http.Error String)
+    | BookIsUpdated (Result Http.Error Book)
     | BookIsDeleted (Result Http.Error String)
     | UpdateCurrentBook
     | SaveBookEditChanges
@@ -148,11 +148,6 @@ update sharedState msg model =
                     let
                         nextBook =
                             { book | public = not book.public }
-
-                        -- command =
-                        --     updateBook nextBook (userToken sharedState)
-                        -- updatedBookList =
-                        --     Utility.replaceIf (\runningBook -> runningBook.id == nextBook.id) nextBook model.bookList
                     in
                     ( model
                     , Cmd.none
@@ -170,8 +165,8 @@ update sharedState msg model =
                 _ ->
                     ( model, Cmd.none, NoUpdate )
 
-        BookIsUpdated (Ok str) ->
-            ( model, Cmd.none, NoUpdate )
+        BookIsUpdated (Ok book) ->
+            ( model, Cmd.none, SharedState.UpdateCurrentBook (Just book) )
 
         BookIsUpdated (Err err) ->
             ( model, Cmd.none, NoUpdate )
@@ -190,7 +185,11 @@ update sharedState msg model =
                             Nothing
 
                         Just book ->
-                            Just { book | pagesRead = model.pagesRead }
+                            let
+                                deltaPagesRead =
+                                    model.pagesRead - book.pagesRead
+                            in
+                            Just { book | pagesRead = model.pagesRead, pagesReadToday = book.pagesReadToday + deltaPagesRead }
 
                 token =
                     case sharedState.currentUser of
@@ -283,15 +282,23 @@ update sharedState msg model =
                         Just user ->
                             user.id
 
-                ( nextBook, deltaPages ) =
+                nextBook =
                     case sharedState.currentBook of
                         Nothing ->
-                            ( Nothing, 0 )
+                            Nothing
 
                         Just book ->
-                            ( Just { book | pagesRead = str |> String.toInt |> Maybe.withDefault 0 }
-                            , (str |> String.toInt |> Maybe.withDefault 0) - book.pagesRead
-                            )
+                            let
+                                pagesRead =
+                                    str |> String.toInt |> Maybe.withDefault 0
+
+                                deltaPages =
+                                    pagesRead - book.pagesRead
+
+                                pagesReadToday =
+                                    book.pagesReadToday + deltaPages
+                            in
+                            Just { book | pagesRead = pagesRead, pagesReadToday = pagesReadToday }
 
                 command =
                     case nextBook of
@@ -554,7 +561,7 @@ updateBook book token =
         , headers = [ Http.header "Authorization" ("Bearer " ++ token) ]
         , url = Configuration.backend ++ "/api/books/" ++ String.fromInt book.id
         , body = Http.jsonBody (Book.Coders.bookRecordEncoder book)
-        , expect = Http.expectJson BookIsUpdated Book.Coders.statusDecoder
+        , expect = Http.expectJson BookIsUpdated Book.Coders.bookDecoder
         , timeout = Nothing
         , tracker = Nothing
         }
@@ -924,7 +931,7 @@ startMessage : Book -> String
 startMessage book =
     case book.startDateString == "" of
         True ->
-            "Start date"
+            "<Start date>"
 
         False ->
             book.startDateString
@@ -936,14 +943,14 @@ finishMessage sharedState book =
         True ->
             let
                 n =
-                    daysToFinish sharedState book
+                    daysToComplete sharedState book
             in
-            case n == 1 of
+            case n == 1.0 of
                 True ->
-                    String.fromInt n ++ " day to finish " ++ String.fromInt (daysRemaining book) ++ " pp"
+                    String.fromFloat n ++ " day to finish " ++ String.fromInt (daysRemaining book) ++ " pp"
 
                 False ->
-                    String.fromInt n ++ " days to finish: " ++ String.fromInt (daysRemaining book) ++ " pp"
+                    String.fromFloat n ++ " days to finish " ++ String.fromInt (daysRemaining book) ++ " pp"
 
         False ->
             book.finishDateString
@@ -951,12 +958,15 @@ finishMessage sharedState book =
 
 readingRateDisplay : SharedState -> Book -> Element msg
 readingRateDisplay sharedState book =
-    case ( book.startDateString /= "", book.finishDateString /= "" ) of
-        ( True, _ ) ->
-            Element.el [ moveDown 5, Font.size 16, Font.color Style.darkBlue ] (Element.text <| readingRateString sharedState book)
+    -- case ( book.startDateString /= "", book.finishDateString /= "" ) of
+    -- ( True, _ ) ->
+    Element.el [ moveDown 5, Font.size 16, Font.color Style.darkBlue ] (Element.text <| readingRateString sharedState book)
 
-        ( _, _ ) ->
-            Element.el [ Font.size 14 ] (Element.text <| "")
+
+
+--
+--        ( _, _ ) ->
+--            Element.el [ Font.size 14 ] (Element.text <| "")
 
 
 readingRateString : SharedState -> Book -> String
@@ -973,13 +983,12 @@ readingRateString sharedState book =
                 False ->
                     " days)"
     in
-    (String.fromInt <|
-        Basics.round <|
-            readingRate sharedState book
-    )
-        ++ " pp/day ("
-        ++ (String.fromInt <| daysToComplete_)
-        ++ daysString
+    String.fromInt book.pagesReadToday
+        ++ " pp/today, "
+        ++ (String.fromFloat <|
+                readingRate sharedState book
+           )
+        ++ " pp/day"
 
 
 daysToFinish : SharedState -> Book -> Int
@@ -999,8 +1008,20 @@ daysRemaining book =
     book.pages - book.pagesRead
 
 
-daysToComplete : SharedState -> Book -> Int
+daysToComplete : SharedState -> Book -> Float
 daysToComplete sharedState book =
+    let
+        pagesRemaining =
+            book.pages - book.pagesRead |> toFloat
+
+        daysRemaining_ =
+            pagesRemaining / readingRate sharedState book
+    in
+    Utility.roundTo 1 daysRemaining_
+
+
+daysToComplete2 : SharedState -> Book -> Int
+daysToComplete2 sharedState book =
     case book.finishDateString /= "" of
         True ->
             Days.fromUSDate book.startDateString book.finishDateString
@@ -1011,7 +1032,16 @@ daysToComplete sharedState book =
 
 readingRate : SharedState -> Book -> Float
 readingRate shareState book =
-    Basics.toFloat book.pagesRead / (Basics.toFloat <| daysToComplete shareState book)
+    case book.averageReadingRate == 0 of
+        False ->
+            book.averageReadingRate
+
+        True ->
+            max 1.0 (toFloat book.pagesReadToday)
+
+
+
+--- (Basics.toFloat <| daysToComplete shareState book)
 
 
 updateBookButton : Element Msg
