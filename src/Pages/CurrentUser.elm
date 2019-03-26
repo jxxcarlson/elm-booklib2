@@ -1,8 +1,8 @@
 module Pages.CurrentUser exposing
     ( Model
     , currentSharedStateView
-    , getStats
     , getInvitations
+    , getStats
     , initModel
     , update
     , view
@@ -23,9 +23,9 @@ import Routing.Helpers exposing (Route(..), reverseRoute)
 import SharedState exposing (SharedState, SharedStateUpdate(..))
 import Stats exposing (Stats)
 import User.Chart
+import User.Invitation as Invitation exposing (Invitation, Status(..))
 import User.Session as Session
 import User.Types exposing (Msg(..), ReadingStat, State(..), User)
-import User.Invitation as Invitation exposing(Invitation, Status(..))
 
 
 type alias Model =
@@ -105,8 +105,11 @@ update sharedState msg model =
               }
             , Cmd.batch
                 [ case sharedState.invitations == [] of
-                     True -> pushUrl sharedState.navKey "#books"
-                     False -> Cmd.none
+                    True ->
+                        pushUrl sharedState.navKey "#books"
+
+                    False ->
+                        Cmd.none
                 , OutsideInfo.sendInfoOutside (UserData (OutsideInfo.userEncoder user))
                 , getStats
                 , getInvitations user.username
@@ -193,15 +196,16 @@ update sharedState msg model =
 
         GotInvitations (Ok invitations) ->
             let
-                activeInvitations = List.filter (\i -> i.status == Waiting) invitations
+                activeInvitations =
+                    List.filter (\i -> i.status == Waiting) invitations)
             in
-            ( model, Cmd.none, SharedState.UpdateInvitations activeInvitations)
+            ( model, Cmd.none, SharedState.UpdateInvitations  activeInvitations )
 
         GotInvitations (Err _) ->
-            ( {model | message = "Error getting invitations"}, Cmd.none, NoUpdate)
+            ( { model | message = "Error getting invitations" }, Cmd.none, NoUpdate )
 
         GoToInvitations ->
-            ( model, pushUrl sharedState.navKey "#invitations", NoUpdate)
+            ( model, pushUrl sharedState.navKey "#invitations", NoUpdate )
 
 
 view : SharedState -> Model -> Element Msg
@@ -233,11 +237,14 @@ view sharedState model =
 
 invitationsLine sharedState =
     case sharedState.invitations == [] of
-        True -> Element.none
-        False -> row [spacing 12]
-           [ el [Font.size 16, Font.bold, Font.color Style.darkRed] (text "You have an invitation to join a group!")
-           , goToInvitationsButton
-           ]
+        True ->
+            Element.none
+
+        False ->
+            row [ spacing 12 ]
+                [ el [ Font.size 16, Font.bold, Font.color Style.darkRed ] (text "You have an invitation to join a group!")
+                , goToInvitationsButton
+                ]
 
 
 infoLine =
@@ -336,7 +343,6 @@ signInColumn sharedState model =
         , verifyUserLink model
         , infoPanel sharedState model
         , invitationsLine sharedState
-
         ]
 
 
@@ -406,11 +412,13 @@ tagUpdateButton =
         , label = el [ Font.size 14 ] (text "Update tags ")
         }
 
+
 goToInvitationsButton =
     Input.button Style.button
         { onPress = Just GoToInvitations
         , label = el [ Font.size 14 ] (text "Look at invitations")
         }
+
 
 footer : SharedState -> Model -> Element Msg
 footer sharedState model =
@@ -680,9 +688,11 @@ cleanupErrorMessage str =
         |> String.dropLeft 1
 
 
+
 --
 -- REQUESTS
 --
+
 
 getStats : Cmd Msg
 getStats =
@@ -691,12 +701,14 @@ getStats =
         , expect = Http.expectJson GotStats Stats.decoder
         }
 
-getInvitations :  String -> Cmd Msg
-getInvitations invitee  =
-      Http.get
+
+getInvitations : String -> Cmd Msg
+getInvitations invitee =
+    Http.get
         { url = Configuration.backend ++ "/api/invitations?invitee=" ++ invitee
         , expect = Http.expectJson GotInvitations Invitation.invitationsDecoder
         }
+
 
 
 --
