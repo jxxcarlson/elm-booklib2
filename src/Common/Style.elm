@@ -33,6 +33,7 @@ module Common.Style exposing
     , smallButtonRed
     , tableHeading
     , titleButton
+    , titleButton2
     , white
     )
 
@@ -52,6 +53,14 @@ titleButton highlighted =
 
     else
         [ Font.color white ]
+
+
+titleButton2 highlighted =
+    if highlighted then
+        [ Font.color orange ]
+
+    else
+        [ Font.color lightOrange ]
 
 
 buttonWithWidth width_ =
@@ -283,6 +292,10 @@ lightBlue =
     Element.rgb 0.8 0.8 0.9
 
 
+mediumBlue =
+    Element.rgb 0.7 0.7 1.0
+
+
 blue =
     Element.rgb 0.15 0.15 1.0
 
@@ -292,5 +305,8 @@ darkBlue =
 
 
 orange =
-    -- Element.rgb 0.9569 0.6078 0.2588
     Element.rgb 1.0 0.7 0.0549
+
+
+lightOrange =
+    Element.rgb255 255 239 204

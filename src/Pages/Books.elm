@@ -361,7 +361,7 @@ sortBooks sortOrder books =
 
 titleHeadingButton : Model -> Element Msg
 titleHeadingButton model =
-    Input.button (Style.titleButton (model.sortOrder == SortByTitle))
+    Input.button (Style.titleButton2 (model.sortOrder == SortByTitle))
         { onPress = Just (SetSortOrder SortByTitle)
         , label = Element.text "Title"
         }
@@ -369,7 +369,7 @@ titleHeadingButton model =
 
 indexButton : Model -> Element Msg
 indexButton model =
-    Input.button (Style.titleButton (model.sortOrder == NormalSortOrder))
+    Input.button (Style.titleButton2 (model.sortOrder == NormalSortOrder))
         { onPress = Just (SetSortOrder NormalSortOrder)
         , label = Element.text "N"
         }
@@ -377,7 +377,7 @@ indexButton model =
 
 authorButton : Model -> Element Msg
 authorButton model =
-    Input.button (Style.titleButton (model.sortOrder == SortByAuthor))
+    Input.button (Style.titleButton2 (model.sortOrder == SortByAuthor))
         { onPress = Just (SetSortOrder SortByAuthor)
         , label = Element.text "Author"
         }
@@ -385,13 +385,17 @@ authorButton model =
 
 categoryButton : Model -> Element Msg
 categoryButton model =
-    Input.button (Style.titleButton (model.sortOrder == SortByCategory))
+    Input.button (Style.titleButton2 (model.sortOrder == SortByCategory))
         { onPress = Just (SetSortOrder SortByCategory)
         , label = Element.text "Category"
         }
 
 
 listBooksMain sharedState model =
+    let
+        nBooks =
+            List.length model.bookList
+    in
     Element.table
         [ Element.centerX
         , Font.size 13
@@ -408,7 +412,7 @@ listBooksMain sharedState model =
               , width = px 20
               , view =
                     \p ->
-                        el [] (text <| String.fromInt <| Tuple.first p + 1)
+                        el [] (text <| String.fromInt <| nBooks - Tuple.first p)
               }
             , { header = Element.el (Style.tableHeading ++ [ clipX ]) (titleHeadingButton model)
               , width = px 200
