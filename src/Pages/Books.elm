@@ -42,6 +42,7 @@ type alias Model =
     , finishDateString : String
     , errorMessage : String
     , startDateString : String
+    , sortOrder : SortOrder
     }
 
 
@@ -54,7 +55,16 @@ init =
     , errorMessage = ""
     , finishDateString = ""
     , startDateString = ""
+    , sortOrder = NormalSortOrder
     }
+
+
+type SortOrder
+    = NormalSortOrder
+    | SortById
+    | SortByCategory
+    | SortByTitle
+    | SortByAuthor
 
 
 bookIsCompleted : Book -> Int
@@ -84,6 +94,7 @@ type Msg
     | SetCurrentBook Book
     | GetSharedBooks String
     | GetCurrentUserBookList
+    | SetSortOrder SortOrder
     | NoOp
 
 
@@ -207,6 +218,9 @@ update sharedState msg model =
                     , NoUpdate
                     )
 
+        SetSortOrder sortOrder ->
+            ( { model | sortOrder = sortOrder }, Cmd.none, NoUpdate )
+
 
 view : SharedState -> Model -> Element Msg
 view sharedState model =
@@ -326,6 +340,57 @@ listBooks sharedState model =
             listBooksMain sharedState model
 
 
+sortBooks : SortOrder -> List ( Int, Book ) -> List ( Int, Book )
+sortBooks sortOrder books =
+    case sortOrder of
+        NormalSortOrder ->
+            books
+
+        SortById ->
+            List.sortBy (\b -> Tuple.second b |> .id) books
+
+        SortByCategory ->
+            List.sortBy (\b -> Tuple.second b |> .category) books
+
+        SortByTitle ->
+            List.sortBy (\b -> Tuple.second b |> .title) books
+
+        SortByAuthor ->
+            List.sortBy (\b -> Tuple.second b |> .author) books
+
+
+titleHeadingButton : Model -> Element Msg
+titleHeadingButton model =
+    Input.button (Style.titleButton (model.sortOrder == SortByTitle))
+        { onPress = Just (SetSortOrder SortByTitle)
+        , label = Element.text "Title"
+        }
+
+
+indexButton : Model -> Element Msg
+indexButton model =
+    Input.button (Style.titleButton (model.sortOrder == NormalSortOrder))
+        { onPress = Just (SetSortOrder NormalSortOrder)
+        , label = Element.text "N"
+        }
+
+
+authorButton : Model -> Element Msg
+authorButton model =
+    Input.button (Style.titleButton (model.sortOrder == SortByAuthor))
+        { onPress = Just (SetSortOrder SortByAuthor)
+        , label = Element.text "Author"
+        }
+
+
+categoryButton : Model -> Element Msg
+categoryButton model =
+    Input.button (Style.titleButton (model.sortOrder == SortByCategory))
+        { onPress = Just (SetSortOrder SortByCategory)
+        , label = Element.text "Category"
+        }
+
+
 listBooksMain sharedState model =
     Element.table
         [ Element.centerX
@@ -337,43 +402,49 @@ listBooksMain sharedState model =
         , Font.color Style.white
         , clipX
         ]
-        { data = model.bookList
+        { data = sortBooks model.sortOrder (List.indexedMap Tuple.pair model.bookList)
         , columns =
-            [ { header = Element.el (Style.tableHeading ++ [ clipX ]) (Element.text "Title")
+            [ { header = Element.el (Style.tableHeading ++ [ clipX ]) (indexButton model)
+              , width = px 20
+              , view =
+                    \p ->
+                        el [] (text <| String.fromInt <| Tuple.first p + 1)
+              }
+            , { header = Element.el (Style.tableHeading ++ [ clipX ]) (titleHeadingButton model)
               , width = px 200
               , view =
-                    \book ->
-                        titleButton book sharedState.currentBook
+                    \p ->
+                        titleButton (Tuple.second p) sharedState.currentBook
               }
-            , { header = Element.el Style.tableHeading (Element.text "Author")
+            , { header = Element.el Style.tableHeading (authorButton model)
               , width = px 150
               , view =
-                    \book ->
-                        el [ clipX ] (Element.text book.author)
+                    \p ->
+                        el [ clipX ] (Element.text (Tuple.second p).author)
               }
-            , { header = Element.el Style.tableHeading (Element.text "Category")
+            , { header = Element.el Style.tableHeading (categoryButton model)
               , width = px 150
               , view =
-                    \book ->
-                        el [ clipX ] (Element.text book.category)
+                    \p ->
+                        el [ clipX ] (Element.text (Tuple.second p).category)
               }
             , { header = Element.el Style.tableHeading (Element.text "")
               , width = px 110
               , view =
-                    \book ->
-                        Element.el [] (Indicator.indicator 100 10 "orange" (pageRatio book))
+                    \p ->
+                        Element.el [] (Indicator.indicator 100 10 "orange" (pageRatio (Tuple.second p)))
               }
             , { header = Element.el Style.tableHeading (el [ moveRight 16 ] (Element.text "Progress"))
               , width = px 80
               , view =
-                    \book ->
-                        el [] (el [ alignRight, paddingXY 8 0 ] (Element.text (pageInfo book)))
+                    \p ->
+                        el [] (el [ alignRight, paddingXY 8 0 ] (Element.text (pageInfo (Tuple.second p))))
               }
             , { header = Element.el Style.tableHeading (el [ moveRight 9 ] (Element.text "%%"))
               , width = px 40
               , view =
-                    \book ->
-                        el [] (el [ alignRight, paddingXY 8 0 ] (Element.text (pageInfo2 book)))
+                    \p ->
+                        el [] (el [ alignRight, paddingXY 8 0 ] (Element.text (pageInfo2 (Tuple.second p))))
               }
             ]
         }
