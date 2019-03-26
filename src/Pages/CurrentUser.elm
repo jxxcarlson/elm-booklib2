@@ -104,13 +104,7 @@ update sharedState msg model =
                 , state = SignedIn
               }
             , Cmd.batch
-                [ case sharedState.invitations == [] of
-                    True ->
-                        pushUrl sharedState.navKey "#books"
-
-                    False ->
-                        Cmd.none
-                , OutsideInfo.sendInfoOutside (UserData (OutsideInfo.userEncoder user))
+                [ OutsideInfo.sendInfoOutside (UserData (OutsideInfo.userEncoder user))
                 , getStats
                 , getInvitations user.username
                 ]
@@ -197,9 +191,17 @@ update sharedState msg model =
         GotInvitations (Ok invitations) ->
             let
                 activeInvitations =
-                    List.filter (\i -> i.status == Waiting) invitations)
+                    List.filter (\i -> i.status == Waiting) invitations
+
+                cmd =
+                    case activeInvitations == [] of
+                        True ->
+                            pushUrl sharedState.navKey "#books"
+
+                        False ->
+                            Cmd.none
             in
-            ( model, Cmd.none, SharedState.UpdateInvitations  activeInvitations )
+            ( model, cmd, SharedState.UpdateInvitations activeInvitations )
 
         GotInvitations (Err _) ->
             ( { model | message = "Error getting invitations" }, Cmd.none, NoUpdate )
