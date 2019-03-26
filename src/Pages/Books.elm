@@ -516,22 +516,30 @@ totalsString sharedState model =
         daysElapsed =
             toFloat <| Days.fromUSDate startDate (Utility.toUtcDateString <| Just sharedState.currentTime)
 
-        booksReadPerMonth : String
+        booksReadPerMonth : Float
         booksReadPerMonth =
-            String.fromFloat <| Utility.roundTo 1 <| nBooksRead / (daysElapsed / 30.5)
+            Utility.roundTo 1 <| nBooksRead / (daysElapsed / 30.5)
+
+        booksReadPerMonthString : String
+        booksReadPerMonthString =
+            case round booksReadPerMonth == 1 of
+                True ->
+                    String.fromFloat booksReadPerMonth ++ " book/month"
+
+                False ->
+                    String.fromFloat booksReadPerMonth ++ " books/month"
 
         pagesReadPerDay =
             String.fromFloat <| Utility.roundTo 1 (Basics.toFloat model.totalPagesRead / daysElapsed)
     in
-    String.fromInt model.totalPagesRead
+    Utility.stringFromIntWithCommas model.totalPagesRead
         ++ " pages since "
         ++ startDate
         ++ " — "
         ++ pagesReadPerDay
         ++ " pp/day"
         ++ " — "
-        ++ booksReadPerMonth
-        ++ " books/month"
+        ++ booksReadPerMonthString
 
 
 totalsStringPhone : SharedState -> Model -> String
