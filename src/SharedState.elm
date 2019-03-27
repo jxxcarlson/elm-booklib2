@@ -1,11 +1,11 @@
-module SharedState exposing (SharedState, SharedStateUpdate(..), initialSharedState, update)
+module SharedState exposing (SharedAppState(..), SharedState, SharedStateUpdate(..), initialSharedState, update)
 
 import Book.Types exposing (Book)
 import Browser.Navigation
 import Stats exposing (Stats)
 import Time exposing (Posix)
+import User.Invitation exposing (Invitation)
 import User.Types exposing (User)
-import User.Invitation exposing(Invitation)
 
 
 type alias SharedState =
@@ -17,7 +17,14 @@ type alias SharedState =
     , windowHeight : Int
     , stats : Maybe Stats
     , invitations : List Invitation
+    , appState : SharedAppState
     }
+
+
+type SharedAppState
+    = SharedStateReady
+    | SharedStateStarting
+    | SharedStateRunning
 
 
 type SharedStateUpdate
@@ -28,6 +35,7 @@ type SharedStateUpdate
     | UpdateCurrentBook (Maybe Book)
     | UpdateStats (Maybe Stats)
     | UpdateInvitations (List Invitation)
+    | UpdateSharedAppState SharedAppState
 
 
 initialSharedState : Browser.Navigation.Key -> Posix -> Int -> Int -> Maybe User -> SharedState
@@ -40,6 +48,7 @@ initialSharedState navKey time w h currentUser =
     , windowHeight = h
     , stats = Nothing
     , invitations = []
+    , appState = SharedStateReady
     }
 
 
@@ -50,19 +59,22 @@ update sharedState sharedStateUpdate =
             { sharedState | currentTime = time }
 
         UpdateCurrentUser currentUser ->
-            { sharedState | currentUser = currentUser }
+            { sharedState | currentUser = currentUser, appState = SharedStateStarting }
 
         UpdateCurrentBook currentBook ->
             { sharedState | currentBook = currentBook }
 
         InvalidateCurrentUser ->
-            { sharedState | currentUser = Nothing, currentBook = Nothing }
+            { sharedState | currentUser = Nothing, currentBook = Nothing, appState = SharedStateReady }
 
         UpdateStats stats ->
             { sharedState | stats = stats }
 
         UpdateInvitations invitations ->
-            { sharedState | invitations = invitations}
+            { sharedState | invitations = invitations }
+
+        UpdateSharedAppState appState ->
+            { sharedState | appState = appState }
 
         NoUpdate ->
             sharedState

@@ -19,7 +19,7 @@ import Pages.Groups as Groups
 import Pages.Invitations as Invitations
 import Pages.SharedBooks as SharedBooks
 import Routing.Helpers exposing (Route(..), parseUrl, reverseRoute)
-import SharedState exposing (SharedState, SharedStateUpdate(..))
+import SharedState exposing (SharedAppState(..), SharedState, SharedStateUpdate(..))
 import Url exposing (Url)
 import User.Types exposing (State(..))
 import User.Utility
@@ -171,13 +171,18 @@ update sharedState msg model =
                             Chart.getUser sharedState |> Cmd.map ChartMsg
 
                         CurrentUserRoute ->
-                            case sharedState.currentUser of
-                                Nothing -> Cmd.none
-                                Just user ->
+                            case (sharedState.currentUser, sharedState.appState) of
+                                (Nothing, _) -> Cmd.none
+                                (Just user, SharedStateStarting)  ->
                                     Cmd.batch [
                                        Chart.getUser sharedState |> Cmd.map ChartMsg
                                        , CurrentUser.getInvitations user.username  |> Cmd.map CurrentUserMsg
                                     ]
+                                (Just _, SharedStateRunning)  ->
+                                     Chart.getUser sharedState |> Cmd.map ChartMsg
+                                (Just _, SharedStateReady)  ->
+                                       Cmd.none
+
 
 
                         GroupsRoute ->
@@ -243,7 +248,8 @@ update sharedState msg model =
                 , aboutModel = newAboutModel
               }
             , cmd
-            , NoUpdate
+            , UpdateSharedAppState SharedStateRunning
+
             )
 
         NavigateTo route ->
