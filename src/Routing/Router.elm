@@ -489,7 +489,7 @@ mainView msgMapper sharedState model =
                             , label = el [] (text "Shared Books")
                             }
                         )
-                    ,
+                    , showIf (sharedState.currentUser /= Nothing)
                         (Input.button (Style.activeButton (model.route == GroupsRoute))
                             { onPress = Just (NavigateTo GroupsRoute)
                             , label = el [] (text "Groups")
