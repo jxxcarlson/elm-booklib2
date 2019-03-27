@@ -27,6 +27,7 @@ module Common.Style exposing
     , noAutocorrect
     , orange
     , preWrap
+    , red
     , shadedColumn
     , signinColumn
     , smallButton

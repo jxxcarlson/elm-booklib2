@@ -414,6 +414,12 @@ listBooksMain sharedState model =
                     \p ->
                         el [] (text <| String.fromInt <| nBooks - Tuple.first p)
               }
+            , { header = Element.el (Style.tableHeading ++ [ clipX ]) (text "S")
+              , width = px 20
+              , view =
+                    \p ->
+                        displayShareStatus (Tuple.second p)
+              }
             , { header = Element.el (Style.tableHeading ++ [ clipX ]) (titleHeadingButton model)
               , width = px 200
               , view =
@@ -452,6 +458,15 @@ listBooksMain sharedState model =
               }
             ]
         }
+
+
+displayShareStatus book =
+    case book.public of
+        True ->
+            el [ Font.color Style.white ] (text "s")
+
+        False ->
+            el [ Font.color Style.white, Font.bold ] (text "•")
 
 
 listBooksForPhone sharedState model =
