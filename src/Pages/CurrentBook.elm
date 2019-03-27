@@ -971,24 +971,30 @@ readingRateDisplay sharedState book =
 
 readingRateString : SharedState -> Book -> String
 readingRateString sharedState book =
-    let
-        daysToComplete_ =
-            daysToComplete sharedState book
+    case book.pagesRead >= book.pages of
+        True ->
+            ""
 
-        daysString =
-            case daysToComplete_ == 1 of
-                True ->
-                    " day)"
+        False ->
+            let
+                daysToComplete_ =
+                    daysToComplete sharedState book
 
-                False ->
-                    " days)"
-    in
-    String.fromInt book.pagesReadToday
-        ++ " pp/today, "
-        ++ (String.fromFloat <|
-                readingRate sharedState book
-           )
-        ++ " pp/day"
+                daysString =
+                    case daysToComplete_ == 1 of
+                        True ->
+                            " day)"
+
+                        False ->
+                            " days)"
+            in
+            String.fromInt book.pagesReadToday
+                ++ " pp/today, "
+                ++ (String.fromFloat <|
+                        Utility.roundTo 1 <|
+                            readingRate sharedState book
+                   )
+                ++ " pp/day"
 
 
 daysToFinish : SharedState -> Book -> Int
