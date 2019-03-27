@@ -97,7 +97,7 @@ update sharedState msg model =
 
         ProcessAuthentication (Ok user) ->
             ( { model
-                | message = "Success! Welcome " ++ user.username ++ "."
+                | message = "Welcome " ++ user.username ++ "."
                 , username = ""
                 , email = ""
                 , password = ""
