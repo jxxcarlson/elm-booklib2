@@ -14,6 +14,7 @@ import Common.Utility as Utility
 import Configuration
 import Element exposing (..)
 import Element.Background as Background
+import Element.Border as Border
 import Element.Font as Font
 import Element.Input as Input
 import Http exposing (Error(..))
@@ -283,7 +284,7 @@ statistics2 sharedState =
                         ++ "this month: "
                         ++ thisMonthString
             in
-            el [ Font.size 14 ] (text info)
+            el [ Font.size 14, Font.color Style.blue ] (text info)
 
 
 statistics sharedState =
@@ -335,16 +336,34 @@ signInColumn sharedState model =
         [ showIf (not <| showIfSignedInOrRegistered model) (inputUsername sharedState model)
         , showIf (not <| showIfSignedInOrRegistered model) (inputEmail sharedState model)
         , showIf (not <| showIfSignedInOrRegistered model) (inputPassword sharedState model)
-        , showIf (not <| showIfSignedInOrRegistered model) (row (registrationStyle sharedState) [ signInOrCancelButton model, registerButton model ])
-        , showIf (showIfSignedInOrRegistered model) (signInOrCancelButton model)
+        , showIf (not <| showIfSignedInOrRegistered model) (row (registrationStyle sharedState) [ signInOrCancelButton sharedState model, registerButton model ])
+        , showIf (showIfSignedInOrRegistered model) (signInOrCancelButton sharedState model)
         , messagePanel model
         , showIf (showIfSignedInOrRegistered model) (publicCheckbox sharedState)
-        , showIf (showIfSignedInOrRegistered model) (tagInput sharedState model)
-        , showIf (showIfSignedInOrRegistered model) tagUpdateButton
+        , tagSection sharedState model
         , showIf (not <| showIfSignedInOrRegistered model) (resetPasswordLink model)
         , verifyUserLink model
         , infoPanel sharedState model
         , invitationsLine sharedState
+        , tipLine
+        ]
+
+
+tagSection sharedState model =
+    showIf (showIfSignedInOrRegistered model)
+        (column [ padding 12, spacing 8, Border.width 1 ]
+            [ tagInput sharedState model
+            , tagUpdateButton
+            ]
+        )
+
+
+tipLine =
+    column [ Font.size 14, spacing 8 ]
+        [ el [ Font.bold ] (text "Tip")
+        , paragraph
+            [ width (px 350) ]
+            [ text "To add new book after you are signed in, click on the 'Book' tab, then 'New' in the footer." ]
         ]
 
 
@@ -409,9 +428,9 @@ tagInput sharedState model =
 
 
 tagUpdateButton =
-    Input.button Style.button
+    Input.button Style.smallButton
         { onPress = Just UpdateUserTags
-        , label = el [ Font.size 14 ] (text "Update tags ")
+        , label = el [ Font.size 12 ] (text "Update tags ")
         }
 
 
@@ -530,7 +549,7 @@ inputLabel sharedState =
             Input.labelLeft
 
 
-signInOrCancelButton model =
+signInOrCancelButton sharedState model =
     case model.state of
         NotSignedIn ->
             signInButton
@@ -545,7 +564,16 @@ signInOrCancelButton model =
             signOutButton
 
         SignedIn ->
-            signOutButton
+            case deviceIsPhone sharedState of
+                True ->
+                    signOutButton
+
+                False ->
+                    Element.none
+
+
+
+-- signOutButton
 
 
 signInButton =
