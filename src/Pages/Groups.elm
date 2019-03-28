@@ -1432,7 +1432,7 @@ viewPostContent sharedState model maybePost =
                     [ el [ Font.bold, Font.size 16 ] (text post.title)
                     ]
                 , el [ Font.size 14 ] (text <| "posted by " ++ post.authorName ++ " on " ++ post.creationDate)
-                , row [ Border.width 1 ] [ Common.Book.textViewedAsMarkdown 70 "400px" (postContentHeight sharedState) post.content ]
+                , row [ Border.width 1 ] [ Common.Book.textViewedAsMarkdown 65 "400px" (postContentHeight sharedState) post.content ]
                 , Utility.showIf (Just post.authorName == Maybe.map .username sharedState.currentUser)
                     (row [ spacing 12 ]
                         [ editPostButton post

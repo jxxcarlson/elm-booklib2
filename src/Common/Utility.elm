@@ -6,14 +6,14 @@ module Common.Utility exposing
     , removeLeadingZeros
     , replaceIf
     , roundTo
+    , scale
     , showIf
-    , softBreakAlt
+    , softBreakAt
     , stringFromIntWithCommas
     , toUtcDateString
     , toUtcString
     , toggleList
     , usDateStringFromElixirDateString
-    , scale
     )
 
 import Common.Days as Days
@@ -186,20 +186,50 @@ softBreak width string =
 --     |> String.
 
 
-softBreakAltAux : Int -> String -> List String
-softBreakAltAux width string =
-    if String.length string < width then
+softBreakAtAux : Int -> String -> List String
+softBreakAtAux width string =
+    if String.length string < width || String.contains "http" string then
         [ string ]
 
     else
         softBreak width string
 
 
-softBreakAlt : Int -> String -> List String
-softBreakAlt width string =
+softBreakAtAux2 : Int -> String -> List String
+softBreakAtAux2 width string =
+    if String.length string < width then
+        [ string ]
+
+    else if String.contains "http" string then
+        let
+            n =
+                String.length (getUrl string)
+        in
+        case n > 0 of
+            False ->
+                [ string ]
+
+            True ->
+                softBreak (width - n + 10) string
+
+    else
+        softBreak width string
+
+
+getUrl : String -> String
+getUrl str =
+    str
+        |> String.words
+        |> List.filter (\w -> String.contains "http" w)
+        |> List.head
+        |> Maybe.withDefault ""
+
+
+softBreakAt : Int -> String -> List String
+softBreakAt width string =
     string
         |> String.lines
-        |> List.map (softBreakAltAux width)
+        |> List.map (softBreakAtAux width)
         |> flattenListList
 
 
@@ -321,4 +351,4 @@ listUpdateIf predicate update list =
 
 scale : Float -> Int -> Int
 scale factor k =
-    round <| factor * (toFloat k)
+    round <| factor * toFloat k

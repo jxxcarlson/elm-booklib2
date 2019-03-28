@@ -20,7 +20,7 @@ view2 markdownString =
 view : Int -> String -> Html msg
 view k markdownString =
     markdownString
-        |> Utility.softBreakAlt k
+        |> Utility.softBreakAt k
         |> String.join "\n"
         |> Block.parse Nothing
         -- See answer 2 why
@@ -32,7 +32,7 @@ view k markdownString =
 view1 : String -> Html msg
 view1 markdownString =
     markdownString
-        |> Utility.softBreakAlt 55
+        |> Utility.softBreakAt 55
         |> String.join "\n"
         |> Block.parse (Just customOptions)
         -- See answer 2 why
