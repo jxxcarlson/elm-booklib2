@@ -59,7 +59,12 @@ update sharedState sharedStateUpdate =
             { sharedState | currentTime = time }
 
         UpdateCurrentUser currentUser ->
-            { sharedState | currentUser = currentUser, appState = SharedStateStarting }
+            case sharedState.appState == SharedStateRunning of
+                False ->
+                    { sharedState | currentUser = currentUser, appState = SharedStateStarting }
+
+                True ->
+                    { sharedState | currentUser = currentUser }
 
         UpdateCurrentBook currentBook ->
             { sharedState | currentBook = currentBook }
