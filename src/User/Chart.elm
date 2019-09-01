@@ -83,8 +83,8 @@ barGraphAttributes =
 
 barGraphAttributesForPhone =
     { graphHeight = 300
-    , graphWidth = 500
-    , options = [ Color "rgb(200,0,0)", DeltaX 15, YTickmarks 6, XTickmarks 12 ]
+    , graphWidth = 300
+    , options = [ Color "rgb(200,0,0)", DeltaX 15, YTickmarks 6, XTickmarks 12, Scale 1.0 -1.0 ]
     }
 
 
@@ -98,8 +98,10 @@ chart user =
 
 phoneChart : Int -> Int -> User -> Element msg
 phoneChart w h user =
-    Graph.barChart barGraphAttributesForPhone (prepareStats2 user.readingStats)
-        |> Element.html
+    column [ moveRight 100, width (px 300) ]
+        [ Graph.barChart barGraphAttributesForPhone (prepareStats2 user.readingStats)
+            |> Element.html
+        ]
 
 
 type alias Data =

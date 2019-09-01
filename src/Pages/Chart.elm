@@ -161,10 +161,12 @@ phoneChart sharedState user =
         ]
         [ column
             [ Font.size 12
-            , rotate (radians -90)
-            , above (column [ moveRight 120 ] [ chartInfo Style.black user ])
+
+            -- , rotate (radians -180)
+            -- , above (column [ moveRight 120 ] [ chartInfo Style.black user ])
             ]
             [ User.Chart.phoneChart (sharedState.windowHeight - 10) sharedState.windowWidth user
+            , el [ moveRight 140 ] (chartInfo Style.black user)
             ]
         ]
 
