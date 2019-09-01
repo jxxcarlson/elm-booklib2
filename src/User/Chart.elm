@@ -1,7 +1,7 @@
 module User.Chart exposing (chart, phoneChart, summary)
 
 import Element exposing (..)
-import Graph exposing (Option(..), barChart)
+import SimpleGraph exposing (Option(..), barChart)
 import User.Types exposing (Msg(..), ReadingStat, State(..), User)
 
 
@@ -91,7 +91,7 @@ barGraphAttributesForPhone =
 chart : User -> Element msg
 chart user =
     column [ padding 40, moveDown 20 ]
-        [ Graph.barChart barGraphAttributes (prepareStats2 user.readingStats)
+        [ SimpleGraph.barChart barGraphAttributes (prepareStats2 user.readingStats)
             |> Element.html
         ]
 
@@ -99,7 +99,7 @@ chart user =
 phoneChart : Int -> Int -> User -> Element msg
 phoneChart w h user =
     column [ moveRight 100, width (px 300) ]
-        [ Graph.barChart barGraphAttributesForPhone (prepareStats2 user.readingStats)
+        [ SimpleGraph.barChart barGraphAttributesForPhone (prepareStats2 user.readingStats)
             |> Element.html
         ]
 
