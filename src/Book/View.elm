@@ -7,20 +7,15 @@ import Element.Input as Input
 import Element.Keyed as Keyed
 import Html as H
 import Html.Attributes as HA
-import Markdown
+import Markdown.Elm
+import Option exposing (..)
 import Time exposing (Month(..), Posix)
 
 
 
 -- import User.Model
 -- VIEW: TOP
-
-
-
 -- BOOK PANEL
-
-
-
 
 
 bookListTitle model =
@@ -30,12 +25,6 @@ bookListTitle model =
 
         Just user ->
             user.firstname ++ "'s book list"
-
-
-      ]
-
-
-
 
 
 wordCountOfText : Model -> Int
@@ -71,7 +60,7 @@ blurbViewedAsMarkdown : Model -> Element msg
 blurbViewedAsMarkdown model =
     case model.appState of
         SharingBooks _ ->
-            Element.html <| H.div (markdownStyle model) <| Markdown.toHtml Nothing model.sharedBlurb
+            Element.html <| H.div (markdownStyle model) <| Markdown.Elm.toHtml Extended model.sharedBlurb
 
         _ ->
             case model.maybeUser of
@@ -104,7 +93,6 @@ blurbInput model =
         , label = Input.labelAbove [ Font.size 0, Font.bold ] (text "")
         , spellcheck = False
         }
-
 
 
 newBookButton_ : Model -> Element BookMsg
