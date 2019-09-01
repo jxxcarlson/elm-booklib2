@@ -43,6 +43,7 @@ type alias Model =
     , url : Url
     , windowWidth : Int
     , windowHeight : Int
+    , hash : String
     }
 
 
@@ -76,6 +77,7 @@ init flags url navKey =
       , navKey = navKey
       , windowWidth = flags.width
       , windowHeight = flags.height
+      , hash = "702edca0b2181c15d457eacac39de39b"
       }
     , Cmd.batch
         [ OutsideInfo.sendInfoOutside (AskToReconnectUser Json.Encode.null)
