@@ -411,7 +411,7 @@ registrationStyle sharedState =
 tagInput sharedState model =
     case classifyDevice { width = sharedState.windowWidth, height = sharedState.windowHeight } |> .class of
         Phone ->
-            Input.text [ width (px 280), height (px 20), Font.size 14 ]
+            Input.text [ width (px 280), height (px 20), Font.size 14, moveUp 10 ]
                 { text = model.tagString
                 , placeholder = Just <| Input.placeholder [ moveUp 6 ] (el [] (Element.text "history, ficton, science"))
                 , onChange = InputTagString
@@ -419,7 +419,7 @@ tagInput sharedState model =
                 }
 
         _ ->
-            Input.text [ width (px 400), height (px 20), Font.size 14 ]
+            Input.text [ width (px 400), height (px 20), Font.size 14, moveUp 10 ]
                 { text = model.tagString
                 , placeholder = Just <| Input.placeholder [ moveUp 6 ] (el [] (Element.text "history, ficton, science"))
                 , onChange = InputTagString

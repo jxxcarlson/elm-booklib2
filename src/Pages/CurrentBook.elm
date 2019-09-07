@@ -919,7 +919,7 @@ pagesInput sharedState model =
             Element.none
 
         Just book ->
-            Input.text [ width (px 60), height (px 25) ]
+            Input.text [ width (px 60), height (px 25), moveUp 9 ]
                 { text = String.fromInt book.pagesRead
                 , placeholder = Nothing
                 , onChange = InputPagesRead
