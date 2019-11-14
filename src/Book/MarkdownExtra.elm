@@ -10,7 +10,7 @@ import Option exposing (..)
 view : Int -> String -> Html msg
 view k markdownString =
     markdownString
-        |> Markdown.Elm.toHtml Extended
+        |> Markdown.Elm.toHtml ExtendedMath
         |> (\x -> Html.div [] [ x ])
 
 
