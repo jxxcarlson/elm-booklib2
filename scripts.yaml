@@ -1,0 +1,4 @@
+scripts:
+
+  make: lamdera make src/Frontend.elm src/Backend.elm
+
