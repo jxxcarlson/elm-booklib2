@@ -26,7 +26,8 @@ import Http
 import SharedState exposing (SharedState, SharedStateUpdate(..))
 import User.Coders
 import User.Types exposing (User)
-
+import File.Download as Download
+import Codec
 
 
 --
@@ -95,6 +96,7 @@ type Msg
     | GetSharedBooks String
     | GetCurrentUserBookList
     | SetSortOrder SortOrder
+    | ExportJson
     | NoOp
 
 
@@ -217,6 +219,7 @@ update sharedState msg model =
                         ]
                     , NoUpdate
                     )
+        ExportJson -> (model, exportJson model, NoUpdate)
 
         SetSortOrder sortOrder ->
             ( { model | sortOrder = sortOrder }, Cmd.none, NoUpdate )
@@ -654,7 +657,31 @@ footer sharedState model =
         , el Style.footerItem (text <| userStatus sharedState.currentUser)
         , wordCountOfCurrentNotes sharedState
         , userBeginningDate sharedState
+        , exportJsonButton
         ]
+
+
+exportJson : Model -> Cmd msg
+exportJson model =
+    Download.string "books.json" "text/json" (Codec.encodeData model.bookList)
+
+
+exportJsonButton : Element Msg
+exportJsonButton =
+    buttonTemplate ExportJson "Export"
+
+buttonTemplate :  msg -> String -> Element msg
+buttonTemplate  msg label_ =
+   Input.button buttonStyle
+            { onPress = Just msg
+            , label = el [ Font.size 14 ] (text label_)
+            }
+
+buttonStyle : List (Element.Attr () msg)
+buttonStyle =
+    [ Font.color (Element.rgb255 255 255 255)
+    , Element.paddingXY 15 8
+    ]
 
 
 footerForPhone : SharedState -> Model -> Element Msg
